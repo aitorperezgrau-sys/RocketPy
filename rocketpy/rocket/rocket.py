@@ -41,6 +41,8 @@ from rocketpy.tools import (
     find_obj_from_hash,
     parallel_axis_theorem_from_com,
 )
+from rocket.wire import Wire
+
 
 logger = logging.getLogger(__name__)
 
@@ -372,6 +374,8 @@ class Rocket:
         self._controllers = []
         self.air_brakes = []
         self.sensors = Components()
+        self.wires_communications = Components()
+        self.wires_ignition = Components()
         self.aerodynamic_surfaces = Components()
         self.surfaces_cp_to_cdm = {}
         self.rail_buttons = Components()
@@ -1871,6 +1875,53 @@ class Rocket:
             sensor._attached_rockets[self] += 1
         except KeyError:
             sensor._attached_rockets[self] = 1
+
+    def add_wire(self, wire, type, ignition_type):
+        '''
+        Adds the wire to the rocket.
+        Wires are used to calculate the magnetic 
+        distrubance they can create, thus affecting
+        the magnetometer reading. 
+
+        Parameters:
+        --------------
+        wire: Wire
+            Wire to be added to the rocket
+        type: str
+            type of wire.
+            If 'communications', the wire will be consider to
+            have only information communicated from one component to 
+            another, thus they will have a constatn effect on 
+            the magnetic field. If 'ignition', the wire is considered
+            to have flow of current only when there is a ignition. 
+        ignition_type: str, mandatory when it is a ignition wire, otherwise None
+            type of ignition wire: 
+            drogue, main
+            The magnetic disturbance will ocurr during the selected parachute 
+            ejection, simulating the signal sent by the avionics. 
+        '''
+
+        if isinstance(wire, Wire):
+            if isinstance(type, str):
+                if type == 'communications':
+                    self.wires_communications.add(wire, wire.magnetic_interference)
+                elif type == 'ignition':
+                    if not isinstance(ignition_type, str):
+                        raise ValueError('Ignition type must be a string')
+                    else: 
+                        if ignition_type.lower() == 'drogue' or ignition_type.lower() == 'main':
+                            self.wires_ignition.add(wire, wire.magnetic_interference, ignition_type)
+                        else: 
+                            raise ValueError('Ignition type must be main or drogue')
+                else:
+                    raise ValueError('The type must be a ignition or communication')
+            else: 
+                raise ValueError('The type must be a string')
+
+        else: 
+            raise ValueError('The input object must be a Wire object')
+
+
 
     def add_air_brakes(
         self,
