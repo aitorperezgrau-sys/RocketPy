@@ -29,6 +29,7 @@ from rocketpy.rocket.aero_surface import (
     TrapezoidalFins,
     TubeFins,
 )
+from rocketpy.rocket.wire import Wire
 from rocketpy.rocket.aero_surface.fins.elliptical_fin import EllipticalFin
 from rocketpy.rocket.aero_surface.fins.free_form_fin import FreeFormFin
 from rocketpy.rocket.aero_surface.fins.free_form_fins import FreeFormFins
@@ -42,7 +43,6 @@ from rocketpy.tools import (
     parallel_axis_theorem_from_com,
 )
 
-from rocketpy.rocket.wire import Wire
 
 logger = logging.getLogger(__name__)
 

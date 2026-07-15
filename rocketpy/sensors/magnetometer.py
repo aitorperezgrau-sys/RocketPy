@@ -35,7 +35,13 @@ class Magnetometer(InertialSensor):
     
     power_interference: list 
         Holds the total magnetic distortion due to the system interference in T
-        regardless of the initalization mode.  
+        regardless of the initalization mode, for a given measurement 
+
+    standard_communications_interference: list
+        Holds the magnetic distortion due to the communication wires in T
+    
+    activation_signal_interference: list
+        Holds the magnetic distortion due to the ignition signals in T
 
     measurement_range : float, tuple
         The measurement range of the sensor in T.
@@ -350,11 +356,11 @@ class Magnetometer(InertialSensor):
 
 
         #--- Apply noise + bias and quantize ---
-        B_sensor = self.apply_temperature_drift(B_sensor)              # T
-        B_sensor = self.apply_hard_iron(B_sensor)                      # T
-        B_sensor = self.power_interference(B_sensor, rocket, u)        # T
-        B_sensor = self.apply_noise(B_sensor)                          # T
-        B_sensor = self.quantize(B_sensor)                             # T
+        B_sensor = self.apply_temperature_drift(B_sensor)               # T
+        B_sensor = self.apply_hard_iron(B_sensor)                       # T
+        B_sensor = self.apply_power_interference(B_sensor, rocket, u)   # T
+        B_sensor = self.apply_noise(B_sensor)                           # T
+        B_sensor = self.quantize(B_sensor)                              # T
 
 
         self.measurement = (B_sensor.x, B_sensor.y, B_sensor.z)   # T                                  
@@ -364,7 +370,7 @@ class Magnetometer(InertialSensor):
 
     
 
-    def power_interference(self, B: Vector, rocket: Rocket, u: list):
+    def apply_power_interference(self, B: Vector, rocket: Rocket, u: list):
 
         '''
         This funtion applies the electromagnetic interference to the 
@@ -395,13 +401,17 @@ class Magnetometer(InertialSensor):
 
         '''
 
-        B = B + self.standard_communications_interference(B, rocket)
-        B = B + self.activation_signal_interference(B, rocket, u)
+        self.power_interference = [0,0,0]
+
+        B = self.apply_standard_communications_interference(B, rocket)
+        B = self.apply_activation_signal_interference(B, rocket, u)
+
+        self.power_interference = self.activation_signal_interference + self.power_interference
 
         return B
     
 
-    def standard_communications_interference(self, B: Vector, rocket: Rocket):
+    def apply_standard_communications_interference(self, B: Vector, rocket: Rocket):
         '''
         This function applies the interference caused due to the current
         flowing through the communication wires. 
@@ -414,14 +424,17 @@ class Magnetometer(InertialSensor):
             Rocketpy Rocket class
         '''
 
+        self.standard_communications_interference = [0, 0, 0]
+
         for communication_wire in rocket.communication_wires:
             B = B + communication_wire._mangetic_interference
+            self.standard_communications_interference = self.standard_communications_interference + communication_wire.magnetic_interference 
 
         return B
 
 
 
-    def activation_signal_interference(self, B: Vector, rocket: Rocket, u: list):
+    def apply_activation_signal_interference(self, B: Vector, rocket: Rocket, u: list):
 
         '''
         This function applies the interference caused due to the current
@@ -444,6 +457,8 @@ class Magnetometer(InertialSensor):
             interference
         '''
 
+        self.activation_signal_interference = [0, 0, 0]
+
         for ingition_wire in rocket.ignition_wires:
 
             wire = ingition_wire[0]
@@ -451,8 +466,12 @@ class Magnetometer(InertialSensor):
 
             if parachute_trigger == 'apogee' and u[5] < 0:
                     B = B + wire._magnetic_interference
+                    self.activation_signal_interference = self.activation_signal_interference + wire.magnetic_interference
+
             elif isinstance(parachute_trigger, (float, int)) and parachute_trigger >= u[2]:
                     B = B + wire._magnetic_interference
+                    self.activation_signal_interference = self.activation_signal_interference + wire.magnetic_interference
+
         return B
     
 
@@ -464,6 +483,16 @@ class Magnetometer(InertialSensor):
         magnetized materials on the rocket itself that move along with 
         the sensor (from steel screws, battery casing, feerromagnetic components), 
         thus it is a constant value. It shifts the center of the magnetic data
+
+        Input:
+        --------
+        B: Vector
+            magnetic field Vector
+        
+        Returns: 
+        -------
+        B: Vector
+            Magnetic field after hard_iron_distortion. 
         '''
 
         B = B + self._hard_iron_distortion
