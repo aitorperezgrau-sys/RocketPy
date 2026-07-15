@@ -1,7 +1,7 @@
 import math
 import csv
 import numpy as np
-from rocketpy.sensors import Sensor, InertialSensor, ScalarSensor
+from rocketpy.sensors.sensor import Sensor, InertialSensor, ScalarSensor
 from rocketpy.mathutils.vector_matrix import Matrix, Vector
 from rocketpy.tools import inverted_haversine
 from pywmm import WMMv2
@@ -9,6 +9,8 @@ from datetime import datetime
 from pywmm.date_utils import decimal_year
 from pywmm.calculator import calculate_geomagnetic
 from rocketpy.rocket import Rocket
+
+
 
 
 
