@@ -8,9 +8,7 @@ from pywmm import WMMv2
 from datetime import datetime
 from pywmm.date_utils import decimal_year
 from pywmm.calculator import calculate_geomagnetic
-from rocket import Rocket
-
-
+from rocketpy.rocket import Rocket
 
 
 

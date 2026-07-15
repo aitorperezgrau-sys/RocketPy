@@ -53,9 +53,11 @@ from .rocket import (
     TrapezoidalFin,
     TrapezoidalFins,
     TubeFins,
+    Wire
 )
+
 from .sensitivity import SensitivityModel
-from .sensors import Accelerometer, Barometer, GnssReceiver, Gyroscope
+from .sensors import Accelerometer, Barometer, GnssReceiver, Gyroscope, Magnetometer
 from .simulation import Flight, MonteCarlo, MultivariateRejectionSampler
 from .stochastic import (
     CustomSampler,

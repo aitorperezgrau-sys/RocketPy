@@ -41,8 +41,8 @@ from rocketpy.tools import (
     find_obj_from_hash,
     parallel_axis_theorem_from_com,
 )
-from rocket.wire import Wire
 
+from rocketpy.rocket.wire import Wire
 
 logger = logging.getLogger(__name__)
 
