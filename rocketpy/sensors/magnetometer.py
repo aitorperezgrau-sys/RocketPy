@@ -8,6 +8,7 @@ from pywmm import WMMv2
 from datetime import datetime
 from pywmm.date_utils import decimal_year
 from pywmm.calculator import calculate_geomagnetic
+from rocket import Rocket
 
 
 
@@ -272,14 +273,18 @@ class Magnetometer(InertialSensor):
         Parameters
         ----------
         time : float
-        Current time in seconds.
+            Current time in seconds.
+
         kwargs : dict
             Keyword arguments dictionary containing the following keys:
 
              - u : np.array
                 State vector of the rocket.
+                u = [x, y, z, vx, vy, vz, e0, e1, e2, e3, wx, wy, wz]
             - u_dot : np.array
                 Derivative of the state vector of the rocket.
+            - rocket: Rocket
+                rocket with which the simulation is being executed.  
             - relative_position : np.array
                 Position of the sensor relative to the rocket center of mass.
             - environment : Environment
@@ -291,6 +296,7 @@ class Magnetometer(InertialSensor):
         lat0, lon0, launch_site_elevation = kwargs["environment"].latitude, kwargs["environment"].longitude, kwargs["environment"].elevation
         earth_radius = kwargs["environment"].earth_radius
         avionics_signal = kwargs["avionics_signal"]
+        rocket = kwargs["rocket"]
         
         quaternion = u[6:10]  # Quaternion represents the body orientation with respect to the inertial frame.
         rotation_body_to_inertial = Matrix.transformation(quaternion) # rotation matrix from rocket frame to inertial frame
@@ -344,11 +350,11 @@ class Magnetometer(InertialSensor):
 
 
         #--- Apply noise + bias and quantize ---
-        B_sensor = self.apply_temperature_drift(B_sensor)                      # T
-        B_sensor = self.apply_hard_iron(B_sensor)                              # T
-        B_sensor = self.apply_system_interference(B_sensor, avionics_signal)   # T
-        B_sensor = self.apply_noise(B_sensor)                                  # T
-        B_sensor = self.quantize(B_sensor)                                     # T
+        B_sensor = self.apply_temperature_drift(B_sensor)              # T
+        B_sensor = self.apply_hard_iron(B_sensor)                      # T
+        B_sensor = self.power_interference(B_sensor, rocket, u)        # T
+        B_sensor = self.apply_noise(B_sensor)                          # T
+        B_sensor = self.quantize(B_sensor)                             # T
 
 
         self.measurement = (B_sensor.x, B_sensor.y, B_sensor.z)   # T                                  
@@ -358,26 +364,97 @@ class Magnetometer(InertialSensor):
 
     
 
-    def apply_system_interference(self, B: Vector, avionics_signal: list):
+    def power_interference(self, B: Vector, rocket: Rocket, u: list):
 
         '''
         This funtion applies the electromagnetic interference to the 
         magnetic field vector, when a signal is triggered. 
         It considers that there is electron flow, thus, 
-        a generation of magnetic field, when any of the values is True,
-        or it is a 1. 
+        a generation of magnetic field, when the conditions
+        for the trigger are fulfilled, when it is a 
+        ignition wire, or always when it is a communication wire. 
+
+        Input:
+        --------
+        B: Vector
+            magnetic field Vector
+        rocket: Rocket
+            Rocketpy Rocket class
+        u: list
+            state vector of the rocket
+            u = [x, y, z, vx, vy, vz, e0, e1, e2, e3, wx, wy, wz]
+
+        
+        Returns:
+        -------
+        B: Vector
+            Magnetic field after adjustment of both the 
+            activation signal interference and communications
+            interference
+    
+
         '''
 
-        for i in avionics_signal:
-            if (isinstance(i, bool) and i) or (isinstance(i, (int,float)) and i == 1.0):
-                B = B + self._activation_signal_distortion
-                break
-            elif isinstance(i, list) and i[0]:
-                B = B + self._activation_signal_distortion
+        B = B + self.standard_communications_interference(B, rocket)
+        B = B + self.activation_signal_interference(B, rocket, u)
 
         return B
     
 
+    def standard_communications_interference(self, B: Vector, rocket: Rocket):
+        '''
+        This function applies the interference caused due to the current
+        flowing through the communication wires. 
+
+         Input:
+        --------
+        B: Vector
+            magnetic field Vector
+        rocket: Rocket
+            Rocketpy Rocket class
+        '''
+
+        for communication_wire in rocket.communication_wires:
+            B = B + communication_wire._mangetic_interference
+
+        return B
+
+
+
+    def activation_signal_interference(self, B: Vector, rocket: Rocket, u: list):
+
+        '''
+        This function applies the interference caused due to the current
+        flowing through the ignition wires, during an activation signal
+
+         Input:
+        --------
+        B: Vector
+            magnetic field Vector
+        rocket: Rocket
+            Rocketpy Rocket class
+        u: list
+            state vector of the rocket
+            u = [x, y, z, vx, vy, vz, e0, e1, e2, e3, wx, wy, wz]
+
+        Returns: 
+        -------
+        B: Vector
+            Magnetic field after adjustment activation signal interference
+            interference
+        '''
+
+        for ingition_wire in rocket.ignition_wires:
+
+            wire = ingition_wire[0]
+            parachute_trigger = ingition_wire[1]
+
+            if parachute_trigger == 'apogee' and u[5] < 0:
+                    B = B + wire._magnetic_interference
+            elif isinstance(parachute_trigger, (float, int)) and parachute_trigger >= u[2]:
+                    B = B + wire._magnetic_interference
+        return B
+    
 
     def apply_hard_iron(self, B):
 
@@ -393,7 +470,7 @@ class Magnetometer(InertialSensor):
         
         return B
     
-    
+
 
     def export_measured_data(self, filename, file_format):
         '''Export the measured values to a file
@@ -437,17 +514,7 @@ class Magnetometer(InertialSensor):
             measurement_range             = data.get('measurement_range', np.inf),
             resolution                    = data.get('resolution', 0),
             hard_iron_distortion          = data.get('hard_iron_distortion', 0.0),
-            activation_signal_distortion  = data.get('activation_signal_distortion', 'physical'),
-            
-            # Physical Wire Parameters
-            wire_current                  = data.get('wire_current', 1.0),
-            wire_current_direction        = data.get('wire_current_direction', 'anticlockwise'),
-            wire_angles                   = data.get('wire_angles', 'physical'),
-            wire_distance                 = data.get('wire_distance', 1e-2),
-            wire_length                   = data.get('wire_length', 8 * 1e-2),
-            
-
-            
+          
             # Noise Profiles
             noise_density                 = data.get('noise_density', 0),
             noise_variance                = data.get('noise_variance', 1),

@@ -373,9 +373,9 @@ class Rocket:
         self.parachutes = []
         self._controllers = []
         self.air_brakes = []
+        self.communication_wires = []
+        self.ignition_wires = []
         self.sensors = Components()
-        self.wires_communications = Components()
-        self.wires_ignition = Components()
         self.aerodynamic_surfaces = Components()
         self.surfaces_cp_to_cdm = {}
         self.rail_buttons = Components()
@@ -1876,7 +1876,7 @@ class Rocket:
         except KeyError:
             sensor._attached_rockets[self] = 1
 
-    def add_wire(self, wire, type, ignition_type):
+    def add_wire(self, wire, type, parachute_name):
         '''
         Adds the wire to the rocket.
         Wires are used to calculate the magnetic 
@@ -1887,6 +1887,7 @@ class Rocket:
         --------------
         wire: Wire
             Wire to be added to the rocket
+
         type: str
             type of wire.
             If 'communications', the wire will be consider to
@@ -1894,25 +1895,32 @@ class Rocket:
             another, thus they will have a constatn effect on 
             the magnetic field. If 'ignition', the wire is considered
             to have flow of current only when there is a ignition. 
-        ignition_type: str, mandatory when it is a ignition wire, otherwise None
-            type of ignition wire: 
-            drogue, main
+
+        parachute_name: str, mandatory when it is a ignition wire, otherwise None
+            Name of the parachtue in whose deployment we want the wire to have
+            charge flow, it must be the same as the name assigned for the parachute
             The magnetic disturbance will ocurr during the selected parachute 
-            ejection, simulating the signal sent by the avionics. 
+            ejection, simulating the signal sent by the avionics. The ejection 
+            conditions will be taken from the parachute definition.
         '''
 
         if isinstance(wire, Wire):
             if isinstance(type, str):
                 if type == 'communications':
-                    self.wires_communications.add(wire, wire.magnetic_interference)
+                    self.communication_wires.append(wire)
                 elif type == 'ignition':
-                    if not isinstance(ignition_type, str):
+                    if not isinstance(parachute_name, str):
                         raise ValueError('Ignition type must be a string')
                     else: 
-                        if ignition_type.lower() == 'drogue' or ignition_type.lower() == 'main':
-                            self.wires_ignition.add(wire, wire.magnetic_interference, ignition_type)
-                        else: 
-                            raise ValueError('Ignition type must be main or drogue')
+                            if self.parachutes:
+                                for parachute in self.parachutes:
+                                    if parachute_name == parachute.name:
+                                        self.ignition_wires.append((wire, parachute.trigger))
+                                        break
+                                else: 
+                                    raise ValueError(f'There is not parachute named: {parachute_name}') 
+                            else:
+                                raise ValueError('Define a parachute first')
                 else:
                     raise ValueError('The type must be a ignition or communication')
             else: 

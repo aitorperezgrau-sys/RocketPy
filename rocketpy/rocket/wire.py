@@ -9,10 +9,10 @@ class Wire():
 
     '''
     Wire class, that the physics of a wire, and the magnetic field it can create.
-    It is used to model the power magnetic interference in the magnetometer. 
+    It is used to model the magnetic interference in the magnetometer. 
 
     
-     Attributes: 
+    Attributes: 
     -----------------
     wire_current: float
         Intensity of the current through the wire in A
@@ -20,6 +20,10 @@ class Wire():
     wire_current_direction: string
         Direction of the current through the wire, it can either be 
         clockwise or anticlockwise
+
+    magnetic_interference:
+        distortion of the magnetic field due to the charge flow 
+        through the wire.
 
     wire_length: float, optional
         length of the wire in m. 
@@ -117,7 +121,8 @@ class Wire():
 
 
 
-        # define power  attribute
+        # define mangetic interference:
+
         if isinstance(magnetic_interference, (float, int)) and magnetic_interference != 0:
 
             self.magnetic_interference = [magnetic_interference, magnetic_interference, magnetic_interference]
@@ -206,7 +211,7 @@ class Wire():
             
             
         elif magnetic_interference == 0:
-            self.activation_signal_distortion = [0,0,0]
+            self.magnetic_interference = [0,0,0]
 
             self.wire_current = None
             self.wire_distance = None
