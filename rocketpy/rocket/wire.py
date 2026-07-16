@@ -9,21 +9,20 @@ class Wire():
 
     '''
     Wire class, that the physics of a wire, and the magnetic field it can create.
-    It is used to model the magnetic interference in the magnetometer. 
+    It is used to model the magnetic field in the magnetometer. 
 
     
     Attributes: 
     -----------------
-    wire_current: float
+    wire_current: float, int
         Intensity of the current through the wire in A
 
     wire_current_direction: string
         Direction of the current through the wire, it can either be 
         clockwise or anticlockwise
 
-    magnetic_interference:
-        distortion of the magnetic field due to the charge flow 
-        through the wire.
+    magnetic_field:
+        magnetic field due to the charge flow through the wire.
 
     wire_length: float, optional
         length of the wire in m. 
@@ -40,107 +39,131 @@ class Wire():
 
     def __init__(
             self,
-            wire_current,
-            wire_current_direction,
-            magnetic_interference = 'physical',
-            wire_angles_magnetometer = 'physical',
-            wire_distance_to_magnetometer = 1e-2,
-            wire_length = 8e-2,
+            current,
+            current_direction,
+            type,
+            ignition_wire_function = 'parachute',
+            parachute_name = 'main', 
     ):
         
         '''
-        wire_current: float, int, list, optional
+        current: float, int, list, optional
             Intensity of the current through the communication wires to calculate 
             the magnetic distortion experienced by the sensor due to activation signals
             in Amperes (A). Default is 1 A. 
 
-        wire_current_direction: string
+        current_direction: string
             Direction of the current passing the communication wires to calculate the
             magnetic distortion experienced by the sensor due to activation signals 
             in Amperes (A). Default is anticlockwise
+        
+        type: str
+            type of wire.
+            If 'communications', the wire will be consider to
+            have only information communicated from one component to 
+            another, thus they will have a constatn effect on 
+            the magnetic field. If 'ignition', the wire is considered
+            to have flow of current only when there is a ignition.
 
-        magnetic_interference: float, list, str, optional
-            Magnetic influence on the magnetometer due to activation signal in T: 
+        ignition_wire_function: str
+            type of ingnition wire. 
 
-            - If a float, in T the same value is applied to each axis 
 
-            - If a list or float, in T the distortion will be taken considering 
-              these values. 
+        parachute_name: str, mandatory when it is a ignition wire whose function is parachute
+            ,otherwise None. 
 
-            - If str: 'physical' the activation_signal_distortion can be modelled 
-              using the followign arguments, wire_current, wire_current_direction 
-              wire_distance_to_magnetometer, wire_length, assuming that the magnetometer is placed 
-              in the middle of the wire, and that magnetometer and wire are in the 
-              same plane. 
+            Name of the parachtue in whose deployment we want the wire to have
+            charge flow, it must be the same as the name assigned for the parachute
+            The magnetic disturbance will ocurr during the selected parachute 
+            ejection, simulating the signal sent by the avionics. The ejection 
+            conditions will be taken from the parachute definition.
 
-            - If str: 'angles', the activation_signal_distortion can be modelled 
-              using the following arguments, wire_current, wire_current_direction
-              wire_distance, wire_length, assuming that the magnetometer and wire
-              are in the same plane
-
-            - If 0, there is no magnetic distortion due to activation signal
+        '''
             
-            Default is 'physical', meaning, it can be defined with the physical
-            parameters. 
 
-        wire_angles_magnetometer: tuple, list, float, int, str, optional
-            Angles between the edge of the wires and the magnetometer in degrees. 
-            The angles are defined between the wire and the line joining the edge
-            of the wire and the magnetometer. This parameter is necesary if the 
-            activation_signal_distortion is 'angles'. The angles must be between 0 and 90,
-            without including them
+        # handling of direction of the current
+        if not isinstance(self.current_direction, str):
+            raise ValueError('The current direction parameter must be a string')
+        elif  not (current_direction == 'anticlockwise' or current_direction == 'clockwise'): 
+            raise ValueError('The accepted strings are anticlockwise and clockwise')
+        else: 
+            self.current_direction = current_direction
+       
 
-            If a float, the same angle applies for the left and rigth edges
-            If a list or tuple, the first angle is considered to be the one to the
-            left from the sensor perspective, and the second to the left from the 
-            sensor perspective
-            If a str: 'physical' indicates that the activation_signal_distortion 
-            is in the physical mode. 
+        # define current of the wire
+        if not isinstance(current, (float, int)):
+            raise ValueError('The current through the wire must be a float or int') 
+        else: 
+            self.current = current
 
-            Default is 'physical'. 
 
-        wire_distance_to_magnetometer: float, int, optional  
-            Distance from the wires to the magnetic sensor to to calculate the
-            magnetic distortion experienced by the sensor due to activation signals. 
-            If a float, the wires are assumed to be at the same distance of each
-            magnetometer axis. 
-            If a list, each value is the distance to the x,y,z axis of the magnetometer
-            with a list of length 3.
+        # define the type of wire
+        if isinstance(type, str):
+            if type == 'communications':
+                self.type = 'communications'
+            elif type == 'ignition':
+                self.type == 'ignition'
+                if isinstance(ignition_wire_function,str):
+                    if ignition_wire_function.lower() == 'parachute':
+                        if not isinstance(self.parachute_name, str):
+                            raise ValueError('The name of the parachute must be a string')
+                        else: 
+                            self.parachute_name = parachute_name
+                    else: 
+                        raise ValueError(f'There is not ignition type {ignition_wire_function}', ignition_wire_function)
+                else: 
+                    raise ValueError('The type of ignition wire must be a str')
+            else:
+                raise ValueError('The type must be a ignition or communication')
             
-            Default is 1e-2 m, 1 cm. 
+        else: 
+            raise ValueError('The type must be a string')
 
-        wire_length: float, optional, str
-            Length of the wire to calculate the magnetic distortion experienced by
-            the sensor due to activation signals.
-            str: If the activation_signal_distortion is 'angles' this parameters must be 
-            initiated with 'angles'. 
 
-            Default is 8 * 1e-2 m, 8cm. 
+        self._magnetic_field = {}
+
+    def measure_magnetic_field(
+        self,
+        position_vector, 
+        magnetic_field = 'physical',
+        ):
+
+
+        '''
+        magnetic_field: float, list, str, optional
+            Magnetic influence on a certain position due to activation signal in T: 
+
+            - If a float, it assumes that the wire genertes the same magnetic field
+              on each axis, with the given value
+
+            - If a tuple or float, it assumes that the wire genertes the given magnetic
+              field
+
+            - If str: 'physical' the magnetic field on the point position_vector is 
+            calculated using physical parameters, assuming that the magnetometer and wire
+            are in the same plane
+            
+            Default is 'physical', meaning, it is calculated using the physical parameters of the rocket
 
         '''
 
 
+        # define mangetic field:
 
-        # define mangetic interference:
+        if isinstance(magnetic_field, (float, int)) and magnetic_field != 0:
 
-        if isinstance(magnetic_interference, (float, int)) and magnetic_interference != 0:
+            self.magnetic_field = [magnetic_field, magnetic_field, magnetic_field]
 
-            self.magnetic_interference = [magnetic_interference, magnetic_interference, magnetic_interference]
+        elif  isinstance(magnetic_field, (list, tuple)):
 
-        elif  isinstance(magnetic_interference, (list, tuple)):
-
-            if len(magnetic_interference) == 3: 
-                self.magnetic_interference = list(magnetic_interference)
+            if len(magnetic_field) == 3: 
+                self.magnetic_field = list(magnetic_field)
             else:
                 raise ValueError('If a list is passed, it must have a value for each axis. Therefore, it must have length 3')
 
-        elif isinstance(magnetic_interference, str) and (magnetic_interference == 'physical' or magnetic_interference == 'angles'): 
 
-            # define wire_current
-            if not isinstance(wire_current, (float, int)):
-                raise ValueError('The current through the wire must be a float or int') 
-            else: 
-                self.wire_current = wire_current
+
+        elif isinstance(magnetic_field, str) and (magnetic_field == 'physical' or magnetic_field == 'angles'): 
 
             # define wire_distance
             if not isinstance(wire_distance_to_magnetometer, (float, int)): 
@@ -193,25 +216,18 @@ class Wire():
                 raise ValueError('Introduce a valid wire length')
 
             
-
-            # handling of direction of the current
-            if isinstance(wire_current_direction, str) and not (wire_current_direction == 'anticlockwise' or wire_current_direction == 'clockwise'): 
-                raise ValueError('The accepted strings are anticlockwise and clockwise')
             
-            elif not isinstance(wire_current_direction, str):
-                raise ValueError('The current direction parameter must be a string')
-            
-            elif isinstance(wire_current_direction, str) and wire_current_direction == 'anticlockwise':
+            if isinstance(self.wire_current_direction, str) and self.wire_current_direction == 'anticlockwise':
                 self._wire_angles_magnetometer = [self._wire_angles_magnetometer[1], self._wire_angles_magnetometer[0]]
 
 
-            b_field_wire = ((1e-7 * wire_current) / wire_distance_to_magnetometer) * (math.cos(self._wire_angles_magnetometer[0]) - math.cos(self._wire_angles_magnetometer[1]))
+            b_field_wire = ((1e-7 * self.current) / wire_distance_to_magnetometer) * (math.cos(self._wire_angles_magnetometer[0]) - math.cos(self._wire_angles_magnetometer[1]))
 
-            self.magnetic_interference = [0, 0, b_field_wire]
+            self.magnetic_field = [0, 0, b_field_wire]
             
             
-        elif magnetic_interference == 0:
-            self.magnetic_interference = [0,0,0]
+        elif magnetic_field == 0:
+            self.magnetic_field = [0,0,0]
 
             self.wire_current = None
             self.wire_distance = None
@@ -220,4 +236,6 @@ class Wire():
         else:
             raise ValueError('Introduce a correct value for the activation signal')
 
-        self._magnetic_interference = Vector(self.magnetic_interference) 
+
+
+        self._magnetic_field[position_vector] = Vector(self.magnetic_field) 

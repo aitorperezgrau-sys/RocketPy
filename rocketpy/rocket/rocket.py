@@ -1856,6 +1856,7 @@ class Rocket:
         ----------
         sensor : Sensor
             Sensor to be added to the rocket.
+            
         position : int, float, tuple, list, Vector
             Position of the sensor. If a Vector, tuple or list is passed, it
             must be in the format (x, y, z) where x, y, and z are defined in the
@@ -1876,7 +1877,12 @@ class Rocket:
         except KeyError:
             sensor._attached_rockets[self] = 1
 
-    def add_wire(self, wire, type, parachute_name):
+
+    def add_wire(
+            self, 
+            wire, 
+            position_edges):
+
         '''
         Adds the wire to the rocket.
         Wires are used to calculate the magnetic 
@@ -1886,46 +1892,42 @@ class Rocket:
         Parameters:
         --------------
         wire: Wire
-            Wire to be added to the rocket
+            Wire object to be added to the rocket
 
-        type: str
-            type of wire.
-            If 'communications', the wire will be consider to
-            have only information communicated from one component to 
-            another, thus they will have a constatn effect on 
-            the magnetic field. If 'ignition', the wire is considered
-            to have flow of current only when there is a ignition. 
+        position_edges: list[list], list[tuple], tuple[list], tuple[tuple], list[int/float]
+            list or tuple of lists or tuple with 3 components, x,y,z for the edges
+            of the wire. They defined in the rocket's user defined coordinate system. 
+            
+            if a list with a int or a float, the position is assumed to be along the z axis.
 
-        parachute_name: str, mandatory when it is a ignition wire, otherwise None
-            Name of the parachtue in whose deployment we want the wire to have
-            charge flow, it must be the same as the name assigned for the parachute
-            The magnetic disturbance will ocurr during the selected parachute 
-            ejection, simulating the signal sent by the avionics. The ejection 
-            conditions will be taken from the parachute definition.
         '''
+        position = []
+
+        if len(position) == 2:
+            for i in position:
+                if isinstance(i, (float, int)):
+                    position.append(Vector([0, 0, i]))
+                else:
+                    position.append(Vector(*i))
+        else: 
+            raise ValueError('The length of the list must be 2')
+        
+        _position = Vector(_position)
+
 
         if isinstance(wire, Wire):
-            if isinstance(type, str):
-                if type == 'communications':
-                    self.communication_wires.append(wire)
-                elif type == 'ignition':
-                    if not isinstance(parachute_name, str):
-                        raise ValueError('Ignition type must be a string')
-                    else: 
-                            if self.parachutes:
-                                for parachute in self.parachutes:
-                                    if parachute_name == parachute.name:
-                                        self.ignition_wires.append((wire, parachute.trigger))
-                                        break
-                                else: 
-                                    raise ValueError(f'There is not parachute named: {parachute_name}') 
-                            else:
-                                raise ValueError('Define a parachute first')
+                if wire.type == 'communications':
+                    self.communication_wires.append(wire, _position)
                 else:
-                    raise ValueError('The type must be a ignition or communication')
-            else: 
-                raise ValueError('The type must be a string')
-
+                    if self.parachutes:
+                        for parachute in self.parachutes:
+                            if self.parachute_name == parachute.name:
+                                self.ignition_wires.append((wire, parachute.trigger, _position))
+                                break
+                        else: 
+                            raise ValueError(f'There is not parachute named: {self.parachute_name}') 
+                    else:
+                        raise ValueError('Define a parachute first')
         else: 
             raise ValueError('The input object must be a Wire object')
 
