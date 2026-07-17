@@ -1872,6 +1872,8 @@ class Rocket:
             position = (0, 0, position)
         position = Vector(position)
         self.sensors.add(sensor, position)
+        sensor._set_sensor_from_cso(position)
+
         try:
             sensor._attached_rockets[self] += 1
         except KeyError:
@@ -1897,10 +1899,11 @@ class Rocket:
         position_edges: list[list], list[tuple], tuple[list], tuple[tuple], list[int/float]
             list or tuple of lists or tuple with 3 components, x,y,z for the edges
             of the wire. They defined in the rocket's user defined coordinate system. 
-            
+            The first component is the edge closest to the nose, A, the other B. 
             if a list with a int or a float, the position is assumed to be along the z axis.
 
         '''
+
         edges = []
 
         if isinstance(position_edges, (list, tuple)):
@@ -1910,7 +1913,7 @@ class Rocket:
                 for position_edge in position_edges:
 
                     if isinstance(position_edge, (int, float)):
-                        edges.append([0, 0, position_edge])
+                        edges.append(Vector(0, 0, position_edge))
 
                     elif isinstance(position_edges, (tuple, list)):
                         edges.append(Vector(position_edge))
@@ -1919,41 +1922,15 @@ class Rocket:
         else: 
             raise ValueError('Position edges must be a list')
         
-
-
-        if isinstance(wire, Wire):
-                
-                wire._position_edges = Vector(edges)
-
-                if wire.type == 'communications':
-                    self.communication_wires.append(wire)
-                else:
-                    if wire.ignition_wire_function == 'parachute':
-                        if self.parachutes:
-                            for parachute in self.parachutes:
-                                if parachute.name == wire.parachute_name: 
-                                    self.ignition_wires.append(wire)
-                                    break
-                            else: 
-                                raise ValueError(f'There is not parachute named: {wire.parachute_name}') 
-                        else:
-                            raise ValueError('Define a parachute first')
-                        
-                    elif wire.ignition_wire_function == 'solid_motor':
-                        if self.motor: 
-                            self.ignition_wires.append((wire))
-                        else:
-                            raise ValueError('Define a motor first')
-                            
-                            
-
-                        
-
-
-        else: 
-            raise ValueError('The input object must be a Wire object')
+        
+        wire.set_wire_edges_from_cso(wire, edges)
         
 
+        if wire.type == 'communications':
+                self.communication_wires.append(wire)                
+
+        else:
+                self.ignition_wires.append(wire)
 
 
 

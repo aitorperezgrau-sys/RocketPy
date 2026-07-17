@@ -27,6 +27,14 @@ class Wire():
     wire_length: float, optional
         length of the wire in m. 
 
+    type: str
+        type of wire, it can either be ignition or communications
+
+    ignition_wire_function: str
+        sub-type of the wire, when it is an ignition wire
+        because it is a HIL wire it can be:
+        'parachute' or 'solid_motor
+
     '''
 
     def __init__(
@@ -158,7 +166,7 @@ class Wire():
         that the wire is straight. 
         '''
 
-        
+
 
 
 
@@ -204,3 +212,24 @@ class Wire():
         
 
 
+    def _set_wire_edges_from_cso (self, wire_edges_from_cso):
+
+        '''
+        save as an attribute the position of the wire edges from the coordiante system
+        origin, chosen by the user.
+        
+        input:
+        ------------------
+        wire_edges_from_cso: list, tuple, Vector
+            edges position relative to the the coordiante system
+            origin
+        '''
+        
+        if isinstance(wire_edges_from_cso, Vector):
+            self._wire_edges_from_cso = wire_edges_from_cso
+
+        elif isinstance(wire_edges_from_cso, (list, tuple)):
+            self._wire_edges_from_cso = Vector(wire_edges_from_cso)
+            
+        else:
+            raise ValueError(' can only be a list, a tuple or a Vector')

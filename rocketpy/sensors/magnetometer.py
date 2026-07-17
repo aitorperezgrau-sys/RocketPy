@@ -29,6 +29,10 @@ class Magnetometer(InertialSensor):
 
     orientation : tuple, list
         Orientation of the sensor in the rocket.
+    
+    magnetic_interference: list
+        magnetic interference on the magnetometer, it is the sum of the
+        hard iron distortion, power interference and soft iron distortion
 
     hard_iron_distortion: list
         Hard iron distortion in T
@@ -436,10 +440,6 @@ class Magnetometer(InertialSensor):
             - sensor_from_com : np.array
                 Position of the sensor relative to the rocket center of mass.
 
-            - sensor_from_cso : 
-                Position of the sensor relative to the rocket coordiante system 
-                origin.
-
             - burn_start_time: float
                 Initial burning time of the motor
 
@@ -466,7 +466,6 @@ class Magnetometer(InertialSensor):
         lat0, lon0, launch_site_elevation = kwargs["environment"].latitude, kwargs["environment"].longitude, kwargs["environment"].elevation
         earth_radius = kwargs["environment"].earth_radius
         rocket = kwargs["rocket"]
-        self._sensor_from_cso = kwargs["sensor_from_csoo"]
 
 
         
@@ -526,11 +525,10 @@ class Magnetometer(InertialSensor):
 
 
         #--- Apply noise + bias and quantize ---
-        B_sensor = self.apply_temperature_drift(B_sensor)                                                                  # T
-        B_sensor = self.apply_hard_iron(B_sensor)                                                                          # T
-        B_sensor = self.apply_power_interference(B_sensor, rocket, u, parachute_events, burn_start_time, initial_time, current_time)   # T
-        B_sensor = self.apply_noise(B_sensor)                                                                              # T
-        B_sensor = self.quantize(B_sensor)                                                                                 # T
+        B_sensor = self.apply_temperature_drift(B_sensor)                                                                            # T
+        B_sensor = self.apply_magnetic_interference(B_sensor, rocket, parachute_events, burn_start_time, initial_time, current_time) # T
+        B_sensor = self.apply_noise(B_sensor)                                                                                        # T
+        B_sensor = self.quantize(B_sensor)                                                                                           # T
 
 
         self.measurement = (B_sensor.x, B_sensor.y, B_sensor.z)   # T                                  
@@ -538,9 +536,55 @@ class Magnetometer(InertialSensor):
     
 
 
-    
+    def apply_magnetic_interference(self, B: Vector, rocket: Rocket, u: list, parachute_events, burn_start_time: float, initial_time: float, current_time: float):
+        '''
+        This funciton applies the magnetic distortion due to 
+        the power interference, hard iron and soft iron.
 
-    def apply_power_interference(self, B: Vector, rocket: Rocket, u: list, relative_position, parachute_events, burn_start_time: float, initial_time: float, current_time: float):
+        Input:
+        --------
+        B: Vector
+            magnetic field Vector
+
+        rocket: Rocket
+            Rocketpy Rocket class
+
+        u: list
+            state vector of the rocket
+            u = [x, y, z, vx, vy, vz, e0, e1, e2, e3, wx, wy, wz]
+
+        parachute_events: list 
+            List that stores parachute events triggered during flight.
+            It is a list formed by lists which contain the trigger time 
+            and the parachute object. 
+
+        burn_start_time: float
+            Initial burning time of the motor
+
+        initiaL_time: float
+            initial time of the simulation
+
+        current_time: float
+            current time of the simulation:
+
+        Returns:
+        -------
+        B: Vector
+            Magnetic field after adjustment of the hard iron, 
+            and power interference
+
+        '''
+        
+        self.magnetic_interference = [0, 0, 0]
+
+        B_sensor = self.apply_hard_iron(B_sensor)                                                                                      # T
+        B_sensor = self.apply_power_interference(B_sensor, rocket, u, parachute_events, burn_start_time, initial_time, current_time)   # T
+
+        self.magnetic_interference = self.activation_signal_interference + self.power_interference + self.hard_iron_distortion
+
+
+
+    def apply_power_interference(self, B: Vector, rocket: Rocket, u: list, parachute_events, burn_start_time: float, initial_time: float, current_time: float):
 
         '''
         This funtion applies the electromagnetic interference to the 
@@ -623,7 +667,7 @@ class Magnetometer(InertialSensor):
 
                 if self.standard_communications_interference == [0, 0, 0]:
                     for communication_wire in rocket.communication_wires:
-                        communication_wire.calculate_magnetic_field(self._sensor_from_csoo)
+                        communication_wire.calculate_magnetic_field(self._sensor_from_cso)
                         B = B + communication_wire._mangetic_interference
                         self.standard_communications_interference = self.standard_communications_interference + communication_wire.magnetic_interference 
                         self._standard_communications_interference = Vector(self.standard_communications_interference)
@@ -695,27 +739,27 @@ class Magnetometer(InertialSensor):
 
                             if parachute.name == ingition_wire.parachute_name and ejection_time != 0:
 
-                                if not ingition_wire._magnetic_interference or not ingition_wire._magnetic_interference[self._sensor_from_csoo]:
-                                    ingition_wire.measure_magnetic_field(self._sensor_from_csoo)
-                                    B = B + ingition_wire._magnetic_field[self._sensor_from_csoo]
-                                    self.activation_signal_interference = self.activation_signal_interference + ingition_wire.magnetic_interference[self._sensor_from_csoo]
+                                if not ingition_wire._magnetic_interference or not ingition_wire._magnetic_interference[self._sensor_from_cso]:
+                                    ingition_wire.measure_magnetic_field(self._sensor_from_cso)
+                                    B = B + ingition_wire._magnetic_field[self._sensor_from_cso]
+                                    self.activation_signal_interference = self.activation_signal_interference + ingition_wire.magnetic_interference[self._sensor_from_cso]
 
                                 else: 
-                                    B = B + ingition_wire._magnetic_field[self._sensor_from_csoo]
-                                    self.activation_signal_interference = self.activation_signal_interference + ingition_wire.magnetic_interference[self._sensor_from_csoo]
+                                    B = B + ingition_wire._magnetic_field[self._sensor_from_cso]
+                                    self.activation_signal_interference = self.activation_signal_interference + ingition_wire.magnetic_interference[self._sensor_from_cso]
 
                     elif ingition_wire.ignition_wire_function == 'solir_motor':
 
                         if current_time - initial_time <= burn_start_time: 
 
-                            if not ingition_wire._magnetic_interference or not ingition_wire._magnetic_interference[self._sensor_from_csoo]:
-                                ingition_wire.measure_magnetic_field(self._sensor_from_csoo)
-                                B = B + ingition_wire._magnetic_field[self._sensor_from_csoo]
-                                self.activation_signal_interference = self.activation_signal_interference + ingition_wire.magnetic_interference[self._sensor_from_csoo]
+                            if not ingition_wire._magnetic_interference or not ingition_wire._magnetic_interference[self._sensor_from_cso]:
+                                ingition_wire.measure_magnetic_field(self._sensor_from_cso)
+                                B = B + ingition_wire._magnetic_field[self._sensor_from_cso]
+                                self.activation_signal_interference = self.activation_signal_interference + ingition_wire.magnetic_interference[self._sensor_from_cso]
 
                             else: 
-                                B = B + ingition_wire._magnetic_field[self._sensor_from_csoo]
-                                self.activation_signal_interference = self.activation_signal_interference + ingition_wire.magnetic_interference[self._sensor_from_csoo]
+                                B = B + ingition_wire._magnetic_field[self._sensor_from_cso]
+                                self.activation_signal_interference = self.activation_signal_interference + ingition_wire.magnetic_interference[self._sensor_from_cso]
             else:
                 raise ValueError('You must define some ignition wire to be able to consider its magnetic disturbance.')
 
@@ -747,7 +791,7 @@ class Magnetometer(InertialSensor):
         '''
 
         B = B + self._hard_iron_distortion
-        
+
         return B
     
 
