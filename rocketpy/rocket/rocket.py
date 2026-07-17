@@ -1901,35 +1901,59 @@ class Rocket:
             if a list with a int or a float, the position is assumed to be along the z axis.
 
         '''
-        position = []
+        edges = []
 
-        if len(position) == 2:
-            for i in position:
-                if isinstance(i, (float, int)):
-                    position.append(Vector([0, 0, i]))
-                else:
-                    position.append(Vector(*i))
+        if isinstance(position_edges, (list, tuple)):
+
+            if len(position_edges) == 2:
+
+                for position_edge in position_edges:
+
+                    if isinstance(position_edge, (int, float)):
+                        edges.append([0, 0, position_edge])
+
+                    elif isinstance(position_edges, (tuple, list)):
+                        edges.append(Vector(position_edge))
+            else: 
+                raise ValueError('The length of the list must be 2')
         else: 
-            raise ValueError('The length of the list must be 2')
+            raise ValueError('Position edges must be a list')
         
-        _position = Vector(_position)
 
 
         if isinstance(wire, Wire):
+                
+                wire._position_edges = Vector(edges)
+
                 if wire.type == 'communications':
-                    self.communication_wires.append(wire, _position)
+                    self.communication_wires.append(wire)
                 else:
-                    if self.parachutes:
-                        for parachute in self.parachutes:
-                            if self.parachute_name == parachute.name:
-                                self.ignition_wires.append((wire, parachute.trigger, _position))
-                                break
-                        else: 
-                            raise ValueError(f'There is not parachute named: {self.parachute_name}') 
-                    else:
-                        raise ValueError('Define a parachute first')
+                    if wire.ignition_wire_function == 'parachute':
+                        if self.parachutes:
+                            for parachute in self.parachutes:
+                                if parachute.name == wire.parachute_name: 
+                                    self.ignition_wires.append(wire)
+                                    break
+                            else: 
+                                raise ValueError(f'There is not parachute named: {wire.parachute_name}') 
+                        else:
+                            raise ValueError('Define a parachute first')
+                        
+                    elif wire.ignition_wire_function == 'solid_motor':
+                        if self.motor: 
+                            self.ignition_wires.append((wire))
+                        else:
+                            raise ValueError('Define a motor first')
+                            
+                            
+
+                        
+
+
         else: 
             raise ValueError('The input object must be a Wire object')
+        
+
 
 
 
