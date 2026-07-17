@@ -164,9 +164,47 @@ class Wire():
         This function measures the magnetic field on a given position_vector
         based on the position of the edges of the wire. the magnetic field is calculated assuming 
         that the wire is straight. 
+
+        input:
+        --------
+
+        position_vector: list, tuple
+            position vector of the point in which the magnetic field
+            is going to be measured relative to the coordiante system origin choosen by the user. 
+        
         '''
 
 
+        # definition of the required values
+
+        if self.current_direction == 'anticlockwise':
+            r1 = self._wire_edges_from_cso[0]  # m
+            r2 = self._wire_edges_from_cso[1]  # m
+        else: 
+            r1 = self._wire_edges_from_cso[1]  # m
+            r2 = self._wire_edges_from_cso[0]  # m
+
+        r_V = position_vector               # m
+
+        l = r2 - r1 #m
+        self.wire_length = abs(l) # m
+
+        r1_V =  r_V - r1
+        r2_V =  r_V - r2
+
+        cross_r1_r2 = (r1_V ^ r2_V)
+        cross_norm_r1_r2 = abs(cross_r1_r2)
+
+        dot_term = l @ (r1_V.unit_vector - r2_V.unit_vector)
+        b_V = (1e-7 * self.current) * (cross_r1_r2 / cross_norm_r1_r2) * dot_term
+       
+
+        self.magnetic_field[list(position_vector)]  = list(b_V)
+        self._magnetic_field[list(position_vector)] = b_V
+
+
+
+        
 
 
 
