@@ -223,10 +223,11 @@ class Sensor(ABC):
 
         if isinstance(sensor_from_cso, Vector):
             self._sensor_from_cso = sensor_from_cso
-            self.sensor_from_cso = list(sensor_from_cso)
+            self.sensor_from_cso_t = tuple(sensor_from_cso)
+
 
         elif isinstance(sensor_from_cso, (list, tuple)):
-            self.sensor_from_cso = list(sensor_from_cso)
+            self.sensor_from_cso_t = tuple(sensor_from_cso)
             self._sensor_from_cso = Vector(sensor_from_cso)
             
         else:

@@ -112,7 +112,7 @@ class Wire():
                 self.ignition_wire_function = None                
 
             elif type == 'ignition':
-                self.type == 'ignition'
+                self.type = 'ignition'
 
                 if ignition_wire_function == None:
                     raise ValueError('The ignition type is compulsory when it is a ignition wire')
@@ -184,7 +184,23 @@ class Wire():
             r1 = self._wire_edges_from_cso[1]  # m
             r2 = self._wire_edges_from_cso[0]  # m
 
-        r_V = position_vector               # m
+
+        if len(position_vector) == 3:
+
+            if isinstance(position_vector, (list, tuple)):
+                r_V = Vector(position_vector)  # m
+                r_t   = tuple(position_vector)    # m 
+
+            elif isinstance(position_vector, Vector):
+                r_V = position_vector          # m
+                r_t   = tuple(position_vector)
+
+            else: 
+                raise ValueError('The only accepted parameters are list, tuple or Vector')
+            
+        else:
+            raise ValueError('The length of the position vector must be 3, x,y,z')    
+
 
         l = r2 - r1 #m
         self.wire_length = abs(l) # m
@@ -199,8 +215,8 @@ class Wire():
         b_V = (1e-7 * self.current) * (cross_r1_r2 / cross_norm_r1_r2) * dot_term
        
 
-        self.magnetic_field[list(position_vector)]  = list(b_V)
-        self._magnetic_field[list(position_vector)] = b_V
+        self.magnetic_field[r_t]  = list(b_V)
+        self._magnetic_field[r_t] = b_V
 
 
 
@@ -220,7 +236,7 @@ class Wire():
 
         inputs:
         -----------
-        position_vector:
+        position_vector: list, tuple
             position vector of the point where the magnetic field is
             defined
 
@@ -234,20 +250,29 @@ class Wire():
               field. 
         '''
         
+        if isinstance(position_vector, (tuple, list, Vector)):
 
-        if isinstance(magnetic_field, (float, int)):
+            if len(position_vector) == 3:
 
-            self._magnetic_field[position_vector] = [magnetic_field, magnetic_field, magnetic_field]
+                position_vector_t = tuple(position_vector)
 
-        elif isinstance(magnetic_field, (list, tuple)):
+                if isinstance(magnetic_field, (float, int)):
 
-            if len(magnetic_field) == 3: 
-                self._magnetic_field[position_vector] = list(magnetic_field)
+                    self._magnetic_field[position_vector_t] = [magnetic_field, magnetic_field, magnetic_field]
+
+                elif isinstance(magnetic_field, (list, tuple)):
+
+                    if len(magnetic_field) == 3: 
+                        self._magnetic_field[position_vector_t] = list(magnetic_field)
+                    else:
+                        raise Exception('If a list is passed, it must have a value for each axis. Therefore, it must have length 3')
             else:
-                raise Exception('If a list is passed, it must have a value for each axis. Therefore, it must have length 3')
+                raise ValueError('The position_vector must be a list, tuple or Vector with 3 elements')
+            
         else:
-            raise ValueError('Hard iron must be a float, int or a list with 3 elements')
+            raise ValueError('The position_vector must be a list, tuple or Vector')
         
+
 
 
     def _set_wire_edges_from_cso (self, wire_edges_from_cso):
@@ -258,16 +283,16 @@ class Wire():
         
         input:
         ------------------
-        wire_edges_from_cso: list, tuple, Vector
-            edges position relative to the the coordiante system
-            origin
+        wire_edges_from_cso: list, tuple, Vector formed by Vectors 
+            containing the edges position relative to the the coordiante system
+            origin. 
         '''
         
-        if isinstance(wire_edges_from_cso, Vector):
+        if isinstance(wire_edges_from_cso, (list, tuple)):
             self._wire_edges_from_cso = wire_edges_from_cso
 
-        elif isinstance(wire_edges_from_cso, (list, tuple)):
-            self._wire_edges_from_cso = Vector(wire_edges_from_cso)
-            
+        elif isinstance(wire_edges_from_cso, Vector):
+            self._wire_edges_from_cso = list(wire_edges_from_cso)
+
         else:
-            raise ValueError(' can only be a list, a tuple or a Vector')
+            raise ValueError(' wire_edges_from_cso can only be a list or a tuple')

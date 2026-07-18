@@ -1915,7 +1915,7 @@ class Rocket:
                     if isinstance(position_edge, (int, float)):
                         edges.append(Vector(0, 0, position_edge))
 
-                    elif isinstance(position_edges, (tuple, list)):
+                    elif isinstance(position_edge, (tuple, list)):
                         edges.append(Vector(position_edge))
             else: 
                 raise ValueError('The length of the list must be 2')
@@ -1923,7 +1923,7 @@ class Rocket:
             raise ValueError('Position edges must be a list')
         
         
-        wire.set_wire_edges_from_cso(wire, edges)
+        wire._set_wire_edges_from_cso(edges)
         
 
         if wire.type == 'communications':

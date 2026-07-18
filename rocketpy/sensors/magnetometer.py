@@ -310,6 +310,7 @@ class Magnetometer(InertialSensor):
                 self.initial_activation_signal_interference = 'wires'
 
             elif power_interference.lower() == 'personalized':
+                self.initial_power_interference = 'personalized'
 
                 if activation_signal_interference is None or standard_communications_interference is None:
                     raise ValueError(
@@ -577,8 +578,8 @@ class Magnetometer(InertialSensor):
         
         self.magnetic_interference = [0, 0, 0]
 
-        B_sensor = self.apply_hard_iron(B_sensor)                                                                                      # T
-        B_sensor = self.apply_power_interference(B_sensor, rocket, u, parachute_events, burn_start_time, initial_time, current_time)   # T
+        B = self.apply_hard_iron(B)                                                                                      # T
+        B = self.apply_power_interference(B, rocket, u, parachute_events, burn_start_time, initial_time, current_time)   # T
 
         self.magnetic_interference = self.activation_signal_interference + self.power_interference + self.hard_iron_distortion
 
@@ -667,9 +668,10 @@ class Magnetometer(InertialSensor):
 
                 if self.standard_communications_interference == [0, 0, 0]:
                     for communication_wire in rocket.communication_wires:
+                        
                         communication_wire.calculate_magnetic_field(self._sensor_from_cso)
                         B = B + communication_wire._mangetic_interference
-                        self.standard_communications_interference = self.standard_communications_interference + communication_wire.magnetic_interference 
+                        self.standard_communications_interference = self.standard_communications_interference + communication_wire.magnetic_field 
                         self._standard_communications_interference = Vector(self.standard_communications_interference)
 
                 else:
@@ -677,7 +679,8 @@ class Magnetometer(InertialSensor):
 
             else:
                 raise ValueError('You must define first some communication wires, to be able to consider the magnetic distrubance cretaed by them')
-        else: 
+            
+        elif  self.initial_communications_interference == 'number':
             B + self._standard_communications_interference
 
         return B
@@ -739,31 +742,31 @@ class Magnetometer(InertialSensor):
 
                             if parachute.name == ingition_wire.parachute_name and ejection_time != 0:
 
-                                if not ingition_wire._magnetic_interference or not ingition_wire._magnetic_interference[self._sensor_from_cso]:
+                                if not ingition_wire._magnetic_field or not ingition_wire._magnetic_field[self.sensor_from_cso]:
                                     ingition_wire.measure_magnetic_field(self._sensor_from_cso)
-                                    B = B + ingition_wire._magnetic_field[self._sensor_from_cso]
-                                    self.activation_signal_interference = self.activation_signal_interference + ingition_wire.magnetic_interference[self._sensor_from_cso]
+                                    B = B + ingition_wire._magnetic_field[self.sensor_from_cso]
+                                    self.activation_signal_interference = self.activation_signal_interference + ingition_wire.magnetic_field[self.sensor_from_cso]
 
                                 else: 
                                     B = B + ingition_wire._magnetic_field[self._sensor_from_cso]
-                                    self.activation_signal_interference = self.activation_signal_interference + ingition_wire.magnetic_interference[self._sensor_from_cso]
+                                    self.activation_signal_interference = self.activation_signal_interference + ingition_wire.magnetic_field[self.sensor_from_cso]
 
                     elif ingition_wire.ignition_wire_function == 'solir_motor':
 
                         if current_time - initial_time <= burn_start_time: 
 
-                            if not ingition_wire._magnetic_interference or not ingition_wire._magnetic_interference[self._sensor_from_cso]:
+                            if not ingition_wire._magnetic_field or not ingition_wire._magnetic_field[self.sensor_from_cso]:
                                 ingition_wire.measure_magnetic_field(self._sensor_from_cso)
-                                B = B + ingition_wire._magnetic_field[self._sensor_from_cso]
-                                self.activation_signal_interference = self.activation_signal_interference + ingition_wire.magnetic_interference[self._sensor_from_cso]
+                                B = B + ingition_wire._magnetic_field[self.sensor_from_cso]
+                                self.activation_signal_interference = self.activation_signal_interference + ingition_wire.magnetic_field[self.sensor_from_cso]
 
                             else: 
-                                B = B + ingition_wire._magnetic_field[self._sensor_from_cso]
-                                self.activation_signal_interference = self.activation_signal_interference + ingition_wire.magnetic_interference[self._sensor_from_cso]
+                                B = B + ingition_wire._magnetic_field[self.sensor_from_cso]
+                                self.activation_signal_interference = self.activation_signal_interference + ingition_wire.magnetic_field[self.sensor_from_cso]
             else:
                 raise ValueError('You must define some ignition wire to be able to consider its magnetic disturbance.')
 
-        else:
+        elif self.initial_activation_signal_interference == 'number':
             B + self._activation_signal_interference
 
         return B
