@@ -1,5 +1,6 @@
 # pylint: disable=unused-argument
 import os
+import sys
 from unittest.mock import patch
 
 import matplotlib.pyplot as plt
@@ -70,6 +71,17 @@ def test_flight_animations_render_all_scene_options(flight_calisto):
     assert rotation_result is None
 
 
+@pytest.mark.skipif(
+    sys.platform == "darwin",
+    reason=(
+        "Exporting an animation loops over PyVista's write_frame, which renders "
+        "off screen and reads the frame buffer back through VTK/OpenGL. On the "
+        "headless macOS CI runners there is no software GL display "
+        "(pyvista/setup-headless-display-action only provides one on "
+        "Linux/Windows), so the read back crashes with a bus error. The export "
+        "path is still covered on Linux and Windows."
+    ),
+)
 def test_flight_animation_export_gif(flight_calisto, tmp_path):
     """Cover the deterministic GIF export path of ``_run_animation``."""
     pytest.importorskip("pyvista")
