@@ -32,6 +32,7 @@ Attention: The newest changes should be on top -->
 
 ### Added
 
+- ENH: MNT: pre-release v1.13.0 cleanup — changelog consolidation + optional deps sync [#1073](https://github.com/RocketPy-Team/RocketPy/pull/1073)
 ### Changed
 
 ### Fixed
