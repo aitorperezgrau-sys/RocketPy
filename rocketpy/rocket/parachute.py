@@ -277,10 +277,13 @@ class Parachute:
         self.noisy_pressure_signal_function = Function(0)
         self.noise_signal_function = Function(0)
         alpha, beta = self.noise_corr
-        self.noise_function = lambda: (
-            alpha * self.noise_signal[-1][1]
-            + beta * np.random.normal(noise[0], noise[1])
-        )
+        if noise == (0, 0, 0):
+            self.noise_function = lambda: 0.0
+        else:
+            self.noise_function = lambda: (
+                alpha * self.noise_signal[-1][1]
+                + beta * np.random.normal(noise[0], noise[1])
+            )
 
     def __evaluate_trigger_function(self, trigger):  # pylint: disable=too-many-statements
         """This is used to set the triggerfunc attribute that will be used to
@@ -291,7 +294,9 @@ class Parachute:
         The resulting triggerfunc always has signature (p, h, y, sensors, u_dot)
         so Flight can pass both sensors and u_dot when needed.
         """
-        # pylint: disable=unused-argument, function-redefined
+        # pylint: disable=function-redefined
+        self._trigger_falling_only = False
+        self._trigger_needs_height = True
 
         # Helper to wrap any callable to the internal (p, h, y, sensors, u_dot) API
         def _make_wrapper(fn):
@@ -337,6 +342,7 @@ class Parachute:
 
         # Numeric altitude trigger
         if isinstance(trigger, (int, float)):
+            self._trigger_falling_only = True
 
             def triggerfunc(p, h, y, sensors, u_dot):  # pylint: disable=unused-argument
                 # p = pressure considering parachute noise signal
@@ -350,6 +356,8 @@ class Parachute:
 
         # Special case: "apogee"
         if isinstance(trigger, str) and trigger.lower() == "apogee":
+            self._trigger_falling_only = True
+            self._trigger_needs_height = False
 
             def triggerfunc(p, h, y, sensors, u_dot):  # pylint: disable=unused-argument
                 return y[5] < 0

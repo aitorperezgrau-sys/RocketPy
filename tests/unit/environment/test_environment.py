@@ -315,16 +315,16 @@ def test_environment_export_environment_exports_valid_environment_json(
     assert exported_env["atmospheric_model_type"] == env.atmospheric_model_type
     assert exported_env["atmospheric_model_file"] is None
     assert exported_env["atmospheric_model_dict"] is None
-    assert exported_env["atmospheric_model_pressure_profile"] == str(
+    assert str(exported_env["atmospheric_model_pressure_profile"]) == str(
         env.pressure.get_source()
     )
-    assert exported_env["atmospheric_model_temperature_profile"] == str(
+    assert str(exported_env["atmospheric_model_temperature_profile"]) == str(
         env.temperature.get_source()
     )
-    assert exported_env["atmospheric_model_wind_velocity_x_profile"] == str(
+    assert str(exported_env["atmospheric_model_wind_velocity_x_profile"]) == str(
         env.wind_velocity_x.get_source()
     )
-    assert exported_env["atmospheric_model_wind_velocity_y_profile"] == str(
+    assert str(exported_env["atmospheric_model_wind_velocity_y_profile"]) == str(
         env.wind_velocity_y.get_source()
     )
 
@@ -814,7 +814,6 @@ def test_pressure_conversion_factor_autodetect_by_model(
     """Regression test for the GEFS/HIRESW pressure-unit bug: NOMADS-GrADS
     models report pressure in hPa (factor 100), THREDDS models in Pa (factor 1).
     A wrong factor silently corrupts the whole atmospheric profile (100x)."""
-    # pylint: disable=protected-access
     factor = example_plain_env._Environment__determine_pressure_conversion_factor(
         None, None, model
     )
