@@ -37,6 +37,10 @@ class Magnetometer(InertialSensor):
     hard_iron_distortion: list
         Hard iron distortion in T
     
+    soft_iron_distortion: Matrix
+        sum of the soft iron distortion matrixes applied to the magnetic 
+        reading.
+    
     power_interference: list 
         Holds the total magnetic distortion due to the system interference in T
         regardless of the initalization mode, for a given measurement 
@@ -115,7 +119,7 @@ class Magnetometer(InertialSensor):
     measurement : float
         The measurement of the sensor after quantization, noise and temperature
         drift.
-        
+
     measured_data : list
         The stored measured data of the sensor after quantization, noise and
         temperature drift.
@@ -128,6 +132,7 @@ class Magnetometer(InertialSensor):
             measurement_range                     = np.inf,
             resolution                            = 0,
             hard_iron_distortion                  = 0,
+            soft_iron_distortion                  = 'plates',
             power_interference                    = 'wires', 
             activation_signal_interference        = None,
             communications_interference           = None,
@@ -189,6 +194,22 @@ class Magnetometer(InertialSensor):
             If a float, the same value is applied to each axis 
             If a list or float, the distortion will be taken considering these 
             values. 
+
+        soft_iron_distortion: Matrix, string
+            soft iron distortion is caused by materials with high permeability on 
+            the rocket, (circuit board copper traces, nearby metal casing), that do
+            not generate the field, but distort the existing external field lines
+            passing through them. This is because the magnetic permeability measures
+            how easily a material allows magnetic field lines to pass through it.
+            Therefore, because it has lower resistance than air  magnetic field lines
+            will bent, to go through the material. 
+
+            
+            If a Matrix the matrix will be taken as a scaling factor 
+            applied to the magnetic field reading.
+            If a string, the accepted input is 'plates', which will
+            consider the soft iron distortion based on the plates added to the 
+            rocket. 
 
         power_interference: int, float, list, str, optional
             the power interference is the magnetic distortion due to the 
@@ -311,6 +332,7 @@ class Magnetometer(InertialSensor):
 
             self.power_interference = [power_interference, power_interference, power_interference]
             self._power_interference = Vector(self.power_interference)
+            self.initial_power_interference = 'number'
 
         elif isinstance(power_interference, (list, tuple)):
 
@@ -318,6 +340,7 @@ class Magnetometer(InertialSensor):
 
                 self.power_interference = list(power_interference)
                 self._power_interference = Vector(self.power_interference)
+                self.initial_power_interference = 'number'
                 
             else:
                 raise ValueError('The length of the list must be 3: x,y,z')
@@ -416,7 +439,7 @@ class Magnetometer(InertialSensor):
 
 
 
-        # define hard_iron_distortion attribute
+        # initialize hard_iron_distortion attribute
         if isinstance(hard_iron_distortion, (float, int)):
 
             self.hard_iron_distortion = [hard_iron_distortion, hard_iron_distortion, hard_iron_distortion]
@@ -432,6 +455,28 @@ class Magnetometer(InertialSensor):
         
         self._hard_iron_distortion = Vector(self.hard_iron_distortion)
         
+
+        
+        # initialize soft_iron_distortion attribute
+        if isinstance(soft_iron_distortion, Matrix):
+            for element in soft_iron_distortion:
+                if not isinstance(element, (float, int)):
+                    raise ValueError('The elements inside the matrix must be float or int')
+                
+            self._soft_iron_distortion = soft_iron_distortion
+            self.initial_soft_iron_distortion = 'number'
+
+        elif isinstance(soft_iron_distortion):
+            if soft_iron_distortion == 'plates':
+                self._soft_iron_distortion = Matrix.zeros()
+                self.initial_soft_iron_distortion = 'plates'
+            else:
+                raise ValueError('The accepted string must be plates')
+        else:
+            raise ValueError('The soft iron distortion can only be a Matrix or a string')
+
+                
+
 
 
 
@@ -575,10 +620,10 @@ class Magnetometer(InertialSensor):
 
 
         #--- Apply noise + bias and quantize ---
-        B_sensor = self.apply_temperature_drift(B_sensor)                                                                            # T
-        B_sensor = self.apply_magnetic_interference(B_sensor, rocket, parachute_events, burn_start_time, initial_time, current_time) # T
-        B_sensor = self.apply_noise(B_sensor)                                                                                        # T
-        B_sensor = self.quantize(B_sensor)                                                                                           # T
+        B_sensor = self.apply_magnetic_interference(B_sensor, rocket, parachute_events, burn_start_time, initial_time, current_time)  # T
+        B_sensor = self.apply_temperature_drift(B_sensor)                                                                             # T
+        B_sensor = self.apply_noise(B_sensor)                                                                                         # T
+        B_sensor = self.quantize(B_sensor)                                                                                            # T
 
 
         self.measurement = (B_sensor.x, B_sensor.y, B_sensor.z)   # T                                  
@@ -627,6 +672,7 @@ class Magnetometer(InertialSensor):
         
         self.magnetic_interference = [0, 0, 0]
 
+        B = self.apply_soft_iron(B)
         B = self.apply_hard_iron(B)                                                                                      # T
         B = self.apply_power_interference(B, rocket, parachute_events, burn_start_time, initial_time, current_time)   # T
 
@@ -638,6 +684,75 @@ class Magnetometer(InertialSensor):
         ]
 
         return B 
+
+    def apply_soft_iron(self, B, rocket: Rocket):
+
+        '''
+        This function applies the soft iron distortion which is the distoriton 
+        of the magnetic field due to the higher magnetic permeability of 
+        some materials relative to the permeability of vacuum. This entails, 
+        that they have smaller magnetic resistance resulting in a bending of 
+        the magnetic field lines, that are forced to pass through them. 
+
+
+        input
+        ----------
+        B: Vector
+        Vector reading of the magnetic field of the earht
+
+        rocket: Rocket
+            Rocketpy Rocket class
+
+
+        Returns
+        ---------
+        B: Vector
+        Magnetic field vector after the soft iron distortion
+        
+        '''
+
+        if self.initial_soft_iron_distortion == 'plates':
+            if self._soft_iron_distortion == Matrix.zeros():
+                for plate in rocket.plates:
+                    if not self.sensor_from_cso_t in plate._magnetic_distortion_matrixes: 
+
+                        plate.calculate_soft_iron_distortion_matrix(self.sensor_from_cso_t)
+                        self._soft_iron_distortion  = self._soft_iron_distortion + plate._magnetic_distortion_matrixes[self.sensor_from_cso_t]
+
+                B = B * self._soft_iron_distortion
+
+            else:
+                B = B *  self._soft_iron_distortion
+
+        elif self.initial_soft_iron_distortion == 'number':
+            B = B * self._soft_iron_distortion
+    
+    
+
+    def apply_hard_iron(self, B):
+
+        '''
+        This funtion applies the hard iron distortion. 
+        This magnetic distortion is caused by permanent magnets or 
+        magnetized materials on the rocket itself that move along with 
+        the sensor (from steel screws, battery casing, feerromagnetic components), 
+        thus it is a constant value. It shifts the center of the magnetic data
+
+        Input:
+        --------
+        B: Vector
+            magnetic field Vector
+        
+        Returns: 
+        -------
+        B: Vector
+            Magnetic field after hard_iron_distortion. 
+        '''
+
+        B = B + self._hard_iron_distortion
+
+        return B
+    
 
 
     def apply_power_interference(self, B: Vector, rocket: Rocket, parachute_events, burn_start_time: float, initial_time: float, current_time: float):
@@ -697,7 +812,7 @@ class Magnetometer(InertialSensor):
 
             self._power_interference = Vector(self.power_interference)
 
-        else: 
+        elif self.initial_power_interference == 'number':
             B = B + self._power_interference
 
         return B
@@ -732,13 +847,13 @@ class Magnetometer(InertialSensor):
                     for communication_wire in rocket.communication_wires:
 
                         communication_wire.measure_magnetic_field(self._sensor_from_cso)
-                        B = B + communication_wire._magnetic_field[self.sensor_from_cso_t]
                         self.communications_interference = [
                                                         self.communications_interference[0] + communication_wire.magnetic_field[self.sensor_from_cso_t][0],
                                                         self.communications_interference[1] + communication_wire.magnetic_field[self.sensor_from_cso_t][1], 
                                                         self.communications_interference[2] + communication_wire.magnetic_field[self.sensor_from_cso_t][2]
                                                         ]
-
+                        
+                    B = B + self._communications_interference
                     self._communications_interference = Vector(self.communications_interference)
 
                 else:
@@ -805,7 +920,7 @@ class Magnetometer(InertialSensor):
 
                             if parachute.name == ingition_wire.parachute_name and ejection_time != 0:
 
-                                if not ingition_wire._magnetic_field or not ingition_wire._magnetic_field[self.sensor_from_cso_t]:
+                                if not self.sensor_from_cso_t in ingition_wire._magnetic_field:
 
                                     ingition_wire.measure_magnetic_field(self._sensor_from_cso)
                                     B = B + ingition_wire._magnetic_field[self.sensor_from_cso_t]
@@ -827,7 +942,7 @@ class Magnetometer(InertialSensor):
 
                         if current_time - initial_time <= burn_start_time: 
 
-                            if not ingition_wire._magnetic_field or not ingition_wire._magnetic_field[self.sensor_from_cso_t]:
+                            if not self.sensor_from_cso_t in ingition_wire._magnetic_field:
 
                                 ingition_wire.measure_magnetic_field(self._sensor_from_cso)
                                 B = B + ingition_wire._magnetic_field[self.sensor_from_cso_t]
@@ -857,33 +972,6 @@ class Magnetometer(InertialSensor):
 
         return B
     
-
-
-    def apply_hard_iron(self, B):
-
-        '''
-        This funtion applies the hard iron distortion. 
-        This magnetic distortion is caused by permanent magnets or 
-        magnetized materials on the rocket itself that move along with 
-        the sensor (from steel screws, battery casing, feerromagnetic components), 
-        thus it is a constant value. It shifts the center of the magnetic data
-
-        Input:
-        --------
-        B: Vector
-            magnetic field Vector
-        
-        Returns: 
-        -------
-        B: Vector
-            Magnetic field after hard_iron_distortion. 
-        '''
-
-        B = B + self._hard_iron_distortion
-
-        return B
-    
-
 
     def export_measured_data(self, filename, file_format):
         '''Export the measured values to a file

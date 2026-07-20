@@ -21,8 +21,11 @@ class Wire():
         Direction of the current through the wire, it can either be 
         clockwise or anticlockwise
 
-    magnetic_field:
-        magnetic field due to the charge flow through the wire.
+    magnetic_field: dict
+        Dictionary of all the magnetic fields calculated, 
+        the key is the position vector of the point relative
+        to the cso, and the value is the magnetic field due to
+        the wire at that point as a list in T. 
 
     wire_length: float
         length of the wire in m. 
@@ -34,6 +37,11 @@ class Wire():
         sub-type of the wire, when it is an ignition wire
         because it is a HIL wire it can be:
         'parachute' or 'solid_motor_ignition
+    
+    parachute_name: str
+        Name of the parachute to which it is attached the wire
+        in the case ignition_wire_function is parachute
+    
 
     '''
 

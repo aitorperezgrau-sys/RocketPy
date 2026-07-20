@@ -30,6 +30,7 @@ from rocketpy.rocket.aero_surface import (
     TubeFins,
 )
 from rocketpy.rocket.wire import Wire
+from rocketpy.rocket.plate import Plate
 from rocketpy.rocket.aero_surface.fins.elliptical_fin import EllipticalFin
 from rocketpy.rocket.aero_surface.fins.free_form_fin import FreeFormFin
 from rocketpy.rocket.aero_surface.fins.free_form_fins import FreeFormFins
@@ -375,6 +376,7 @@ class Rocket:
         self.air_brakes = []
         self.communication_wires = []
         self.ignition_wires = []
+        self.plates = []
         self.sensors = Components()
         self.aerodynamic_surfaces = Components()
         self.surfaces_cp_to_cdm = {}
@@ -1891,7 +1893,7 @@ class Rocket:
         distrubance they can create, thus affecting
         the magnetometer reading. 
 
-        Parameters:
+        Inputs:
         --------------
         wire: Wire
             Wire object to be added to the rocket
@@ -1932,6 +1934,115 @@ class Rocket:
         else:
                 self.ignition_wires.append(wire)
 
+
+
+    def add_plate(
+            self, 
+            plate,
+            shape, 
+            dimensions,
+            position = None,
+            height = None,
+        ):
+
+        '''
+        Adds the plate defined, into 
+        the rocket. 
+    
+        Inputs:
+        -----------
+        plate: Plate object
+
+        shape: str
+            The shape of the plate, allowed parameters are:
+
+            'circular': then the plate is assumed to be 
+            a circle, and the input 'dimension' refers to
+            the radius
+            'squared': then the plate is assumed to be a 
+            square and the input 'dimensions' refers to the 
+            side 
+            'personalized': then the plate will have the shape 
+            specified by the vertexes defined in 'dimensions'
+
+        dimensions: float, int, list
+            Dimensions of the plate, which depend on 'shape' 
+            definition:
+
+            When it is 'circular', the dimension is a float or int,
+            which represents the radius, when the shape is flat. 
+
+            when it is 'squared', the dimension is a float or int,
+            which represents the side lenght, when the shape is flat.
+
+            when it is 'personalized', dimensions must be a list
+            with the vertixes that form the shape. 
+
+        position: str, optional, mandatory when the shape is not 'personalized'
+            position of the plate, when the shape is not 'personalized'
+            Allowed entries are:
+            'left', 'right', 'back', 'front'
+            The plate will be located with the geometric center
+            along the chosen lateral position
+
+        height: float, int, optional,  when the shape is not 'personalized'
+            Position of the plate when the shape is not 
+            'personalized' along the z axis. 
+              
+        '''
+
+        if not isinstance(plate, Plate):
+            raise ValueError('The plate parameter must be a Plate object')
+
+        if isinstance(shape, str):
+            if shape == 'circular' or shape == 'squared':
+
+                if not isinstance(dimensions, (float, int)):
+                    raise ValueError('The dimensions must be a float or int, when the shape is circular or squared')
+                
+
+                if position == None:
+                    raise ValueError('The position when the shape is circular or squared must be defined')
+                elif not isinstance(position, str):
+                    raise ValueError('The height must be a float or int, when the shape is circular or squared')
+                else:
+                    if not (position == 'left' or position == 'right' or position == 'back' or position == 'front'):
+                        raise ValueError('The position can only be left, right, back or front')
+                    
+                if height == None:
+                    raise ValueError('The height when the shape is circular or squared must be defined')
+                
+                elif not isinstance(dimensions, (float, int)):
+                    raise ValueError('The height must be a float or int, when the shape is circular or squared')
+
+
+            elif shape == 'personalized':
+
+                if not isinstance(dimensions, (tuple, list)):
+                    raise ValueError('The dimensions must be a list or tuple, when the shape is personalized')
+                
+            else:
+                raise ValueError('The accepted shapes are circular, squared and personalized')
+        else:
+            raise ValueError('The shape must be defined as a string')
+                
+    
+        self.plates.append(plate)
+
+        plate.define_plate_position(shape, dimensions, position, height)
+        
+            
+
+
+
+                
+                
+
+                    
+
+
+
+        
 
 
     def add_air_brakes(
