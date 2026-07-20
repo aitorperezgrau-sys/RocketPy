@@ -722,7 +722,7 @@ class Magnetometer(InertialSensor):
                                                                                             ]
 
                     self._communications_interference = Vector(self.communications_interference)
-                    
+
                 else:
                     B = B + self._communications_interference
 
@@ -779,7 +779,7 @@ class Magnetometer(InertialSensor):
 
                 for ingition_wire in rocket.ignition_wires:
 
-                    if ingition_wire.ignition_wire_function == 'parachute':
+                    if ingition_wire.ignition_wire_function == 'parachute_ignition':
 
                         for parachute_event in parachute_events:
                             ejection_time = parachute_event[0]
@@ -805,7 +805,7 @@ class Magnetometer(InertialSensor):
                                                                         self.activation_signal_interference[2] + ingition_wire.magnetic_field[self.sensor_from_cso_t][2],
                                                                         ]
 
-                    elif ingition_wire.ignition_wire_function == 'solid_motor':
+                    elif ingition_wire.ignition_wire_function == 'solid_motor_ignition':
 
                         if current_time - initial_time <= burn_start_time: 
 
@@ -828,6 +828,9 @@ class Magnetometer(InertialSensor):
                                                                     self.activation_signal_interference[1] + ingition_wire.magnetic_field[self.sensor_from_cso_t][1],
                                                                     self.activation_signal_interference[2] + ingition_wire.magnetic_field[self.sensor_from_cso_t][2],
                                                                     ]
+                    else:
+                        raise ValueError('The accepted strings for the ignition_wire_function are solid_motor_ignition and parachute_ignition')
+                    
             else:
                 raise ValueError('You must define some ignition wire to be able to consider its magnetic disturbance.')
 

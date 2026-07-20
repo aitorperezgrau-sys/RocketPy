@@ -24,16 +24,16 @@ class Wire():
     magnetic_field:
         magnetic field due to the charge flow through the wire.
 
-    wire_length: float, optional
+    wire_length: float
         length of the wire in m. 
 
-    type: str
+    wire_type: str
         type of wire, it can either be ignition or communications
 
     ignition_wire_function: str
         sub-type of the wire, when it is an ignition wire
         because it is a HIL wire it can be:
-        'parachute' or 'solid_motor
+        'parachute' or 'solid_motor_ignition
 
     '''
 
@@ -41,13 +41,13 @@ class Wire():
             self,
             current,
             current_direction,
-            type,
+            wire_type,
             ignition_wire_function = None,
             parachute_name = None, 
     ):
         
         '''
-        current: float, int, list, optional
+        current: float, int, list
             Intensity of the current through the communication wires to calculate 
             the magnetic distortion experienced by the sensor due to activation signals
             in Amperes (A). Default is 1 A. 
@@ -57,7 +57,7 @@ class Wire():
             magnetic distortion experienced by the sensor due to activation signals 
             in Amperes (A). Default is anticlockwise
         
-        type: str
+        wire_type: str
             type of wire.
             If 'communications', the wire will be consider to
             have only information communicated from one component to 
@@ -68,8 +68,8 @@ class Wire():
         ignition_wire_function: str, mandatory if type is ingition
             type of ingnition wire. This parameter must be a string, for a solid rocket
             the only ignitions are the parachutes and the motor at the beggining 
-            of the flight. In this case, the valid arguments are 'solid_motor' or 'parachutes'.
-            Default is None. 
+            of the flight. In this case, the valid arguments are 'solid_motor_ignition'
+            or 'parachute_ignitions'. Default is None. 
 
         parachute_name: str, mandatory when it is a ignition wire whose function is parachute 
 
@@ -102,26 +102,24 @@ class Wire():
 
 
 
-
-
         # definition of the type of wire
-        if isinstance(type, str):
+        if isinstance(wire_type, str):
 
-            if type == 'communications':
-                self.type = 'communications'
+            if wire_type == 'communications':
+                self.wire_type = 'communications'
                 self.ignition_wire_function = None                
 
-            elif type == 'ignition':
-                self.type = 'ignition'
+            elif wire_type == 'ignition':
+                self.wire_type = 'ignition'
 
                 if ignition_wire_function == None:
                     raise ValueError('The ignition type is compulsory when it is a ignition wire')
 
                 elif isinstance(ignition_wire_function, str):
 
-                    if ignition_wire_function.lower() == 'parachute':
+                    if ignition_wire_function.lower() == 'parachute_ignition':
 
-                        self.ignition_wire_function = 'parachute'
+                        self.ignition_wire_function = 'parachute_ignition'
 
                         if parachute_name == None:
                             raise ValueError('The name of the parachute is compulsory if the ignition_wire_function is parachute')
@@ -132,11 +130,8 @@ class Wire():
                         else: 
                             self.parachute_name = parachute_name
 
-                    elif ignition_wire_function.lower() == 'solid_motor':
-                        self.ignition_wire_function = 'solid_motor'
-
                     else: 
-                        raise ValueError(f'There is not ignition type {ignition_wire_function}', ignition_wire_function)
+                        self.ignition_wire_function = ignition_wire_function
                     
                 else: 
                     raise ValueError('The type of ignition wire must be a str')
@@ -150,7 +145,9 @@ class Wire():
 
 
         self._magnetic_field = {}
-        self._position_edges = Vector([])
+        self.magnetic_field = {}
+        self._wire_edges_from_cso = None
+        self.wire_length = 0
 
 
 
@@ -221,11 +218,6 @@ class Wire():
 
 
         
-
-
-
-
-
 
 
     
