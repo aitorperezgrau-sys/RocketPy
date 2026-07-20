@@ -101,6 +101,24 @@ class Magnetometer(InertialSensor):
     year: float
         Current decimal year
 
+    rotation_sensor_to_body : Matrix
+        The rotation matrix of the sensor from the sensor frame to the rocket
+        frame of reference.
+
+    normal_vector : Vector
+        The normal vector of the sensor in the rocket frame of reference.
+
+    rotation_matrix : Matrix
+        The rotation matrix of the sensor from the rocket frame to the sensor
+        frame of reference.
+
+    measurement : float
+        The measurement of the sensor after quantization, noise and temperature
+        drift.
+        
+    measured_data : list
+        The stored measured data of the sensor after quantization, noise and
+        temperature drift.
     '''
 
     def __init__(
@@ -551,7 +569,7 @@ class Magnetometer(InertialSensor):
         B_cso = B_com 
 
         #--- Transform body frame to sensor frame ---
-        rotation_cso_to_sensor = self._total_rotation_sensor_to_body.transpose
+        rotation_cso_to_sensor = self._total_rotation_sensor_to_body.transpose # total includes the cross-axis sensitivity
 
         B_sensor = rotation_cso_to_sensor @ B_cso  # T
 
@@ -715,11 +733,11 @@ class Magnetometer(InertialSensor):
 
                         communication_wire.measure_magnetic_field(self._sensor_from_cso)
                         B = B + communication_wire._magnetic_field[self.sensor_from_cso_t]
-                        self.communications_interference = self.communications_interference + [
-                                                                                                self.communications_interference[0] + communication_wire.magnetic_field[self.sensor_from_cso_t][0],
-                                                                                                self.communications_interference[1] + communication_wire.magnetic_field[self.sensor_from_cso_t][1], 
-                                                                                                self.communications_interference[2] + communication_wire.magnetic_field[self.sensor_from_cso_t][2]
-                                                                                            ]
+                        self.communications_interference = [
+                                                        self.communications_interference[0] + communication_wire.magnetic_field[self.sensor_from_cso_t][0],
+                                                        self.communications_interference[1] + communication_wire.magnetic_field[self.sensor_from_cso_t][1], 
+                                                        self.communications_interference[2] + communication_wire.magnetic_field[self.sensor_from_cso_t][2]
+                                                        ]
 
                     self._communications_interference = Vector(self.communications_interference)
 

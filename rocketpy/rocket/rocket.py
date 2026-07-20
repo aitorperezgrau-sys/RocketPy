@@ -1926,7 +1926,7 @@ class Rocket:
         wire._set_wire_edges_from_cso(edges)
         
 
-        if wire.type == 'communications':
+        if wire.wire_type == 'communications':
                 self.communication_wires.append(wire)                
 
         else:
