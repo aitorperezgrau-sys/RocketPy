@@ -1,8 +1,10 @@
-from rocketpy.rocket import Rocket
+
 from rocketpy.rocket.aero_surface import NoseCone
 from rocketpy.mathutils import Vector, Matrix
 import math as m
 import numpy as np
+
+
 
 class Plate():
     '''
@@ -18,8 +20,12 @@ class Plate():
         'personalized' if we want to define the material 
         based on the magnetic permeability. 
 
-    magnetic_permeability: 
-        Magnetic permeability of the material, 
+    absolute_magnetic_permeability: 
+        Magnetic permeability of the material,
+
+    relative_magnetic_permeabiltiy:
+        ratio of the magnetic permeability to 
+        the magnetic permeability of vacuum
 
     magnetic_distortion: 
         Dictionary formed by the magnetic distortion
@@ -33,7 +39,7 @@ class Plate():
     def __init__(
             self,
             material,
-            magnetic_permeability = None
+            absolute_magnetic_permeability = None
     ):
     
         '''
@@ -43,7 +49,7 @@ class Plate():
 
         material: str
             Material from which the plate is composed
-            Allowed strings are 'iron', 'carbon steel', or 
+            Allowed strings are 'iron', 'carbon_steel', or 
             'personalized' if we want to define the material 
             based on the magnetic permeability. 
 
@@ -54,8 +60,43 @@ class Plate():
         '''
 
         self._magnetic_distortion_matrixes = {}
-        self._vertixes = []
+        self._vertices = []
 
+        if isinstance(material, str):
+
+            if material == 'iron':
+
+                self.material = 'iron'
+                self.absolute_magnetic_permeability = 1.25e-3
+               
+            elif material == 'carbon_steel':
+
+                self.material = 'carbon_steel'
+                self.absolute_magnetic_permeability = 1.2e-4
+
+            elif material == 'personalized':
+
+                self.material = 'personalized'
+
+                if absolute_magnetic_permeability == None:
+
+                    raise ValueError('The magnetic permeability is compulsory when personalized is chosen')
+                
+                elif not isinstance(absolute_magnetic_permeability, (int, float)):
+
+                    raise ValueError('The magnetic permeability must be an int or float')
+                
+                else:
+                    self.absolute_magnetic_permeability = absolute_magnetic_permeability
+
+            else:
+                raise ValueError('Material argument can only be iron, carbon_steel or personalized')
+
+        else: 
+            raise ValueError('material argument can only be a string')
+
+
+        self.relative_magnetic_permability = self.absolute_magnetic_permeability / float(4 * np.pi * 1e-7)
 
 
     
@@ -79,7 +120,7 @@ class Plate():
             square and the input 'dimensions' refers to the 
             side 
             'personalized': then the plate will have the shape 
-            specified by the vertexes defined in 'dimensions'
+            specified by the vertices defined in 'dimensions'
 
         dimensions: float, int, list
             Dimensions of the plate, which depend on 'shape' 
@@ -92,135 +133,190 @@ class Plate():
             which represents the side lenght, when the shape is flat.
 
             when it is 'personalized', dimensions must be a list
-            with the vertixes that form the shape. 
+            with the vertices that form the shape. 
 
         position: str, optional
             position of the plate, when the shape is not 'personalized'
             Allowed entries are:
             'left', 'right', 'back', 'front'
             The plate will be located with the geometric center
-            along the chosen lateral position
+            along the chosen lateral position, which is defined based
+            on the coordinate system origin. 
 
         height: float, int, optional
             Position of the geometric center of plate when the shape is not 
-            'personalized' along the z axis. 
+            'personalized' along the z axis relative to the cso. 
 
         rocket: Rocket
             RocketPy class.
         '''
-
+ 
         # definition of the position of the NoseCone relative to the cso
         for aerodynamic_surface, _position_relative_to_cso in rocket.aerodynamic_surfaces:
+
             if  isinstance(aerodynamic_surface, NoseCone):
-                self.nose_cone = aerodynamic_surface
-                limiting_z_nose_cone = _position_relative_to_cso[2] - self.nose_cone.length
-            else: 
-                raise ValueError('To determine the plates position, first it must be added a NoseCone to the rocket')
-            
+
+                nose_cone = aerodynamic_surface
+                nose_tip_from_cso = _position_relative_to_cso[2]
+                limiting_z_nose_cone = nose_tip_from_cso - nose_cone.length
+ 
+        if nose_cone == None:
+            raise ValueError('To define the plate, first the nose cone must be added to the rocket.')
+
+
         if shape == 'squared': 
             
-            if (height + dimensions / 2) < limiting_z_nose_cone: 
-                upper_z = height - dimensions / 2
-                lower_z = height - dimensions / 2
+            
+            upper_z = height + dimensions / 2.0
+            lower_z = height - dimensions / 2.0
 
-                angle = dimensions / rocket.radius   # rad
-                lateral_abs = m.sin(angle / 2) * rocket.radius
-                central_abs = m.cos(angle / 2) * rocket.radius
 
-                if position == 'rigth':
-                    self._vertixes = [
-                        Vector(central_abs, lateral_abs, upper_z),
-                        Vector(central_abs, - lateral_abs, upper_z),
-                        Vector(central_abs, lateral_abs, lower_z),
-                        Vector(central_abs, - lateral_abs, lower_z)
-                        ]
-                    
-                elif position == 'front':
-                    self._vertixes = [
-                        Vector(lateral_abs, central_abs, upper_z),
-                        Vector( - lateral_abs, central_abs, upper_z),
-                        Vector(lateral_abs, central_abs, lower_z),
-                        Vector( - lateral_abs, central_abs, lower_z)
-                        ]
-                    
-                elif position == 'left':
-                    self._vertixes = [
-                        Vector( - central_abs, lateral_abs, upper_z),
-                        Vector( - central_abs, - lateral_abs, upper_z),
-                        Vector( - central_abs, lateral_abs, lower_z),
-                        Vector( - central_abs, - lateral_abs, lower_z)
-                        ]
-                    
-                else: 
-                    self._vertixes = [
-                        Vector(lateral_abs, - central_abs, upper_z),
-                        Vector( - lateral_abs, - central_abs, upper_z),
-                        Vector(lateral_abs, - central_abs, lower_z),
-                        Vector( - lateral_abs, - central_abs, lower_z)
-                        ]
+            # upper radius
+            if upper_z > limiting_z_nose_cone:
+                z_local = abs(nose_tip_from_cso - (height + upper_z))
+                r_upper = nose_cone.radius(z_local)
             else: 
+                r_upper = rocket.radius
+
+            # lower radius
+            if lower_z > limiting_z_nose_cone:
+                z_local = abs(nose_tip_from_cso - (height + lower_z))
+                r_lower = nose_cone.radius(z_local)
+            else: 
+                r_lower = rocket.radius
+            
+
+            # upper part 
+            angle_upper = dimensions / r_upper        # rad
+            lateral_upper = m.sin(angle_upper / 2) * r_upper
+            central_upper = m.cos(angle_upper / 2) * r_upper
+
+            # lower part 
+            angle_l = dimensions / r_lower        # rad
+            lateral_l = m.sin(angle_l / 2) * r_lower
+            central_l = m.cos(angle_l / 2) * r_lower
+
+            match position:
+
+                case 'right':
+                    self._vertices = [
+                        Vector([central_upper, lateral_upper, upper_z]),
+                        Vector([central_upper, -lateral_upper, upper_z]),
+                        Vector([central_l, lateral_l, lower_z]),
+                        Vector([central_l, -lateral_l, lower_z]),
+                    ]
+
+                case 'front':
+                    self._vertices = [
+                        Vector([lateral_upper, central_upper, upper_z]),
+                        Vector([-lateral_upper, central_upper, upper_z]),
+                        Vector([lateral_l, central_l, lower_z]),
+                        Vector([-lateral_l, central_l, lower_z]),
+                    ]
+
+                case 'left':
+                    self._vertices = [
+                        Vector([-central_upper, lateral_upper, upper_z]),
+                        Vector([-central_upper, -lateral_upper, upper_z]),
+                        Vector([-central_l, lateral_l, lower_z]),
+                        Vector([-central_l, -lateral_l, lower_z]),
+                    ]
+
+                case 'back':
+                    self._vertices = [
+                        Vector([lateral_upper, -central_upper, upper_z]),
+                        Vector([-lateral_upper, -central_upper, upper_z]),
+                        Vector([lateral_l, -central_l, lower_z]),
+                        Vector([-lateral_l, -central_l, lower_z]),
+                    ]
          
 
         elif shape == 'circular': 
-            if height + dimensions  < limiting_z_nose_cone: 
-                total_angle = 2 * dimensions / rocket.radius
-                z_offset_abs = m.cos(np.pi / 3) * (dimensions / 2)
-                upper_z = height + z_offset_abs
-                midd_z = height
-                lower_z = height - z_offset_abs
-                total_lateral_abs = m.sin(total_angle/ 2) * rocket.radius
-                total_central_abs = m.cos(total_angle / 2) * rocket.radius
-                inner_angle = dimensions / 2 / rocket.radius
-                inner_lateral_abs = m.sin(inner_angle/ 2) * rocket.radius
-                inner_central_abs = m.cos(inner_angle / 2) * rocket.radius
 
-                if position == 'rigth':
-                    self._vertixes = [
-                        Vector(total_central_abs, total_lateral_abs, midd_z),
-                        Vector(total_central_abs, - total_lateral_abs, midd_z),
-                        Vector(inner_central_abs, inner_lateral_abs, upper_z),
-                        Vector(inner_central_abs, - inner_lateral_abs, upper_z),
-                        Vector(inner_central_abs, inner_lateral_abs, lower_z),
-                        Vector(inner_central_abs, - inner_lateral_abs, lower_z)
-                        ]
-                    
-                elif position == 'front':
-                    self._vertixes = [
-                        Vector(total_lateral_abs, total_central_abs, midd_z),
-                        Vector(- total_lateral_abs, total_central_abs, midd_z),
-                        Vector(inner_lateral_abs, inner_central_abs, upper_z),
-                        Vector( - inner_lateral_abs, inner_central_abs, upper_z),
-                        Vector(inner_lateral_abs, inner_central_abs, lower_z),
-                        Vector( - inner_lateral_abs, inner_central_abs, lower_z)
-                        ]
-                    
-                elif position == 'left':
-                    self._vertixes = [
-                        Vector( - total_central_abs, total_lateral_abs, midd_z),
-                        Vector( - total_central_abs, - total_lateral_abs, midd_z),
-                        Vector( - inner_central_abs, inner_lateral_abs, upper_z),
-                        Vector( - inner_central_abs, - inner_lateral_abs, upper_z),
-                        Vector( - inner_central_abs, inner_lateral_abs, lower_z),
-                        Vector( - inner_central_abs, - inner_lateral_abs, lower_z)
-                        ]
-                    
-                else: 
-                    self._vertixes = [
-                        Vector(total_lateral_abs, - total_central_abs, midd_z),
-                        Vector(- total_lateral_abs, - total_central_abs, midd_z),
-                        Vector(inner_lateral_abs, - inner_central_abs, upper_z),
-                        Vector( - inner_lateral_abs, - inner_central_abs, upper_z),
-                        Vector(inner_lateral_abs, - inner_central_abs, lower_z),
-                        Vector( - inner_lateral_abs, - inner_central_abs, lower_z)
-                        ]
-            else:
-                
+            z_offset_abs = m.cos(np.pi / 3) * (dimensions / 2)
+            upper_z = height + z_offset_abs
+            mid_z = height
+            lower_z = height - z_offset_abs
 
+            # upper radius
+            if upper_z > limiting_z_nose_cone:
+                z_local = abs(nose_tip_from_cso - (height + upper_z))
+                r_upper = nose_cone.radius(z_local)
+            else: 
+                r_upper = rocket.radius
+
+            # mid radius
+            if mid_z > limiting_z_nose_cone:
+                z_local = abs(nose_tip_from_cso - (height + mid_z))
+                r_mid = nose_cone.radius(z_local)
+            else: 
+                r_mid = rocket.radius
+
+            # lower radius
+            if lower_z > limiting_z_nose_cone:
+                z_local = abs(nose_tip_from_cso - (height + lower_z))
+                r_lower = nose_cone.radius(z_local)
+            else: 
+                r_lower = rocket.radius
+
+            # Mid-level calculations
+            total_angle = 2 * dimensions / r_mid
+            total_lateral = m.sin(total_angle / 2) * r_mid
+            total_central = m.cos(total_angle / 2) * r_mid
+
+            # Upper and Lower inner angle calculations
+            inner_angle_upper = (dimensions / 2) / r_upper
+            inner_lateral_upper = m.sin(inner_angle_upper / 2) * r_upper
+            inner_central_upper = m.cos(inner_angle_upper / 2) * r_upper
+
+            inner_angle_lower = (dimensions / 2) / r_lower
+            inner_lateral_lower = m.sin(inner_angle_lower / 2) * r_lower
+            inner_central_lower = m.cos(inner_angle_lower / 2) * r_lower      
+            
+            match position:
+
+                case 'right':
+                    self._vertices = [
+                        Vector([total_central, total_lateral, mid_z]),
+                        Vector([total_central, -total_lateral, mid_z]),
+                        Vector([inner_central_upper, inner_lateral_upper, upper_z]),
+                        Vector([inner_central_upper, -inner_lateral_upper, upper_z]),
+                        Vector([inner_central_lower, inner_lateral_lower, lower_z]),
+                        Vector([inner_central_lower, -inner_lateral_lower, lower_z]),
+                    ]
+
+                case 'front':
+                    self._vertices = [
+                        Vector([total_lateral, total_central, mid_z]),
+                        Vector([-total_lateral, total_central, mid_z]),
+                        Vector([inner_lateral_upper, inner_central_upper, upper_z]),
+                        Vector([-inner_lateral_upper, inner_central_upper, upper_z]),
+                        Vector([inner_lateral_lower, inner_central_lower, lower_z]),
+                        Vector([-inner_lateral_lower, inner_central_lower, lower_z]),
+                    ]
+
+                case 'left':
+                    self._vertices = [
+                        Vector([- total_central, total_lateral, mid_z]),
+                        Vector([-total_central, -total_lateral, mid_z]),
+                        Vector([-inner_central_upper, inner_lateral_upper, upper_z]),
+                        Vector([-inner_central_upper, -inner_lateral_upper, upper_z]),
+                        Vector([-inner_central_lower, inner_lateral_lower, lower_z]),
+                        Vector([-inner_central_lower, -inner_lateral_lower, lower_z]),
+                    ]
+
+                case 'back':
+                    self._vertices = [
+                        Vector([total_lateral, -total_central, mid_z]),
+                        Vector([-total_lateral, -total_central, mid_z]),
+                        Vector([inner_lateral_upper, -inner_central_upper, upper_z]),
+                        Vector([-inner_lateral_upper, -inner_central_upper, upper_z]),
+                        Vector([inner_lateral_lower, -inner_central_lower, lower_z]),
+                        Vector([-inner_lateral_lower, -inner_central_lower, lower_z]),
+                    ]
 
         else:
-            self._vertixes = dimensions
-
-
+            self._vertices = dimensions
 
 
         
@@ -232,7 +328,46 @@ class Plate():
 
         '''
         This function allows to calculate the soft iron
-        distortion matrix from the position of the points
-        and the parameters defined for the surface
+        distortion matrix from the position of the vertices 
+        of the plate and the parameters defined for the surface. 
+
+
+        input: 
+        ------------
+
+        position_vector: Vector 
+            Vector containing the position relative 
+            to the coordinate system origin 
+            of the point in m for which we want to calculate the 
+            soft iron distortion matrix. 
         '''
+
+        induced_matrix = Matrix.zeros()
+        diff_magnetic = self.relative_magnetic_permability - 1.0
+        num_vertices = len(self._vertices)
+
+
+        for _vertex in self._vertices: 
+
+            r_V = position_vector - _vertex 
+            r = abs(r_V)
+            r_unit = r_V / r 
+
+            projection_tensor = (r_unit ^ r_unit)
+
+            dipole_kernel = (
+            3.0 * projection_tensor - Matrix.identity()
+             ) / ( r ** 3)
+
+            induced_matrix = induced_matrix + diff_magnetic * dipole_kernel
+        
+        distortion_matrix = Matrix.identity() + (induced_matrix / num_vertices)
+
+        self._magnetic_distortion_matrixes[tuple(position_vector)] = distortion_matrix
+
+
+
+
+
+            
 

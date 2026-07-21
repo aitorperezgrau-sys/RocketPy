@@ -1884,7 +1884,7 @@ class Rocket:
 
     def add_wire(
             self, 
-            wire, 
+            wire: Wire, 
             position_edges):
 
         '''
@@ -1907,6 +1907,8 @@ class Rocket:
         '''
 
         edges = []
+        if not isinstance(wire, Wire):
+            raise ValueError('The wire must be a wire instance')
 
         if isinstance(position_edges, (list, tuple)):
 
@@ -2020,6 +2022,8 @@ class Rocket:
 
                 if not isinstance(dimensions, (tuple, list)):
                     raise ValueError('The dimensions must be a list or tuple, when the shape is personalized')
+                elif len(dimensions) < 3:
+                    raise ValueError('At least 3 points must be defined to create a surface')
                 
             else:
                 raise ValueError('The accepted shapes are circular, squared and personalized')

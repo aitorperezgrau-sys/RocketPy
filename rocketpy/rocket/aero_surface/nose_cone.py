@@ -2,6 +2,7 @@ import logging
 import warnings
 
 import numpy as np
+import math as m
 from scipy.optimize import fsolve
 
 from rocketpy.mathutils.function import Function
@@ -71,6 +72,9 @@ class NoseCone(AeroSurface):
         Function which defines the lift coefficient as a function of the angle
         of attack and the Mach number. Takes as input the angle of attack in
         radians and the Mach number. Returns the lift coefficient.
+    Nosecone.radius: Function
+        Function that returns the radius as a function of the z axis 
+        based on the local coordinate system. 
     NoseCone.clalpha : float
         Lift coefficient slope. Has units of 1/rad.
     NoseCone.plots : plots.aero_surface_plots._NoseConePlots
@@ -137,6 +141,7 @@ class NoseCone(AeroSurface):
         self._rocket_radius = rocket_radius
         self._base_radius = base_radius
         self._length = length
+        self._radius_function = None
         if bluffness is not None:
             if bluffness > 1 or bluffness < 0:  # pragma: no cover
                 raise ValueError(
@@ -216,6 +221,14 @@ class NoseCone(AeroSurface):
         self.evaluate_k()
         self.evaluate_center_of_pressure()
         self.evaluate_nose_shape()
+
+    @property
+    def radius(self):
+
+        if self._radius_function is None:
+            self._radius_function = self._compute_radius_function()
+
+        return self._radius_function    
 
     @property
     def kind(self):
@@ -455,6 +468,56 @@ class NoseCone(AeroSurface):
                 stacklevel=2,
             )
         self.fineness_ratio = self.length / (2 * self.base_radius)
+
+    def _compute_radius_function(self):
+        '''
+        Calculates and returns the radius of the nose cone
+        at a certain height z, based on the local 
+        coordinate system. 
+
+        Local coordinate system:
+            - the origin at the tip of the nose cone and
+            - the Z axis along the longitudinal axis of symmetry, positive downwards (top -> bottom).
+        '''
+        radius_list = []
+        r_prev = np.inf
+        num_points = 0
+        added = False
+
+        for x, y in np.column_stack(self.shape_vec):
+
+            r = m.hypot(x, y) 
+            if r_prev - 1e-3 < r < r_prev + 1e-3:
+                num_points = num_points + 1
+
+                if num_points >= 10 and added == False: 
+                    radius_list.append(r)
+                    added = True
+            else:
+                r_prev = r
+                num_points = 0
+                added = False
+
+        z_list = list(np.linspace(0, self.length, len(radius_list)))
+        
+        data = np.column_stack((z_list, radius_list))
+        print(data)
+
+        return Function(
+                data,
+                inputs = 'z',
+                outputs = 'nose_radius')
+    
+
+        
+
+
+
+        
+
+
+
+            
 
     def evaluate_lift_coefficient(self):
         """Calculates and returns nose cone's lift coefficient.

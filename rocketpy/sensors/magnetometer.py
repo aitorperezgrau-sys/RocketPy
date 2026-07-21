@@ -466,7 +466,7 @@ class Magnetometer(InertialSensor):
             self._soft_iron_distortion = soft_iron_distortion
             self.initial_soft_iron_distortion = 'number'
 
-        elif isinstance(soft_iron_distortion):
+        elif isinstance(soft_iron_distortion, str):
             if soft_iron_distortion == 'plates':
                 self._soft_iron_distortion = Matrix.zeros()
                 self.initial_soft_iron_distortion = 'plates'
@@ -716,7 +716,7 @@ class Magnetometer(InertialSensor):
                 for plate in rocket.plates:
                     if not self.sensor_from_cso_t in plate._magnetic_distortion_matrixes: 
 
-                        plate.calculate_soft_iron_distortion_matrix(self.sensor_from_cso_t)
+                        plate.calculate_soft_iron_distortion_matrix(self._sensor_from_cso)
                         self._soft_iron_distortion  = self._soft_iron_distortion + plate._magnetic_distortion_matrixes[self.sensor_from_cso_t]
 
                 B = B * self._soft_iron_distortion
@@ -853,8 +853,9 @@ class Magnetometer(InertialSensor):
                                                         self.communications_interference[2] + communication_wire.magnetic_field[self.sensor_from_cso_t][2]
                                                         ]
                         
-                    B = B + self._communications_interference
+
                     self._communications_interference = Vector(self.communications_interference)
+                    B = B + self._communications_interference
 
                 else:
                     B = B + self._communications_interference

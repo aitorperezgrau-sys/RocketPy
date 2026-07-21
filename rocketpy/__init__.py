@@ -53,7 +53,8 @@ from .rocket import (
     TrapezoidalFin,
     TrapezoidalFins,
     TubeFins,
-    Wire
+    Wire,
+    Plate,
 )
 
 from .sensitivity import SensitivityModel
