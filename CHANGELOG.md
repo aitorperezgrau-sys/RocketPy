@@ -32,6 +32,7 @@ Attention: The newest changes should be on top -->
 
 ### Added
 
+- ENH: Support for Meteomatics API in the `Environment` class [#1079](https://github.com/RocketPy-Team/RocketPy/pull/1079)
 - ENH: BUG/MNT: pre-release v1.13.0 review fixes [#1074](https://github.com/RocketPy-Team/RocketPy/pull/1074)
 ### Changed
 
