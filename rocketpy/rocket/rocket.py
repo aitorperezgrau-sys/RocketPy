@@ -2028,9 +2028,9 @@ class Rocket:
                 
     
         self.plates.append(plate)
-
-        plate.define_plate_position(shape, dimensions, position, height)
         
+        plate.define_plate_position(shape, dimensions, position, height, self)
+
             
 
 
