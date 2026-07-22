@@ -32,15 +32,15 @@ Attention: The newest changes should be on top -->
 
 ### Added
 
-- ENH: BUG/MNT: pre-release v1.13.0 review fixes [#1074](https://github.com/RocketPy-Team/RocketPy/pull/1074)
 ### Changed
 
 ### Fixed
 
-## [v1.13.0] - 2026-07-19
+## [v1.13.0] - 2026-07-21
 
 ### Added
 
+- ENH: BUG/MNT: pre-release v1.13.0 review fixes [#1074](https://github.com/RocketPy-Team/RocketPy/pull/1074)
 - ENH: `Function` vectorized speed-up and refactor [#1049](https://github.com/RocketPy-Team/RocketPy/pull/1049)
 - ENH: Interactive 3D Flight Trajectory and Attitude Animation (PyVista) [#1066](https://github.com/RocketPy-Team/RocketPy/pull/1066)
 - ENH: Add optional `max_time` to `StochasticFlight` and carry base-flight attributes into created objects [#1070](https://github.com/RocketPy-Team/RocketPy/pull/1070)
