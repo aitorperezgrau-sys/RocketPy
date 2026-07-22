@@ -32,6 +32,7 @@ Attention: The newest changes should be on top -->
 
 ### Added
 
+- ENH: update master with develop [#1081](https://github.com/RocketPy-Team/RocketPy/pull/1081)
 ### Changed
 
 ### Fixed
