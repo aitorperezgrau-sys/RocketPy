@@ -3,6 +3,7 @@ from rocketpy.rocket.aero_surface import NoseCone
 from rocketpy.mathutils import Vector, Matrix
 import math as m
 import numpy as np
+from rocketpy.tools import calculate_area_3D
 
 
 
@@ -27,6 +28,18 @@ class Plate():
         ratio of the magnetic permeability to 
         the magnetic permeability of vacuum
 
+    thickness: float, int
+        Thickness of the plate
+
+    area: float, int
+        Area of the plate. When the parameter is 
+        circular or squared, then the common expression
+        is used, while with personalized, the area is
+        the minimal area of the region contained within the points. 
+
+    volume: float, int
+        Volume of the plate. 
+
     _magnetic_distortion_matrixes: dict
         Dictionary formed by the magnetic distortion
         matrix caused by the plate. The keys are the position
@@ -44,6 +57,7 @@ class Plate():
     def __init__(
             self,
             material,
+            thickness, 
             absolute_magnetic_permeability = None
     ):
     
@@ -57,6 +71,9 @@ class Plate():
             Allowed strings are 'iron', 'carbon_steel', or 
             'personalized' if we want to define the material 
             based on the magnetic permeability. 
+
+        thickness: float, int
+            Thickness of the plate in m. 
 
         magnetic_permeability: float, int, optional
             Magnetic permeability of the material, which is 
@@ -101,9 +118,12 @@ class Plate():
             raise ValueError('material argument can only be a string')
 
 
-        self.relative_magnetic_permability = self.absolute_magnetic_permeability / float(4 * np.pi * 1e-7)
+        self.relative_magnetic_permeability = self.absolute_magnetic_permeability / (4 * np.pi * 1e-7)
 
-
+        if not isinstance(thickness, (float, int)):
+            raise ValueError('Thickness must be a float or int')
+        else:
+            self.thickness = thickness
     
 
     def define_plate_position(self, shape, dimensions, position, height, rocket):
@@ -158,6 +178,8 @@ class Plate():
         '''
  
         # definition of the position of the NoseCone relative to the cso
+        nose_cone = None
+
         for aerodynamic_surface, _position_relative_to_cso in rocket.aerodynamic_surfaces:
 
             if  isinstance(aerodynamic_surface, NoseCone):
@@ -172,7 +194,9 @@ class Plate():
 
         if shape == 'squared': 
             
-            
+            self.area = dimensions * dimensions
+            self.volume = self.area * self.thickness
+
             upper_z = height + dimensions / 2.0
             lower_z = height - dimensions / 2.0
 
@@ -235,9 +259,13 @@ class Plate():
                         Vector([lateral_l, -central_l, lower_z]),
                         Vector([-lateral_l, -central_l, lower_z]),
                     ]
+            
          
 
         elif shape == 'circular': 
+
+            self.area = np.pi * (dimensions ** 2)
+            self.volume = self.area * self.thickness
 
             z_offset_abs = m.cos(np.pi / 3) * (dimensions / 2)
             upper_z = height + z_offset_abs
@@ -323,12 +351,15 @@ class Plate():
 
         else:
             self._vertices = dimensions
+            self.area = calculate_area_3D(self._vertices)
+            self.volume = self.area * self.thickness
+
 
 
         
     
 
-
+    
 
     def calculate_soft_iron_distortion_matrix(self, position_vector: Vector):
 
@@ -349,17 +380,16 @@ class Plate():
         '''
 
         induced_matrix = Matrix.zeros()
-        diff_magnetic = self.relative_magnetic_permability - 1.0
+        diff_magnetic = self.relative_magnetic_permeability - 1.0
         num_vertices = len(self._vertices)
+        dV = self.volume / num_vertices
+        dipole_scalar = (diff_magnetic * dV) / (4.0 * np.pi) 
+
 
         if isinstance(position_vector, (list, tuple)):
-
             position_vector = Vector(position_vector)
-
         elif isinstance(position_vector, Vector):
-
             position_vector = position_vector
-
         else:
             raise ValueError('Position Vector can only be a tuple, list or Vector')
 
@@ -371,6 +401,7 @@ class Plate():
             r_unit = r_V / r 
 
 
+            
             rx, ry, rz = r_unit[0], r_unit[1], r_unit[2]
 
 
@@ -380,19 +411,34 @@ class Plate():
             [rz * rx, rz * ry, rz * rz]
             ])
             
+            adjustment_dimensions = 1e-4
             dipole_kernel = (
             3.0 * projection_tensor - Matrix.identity()
-             ) / ( r ** 3)
+             ) / ((r ** 3) + adjustment_dimensions) 
 
-            induced_matrix = induced_matrix + diff_magnetic * dipole_kernel
+            induced_matrix = induced_matrix + (dipole_scalar * dipole_kernel)
         
-        distortion_matrix = Matrix.identity() + (induced_matrix / num_vertices)
+        distortion_matrix = Matrix.identity() + induced_matrix 
 
         self._magnetic_distortion_matrixes[tuple(position_vector)] = distortion_matrix
 
 
 
 
+    @classmethod
+    def from_dict(cls, data: dict):
 
-            
+        '''
+        Creates an instance of Plate class from a dictionary object, data. 
+        Data is a dictionary that must contain the same keys as the initialization
+        parameter of the Plate class. In the case some parameter is not 
+        defined, the default value matches the default intializaiton of the constructor
+        '''
 
+        return cls(
+            # Mandatory Parameter 
+            material                       = data['material'],
+
+            # Optional Parameter 
+            absolute_magnetic_permeability = data.get('absolute_magnetic_permeability', None)
+        )

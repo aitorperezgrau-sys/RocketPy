@@ -32,12 +32,12 @@ class Magnetometer(InertialSensor):
     
     magnetic_interference: list
         magnetic interference on the magnetometer, it is the sum of the
-        hard iron distortion, power interference and soft iron distortion
-
+        hard iron distortion and power interference. 
+        
     hard_iron_distortion: list
         Hard iron distortion in T
     
-    soft_iron_distortion: Matrix
+    _soft_iron_distortion: Matrix
         sum of the soft iron distortion matrixes applied to the magnetic 
         reading.
     
@@ -352,6 +352,7 @@ class Magnetometer(InertialSensor):
 
                 self.power_interference = [0, 0, 0]
                 self.communications_interference = [0, 0, 0]
+                self.communications_computed = False
                 self.activation_signal_interference = [0, 0, 0]
 
                 self.initial_power_interference = 'wires'
@@ -372,7 +373,7 @@ class Magnetometer(InertialSensor):
                 if isinstance(activation_signal_interference, (int, float)):
                         
                         self.activation_signal_interference = [activation_signal_interference, activation_signal_interference, activation_signal_interference]
-                        self._activation_signal_interference = Vector(self.power_interference)
+                        self._activation_signal_interference = Vector(self.activation_signal_interference)
                         self.initial_activation_signal_interference = 'number'
 
                 elif isinstance(activation_signal_interference, (list, tuple)):
@@ -424,6 +425,7 @@ class Magnetometer(InertialSensor):
 
                         self.communications_interference = [0, 0, 0]
                         self.initial_communications_interference = 'wires'
+                        self.communications_computed = False
 
                     else:
                         raise ValueError('The accepted string is wires')
@@ -460,6 +462,7 @@ class Magnetometer(InertialSensor):
         
         # initialize soft_iron_distortion attribute
         if isinstance(soft_iron_distortion, Matrix):
+
             for element in soft_iron_distortion:
                 if not isinstance(element, (float, int)):
                     raise ValueError('The elements inside the matrix must be float or int')
@@ -467,10 +470,13 @@ class Magnetometer(InertialSensor):
             self._soft_iron_distortion = soft_iron_distortion
             self.initial_soft_iron_distortion = 'number'
 
+
         elif isinstance(soft_iron_distortion, str):
             if soft_iron_distortion == 'plates':
                 self._soft_iron_distortion = Matrix.zeros()
                 self.initial_soft_iron_distortion = 'plates'
+                self.total_soft_iron_distortion_computed = False
+
             else:
                 raise ValueError('The accepted string must be plates')
         else:
@@ -673,18 +679,19 @@ class Magnetometer(InertialSensor):
         
         self.magnetic_interference = [0, 0, 0]
 
-        B = self.apply_soft_iron(B)                                                                                   # T
+        B = self.apply_soft_iron(B, rocket)                                                                                   # T
         B = self.apply_hard_iron(B)                                                                                   # T
         B = self.apply_power_interference(B, rocket, parachute_events, burn_start_time, initial_time, current_time)   # T
 
 
         self.magnetic_interference = [
-            self.activation_signal_interference[0] + self.power_interference[0] + self.hard_iron_distortion[0],
-            self.activation_signal_interference[1] + self.power_interference[1] + self.hard_iron_distortion[1], 
-            self.activation_signal_interference[2] + self.power_interference[2] + self.hard_iron_distortion[2] 
+            self.power_interference[0] + self.hard_iron_distortion[0],
+            self.power_interference[1] + self.hard_iron_distortion[1], 
+            self.power_interference[2] + self.hard_iron_distortion[2] 
         ]
 
         return B 
+    
 
     def apply_soft_iron(self, B, rocket: Rocket):
 
@@ -713,7 +720,7 @@ class Magnetometer(InertialSensor):
         '''
 
         if self.initial_soft_iron_distortion == 'plates':
-            if self._soft_iron_distortion == Matrix.zeros():
+            if not self.total_soft_iron_distortion_computed:
 
                 for plate in rocket.plates:
                     if not self.sensor_from_cso_t in plate._magnetic_distortion_matrixes: 
@@ -721,7 +728,10 @@ class Magnetometer(InertialSensor):
                         plate.calculate_soft_iron_distortion_matrix(self._sensor_from_cso)
                         self._soft_iron_distortion  = self._soft_iron_distortion + plate._magnetic_distortion_matrixes[self.sensor_from_cso_t]
 
+                self.total_soft_iron_distortion_computed = True
                 B = self._soft_iron_distortion @ B
+                
+
 
             else:
                 B = self._soft_iron_distortion @ B
@@ -847,7 +857,7 @@ class Magnetometer(InertialSensor):
         if self.initial_communications_interference == 'wires':
             if rocket.communication_wires: 
 
-                if self.communications_interference == [0, 0, 0]:
+                if not self.communications_computed:
                     for communication_wire in rocket.communication_wires:
 
                         communication_wire.measure_magnetic_field(self._sensor_from_cso)
@@ -859,6 +869,7 @@ class Magnetometer(InertialSensor):
                     
                     self._communications_interference = Vector(self.communications_interference)
                     B = B + self._communications_interference
+                    self.communications_computed = True
 
                 else:
                     B = B + self._communications_interference
@@ -890,7 +901,7 @@ class Magnetometer(InertialSensor):
         parachute_events: list 
             List that stores parachute events triggered during flight.
             it is a list formed by lists which contain the trigger time 
-            and the parachute object. 
+            as the first element and the parachute object as the second. 
 
         burn_start_time: float
             Initial burning time of the motor
@@ -1020,6 +1031,7 @@ class Magnetometer(InertialSensor):
             measurement_range                     = data.get('measurement_range', np.inf),
             resolution                            = data.get('resolution', 0),
             hard_iron_distortion                  = data.get('hard_iron_distortion', 0.0),
+            soft_iron_distortion                  = data.get('soft_iron_distortion', 'plates'),
             power_interference                    = data.get('power_interference', 'wires'),
             activation_signal_interference        = data.get('activation_signal_interference', None),
             communications_interference           = data.get('communications_interference', None),

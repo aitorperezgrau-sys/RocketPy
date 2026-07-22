@@ -132,7 +132,7 @@ class Wire():
                         if parachute_name == None:
                             raise ValueError('The name of the parachute is compulsory if the ignition_wire_function is parachute')
                         
-                        elif not isinstance(self.parachute_name, str):
+                        elif not isinstance(parachute_name, str):
                             raise ValueError('The name of the parachute must be a string')
                         
                         else: 
@@ -167,15 +167,16 @@ class Wire():
 
         '''
         This function measures the magnetic field on a given position_vector
-        based on the position of the edges of the wire. the magnetic field is calculated assuming 
-        that the wire is straight. 
+        based on the position of the edges of the wire. the magnetic field is
+        calculated assuming that the wire is straight. 
 
         input:
         --------
 
-        position_vector: list, tuple
+        position_vector: list, tuple or Vector
             position vector of the point in which the magnetic field
-            is going to be measured relative to the coordiante system origin choosen by the user. 
+            is going to be measured relative to the coordiante system origin choosen
+            by the user. 
         
         '''
 
@@ -198,7 +199,7 @@ class Wire():
 
             elif isinstance(position_vector, Vector):
                 r_V = position_vector          # m
-                r_t   = tuple(position_vector)
+                r_t   = tuple(position_vector) # m
 
             else: 
                 raise ValueError('The only accepted parameters are list, tuple or Vector')
@@ -210,22 +211,24 @@ class Wire():
         l = r2 - r1 #m
         self.wire_length = abs(l) # m
 
-        r1_V =  r_V - r1
-        r2_V =  r_V - r2
+        r1_V =  r_V - r1 # m
+        r2_V =  r_V - r2 # m
 
         cross_r1_r2 = (r1_V ^ r2_V)
         cross_norm_r1_r2 = abs(cross_r1_r2)
 
         dot_term = l @ (r1_V.unit_vector - r2_V.unit_vector)
-        b_V = (1e-7 * self.current) * (cross_r1_r2 / cross_norm_r1_r2) * dot_term
+
+        if cross_norm_r1_r2 < 1e-12: #along the same line, cross product is zero -> magnetic field is 0
+            b_V = Vector([0,0,0]) 
+        else:
+            b_V = (1e-7 * self.current) * (cross_r1_r2 / cross_norm_r1_r2) * dot_term # T
        
 
         self.magnetic_field[r_t]  = list(b_V)
         self._magnetic_field[r_t] = b_V
 
 
-
-        
 
 
     
@@ -275,6 +278,7 @@ class Wire():
 
 
 
+
     def _set_wire_edges_from_cso (self, wire_edges_from_cso):
 
         '''
@@ -296,3 +300,27 @@ class Wire():
 
         else:
             raise ValueError(' wire_edges_from_cso can only be a list or a tuple')
+
+
+
+
+    @classmethod
+    def from_dict(cls, data: dict):
+
+        '''
+        Creates an instance of Wire from a dictionary object, data. 
+        Data is a dictionary that must contain the same keys as the initialization
+        parameter of the Wire class. In the case some parameter is not 
+        defined, the default value matches the default intializaiton of the constructor
+        '''
+
+        return cls(
+            # Mandatory Parameters 
+            current                      = data['current'],
+            current_direction            = data['current_direction'],
+            wire_type                    = data['wire_type'],
+            
+            # Optional Parameters 
+            ignition_wire_function       = data.get('ignition_wire_function', None),
+            parachute_name               = data.get('parachute_mame', None)
+        )

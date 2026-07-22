@@ -1339,6 +1339,20 @@ def normalize_quaternions(quaternions):
         return 1, 0, 0, 0
     return q_w / q_norm, q_x / q_norm, q_y / q_norm, q_z / q_norm
 
+def calculate_area_3D(vertices):
+    """
+    Calculate the area of a 3D planar polygon given its ordered vertices.
+    """
+
+    v = np.array(vertices)
+    v_next = np.roll(v, shift=-1, axis=0)
+
+    cross_products = np.cross(v, v_next)
+    
+    area_vector_sum = np.sum(cross_products, axis=0)
+    
+    return 0.5 * np.linalg.norm(area_vector_sum)
+
 
 def euler313_to_quaternions(phi, theta, psi):
     """Convert 3-1-3 Euler angles to Euler parameters (quaternions).

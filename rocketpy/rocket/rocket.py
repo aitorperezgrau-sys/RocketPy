@@ -1874,6 +1874,7 @@ class Rocket:
             position = (0, 0, position)
         position = Vector(position)
         self.sensors.add(sensor, position)
+        
         sensor._set_sensor_from_cso(position)
 
         try:
@@ -1978,8 +1979,8 @@ class Rocket:
             which represents the side lenght, when the shape is flat.
 
             when it is 'personalized', dimensions must be a list
-            with lists as the vertixes that form the shape. At least, 3 
-            vertices must be defined. 
+            with lists as the vertixes that form the shape. They must be
+            in order and at least 3 vertices must be defined. 
 
         position: str, optional, mandatory when the shape is not 'personalized'
             position of the plate, when the shape is not 'personalized'
@@ -2003,7 +2004,6 @@ class Rocket:
                 if not isinstance(dimensions, (float, int)):
                     raise ValueError('The dimensions must be a float or int, when the shape is circular or squared')
                 
-
                 if position == None:
                     raise ValueError('The position when the shape is circular or squared must be defined')
                 elif not isinstance(position, str):
@@ -2012,13 +2012,16 @@ class Rocket:
                     if not (position == 'left' or position == 'right' or position == 'back' or position == 'front'):
                         raise ValueError('The position can only be left, right, back or front')
                     
+
+
                 if height == None:
                     raise ValueError('The height when the shape is circular or squared must be defined')
                 
-                elif not isinstance(dimensions, (float, int)):
+                if not isinstance(dimensions, (float, int)):
                     raise ValueError('The height must be a float or int, when the shape is circular or squared')
 
 
+                
             elif shape == 'personalized':
 
                 if not isinstance(dimensions, (tuple, list)):
@@ -2041,7 +2044,7 @@ class Rocket:
                             elif isinstance(dimensions[num_vertex], Vector):
                                 
                                 dimensions[num_vertex] = dimensions[num_vertex]
-                                
+
                             else: 
                                 raise ValueError('The vertex components must be given as a list, tuple or Vector')
                             
