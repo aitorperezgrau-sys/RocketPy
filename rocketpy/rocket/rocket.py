@@ -1978,7 +1978,8 @@ class Rocket:
             which represents the side lenght, when the shape is flat.
 
             when it is 'personalized', dimensions must be a list
-            with the vertixes that form the shape. 
+            with lists as the vertixes that form the shape. At least, 3 
+            vertices must be defined. 
 
         position: str, optional, mandatory when the shape is not 'personalized'
             position of the plate, when the shape is not 'personalized'
@@ -2021,19 +2022,45 @@ class Rocket:
             elif shape == 'personalized':
 
                 if not isinstance(dimensions, (tuple, list)):
+                    
                     raise ValueError('The dimensions must be a list or tuple, when the shape is personalized')
+                
                 elif len(dimensions) < 3:
+
                     raise ValueError('At least 3 points must be defined to create a surface')
+                else:
+
+                    for num_vertex in range(len(dimensions)):
+
+                        if len(dimensions[num_vertex]) == 3:
+
+                            if isinstance(dimensions[num_vertex], (list, tuple)):
+
+                                dimensions[num_vertex] = Vector(dimensions[num_vertex])
+
+                            elif isinstance(dimensions[num_vertex], Vector):
+                                
+                                dimensions[num_vertex] = dimensions[num_vertex]
+                                
+                            else: 
+                                raise ValueError('The vertex components must be given as a list, tuple or Vector')
+                            
+                        else:
+                            raise ValueError('The vertex must be defiened with 3 components')
+                        
+
+
                 
             else:
                 raise ValueError('The accepted shapes are circular, squared and personalized')
         else:
             raise ValueError('The shape must be defined as a string')
                 
-    
+
+        plate.define_plate_position(shape, dimensions, position, height, self)
         self.plates.append(plate)
         
-        plate.define_plate_position(shape, dimensions, position, height, self)
+        
 
             
 

@@ -20,18 +20,23 @@ class Plate():
         'personalized' if we want to define the material 
         based on the magnetic permeability. 
 
-    absolute_magnetic_permeability: 
+    absolute_magnetic_permeability: float
         Magnetic permeability of the material,
 
-    relative_magnetic_permeabiltiy:
+    relative_magnetic_permeabiltiy: float
         ratio of the magnetic permeability to 
         the magnetic permeability of vacuum
 
-    magnetic_distortion: 
+    _magnetic_distortion_matrixes: dict
         Dictionary formed by the magnetic distortion
         matrix caused by the plate. The keys are the position
-        vector of the point relative to the cso, and the value 
-        is the magnetic distortion Matrix. 
+        vector of the point relative to the cso given as a tuple,
+        and the value is the magnetic distortion Matrix. 
+    
+    _vertices: list
+        list formed by the Vectors representing the 
+        components of each vertex of the surface relative
+        to the cso. 
 
     '''
     
@@ -133,7 +138,8 @@ class Plate():
             which represents the side lenght, when the shape is flat.
 
             when it is 'personalized', dimensions must be a list
-            with the vertices that form the shape. 
+            with the vertices that form the shape. The vertices
+            components are given as a Vector. 
 
         position: str, optional
             position of the plate, when the shape is not 'personalized'
@@ -324,7 +330,7 @@ class Plate():
 
 
 
-    def calculate_soft_iron_distortion_matrix(self, position_vector):
+    def calculate_soft_iron_distortion_matrix(self, position_vector: Vector):
 
         '''
         This function allows to calculate the soft iron
@@ -335,7 +341,7 @@ class Plate():
         input: 
         ------------
 
-        position_vector: Vector 
+        position_vector: Vector, list, tuple
             Vector containing the position relative 
             to the coordinate system origin 
             of the point in m for which we want to calculate the 
@@ -346,6 +352,17 @@ class Plate():
         diff_magnetic = self.relative_magnetic_permability - 1.0
         num_vertices = len(self._vertices)
 
+        if isinstance(position_vector, (list, tuple)):
+
+            position_vector = Vector(position_vector)
+
+        elif isinstance(position_vector, Vector):
+
+            position_vector = position_vector
+
+        else:
+            raise ValueError('Position Vector can only be a tuple, list or Vector')
+
 
         for _vertex in self._vertices: 
 
@@ -353,8 +370,16 @@ class Plate():
             r = abs(r_V)
             r_unit = r_V / r 
 
-            projection_tensor = (r_unit ^ r_unit)
 
+            rx, ry, rz = r_unit[0], r_unit[1], r_unit[2]
+
+
+            projection_tensor = Matrix([
+            [rx * rx, rx * ry, rx * rz],
+            [ry * rx, ry * ry, ry * rz],
+            [rz * rx, rz * ry, rz * rz]
+            ])
+            
             dipole_kernel = (
             3.0 * projection_tensor - Matrix.identity()
              ) / ( r ** 3)
