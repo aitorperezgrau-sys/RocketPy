@@ -726,11 +726,13 @@ class Magnetometer(InertialSensor):
                     if not self.sensor_from_cso_t in plate._magnetic_distortion_matrixes: 
 
                         plate.calculate_soft_iron_distortion_matrix(self._sensor_from_cso)
+                        print(f'soft iron distortion matrix: {plate._magnetic_distortion_matrixes[self.sensor_from_cso_t]}')
                         self._soft_iron_distortion  = self._soft_iron_distortion + plate._magnetic_distortion_matrixes[self.sensor_from_cso_t]
+
 
                 self.total_soft_iron_distortion_computed = True
                 B = self._soft_iron_distortion @ B
-                
+
 
 
             else:

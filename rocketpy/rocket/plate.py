@@ -46,9 +46,9 @@ class Plate():
         vector of the point relative to the cso given as a tuple,
         and the value is the magnetic distortion Matrix. 
     
-    _vertices: list
-        list formed by the Vectors representing the 
-        components of each vertex of the surface relative
+    points: list[list]
+        list formed by the vectors representing the 
+        components of each points of the surface relative
         to the cso. 
 
     '''
@@ -82,7 +82,7 @@ class Plate():
         '''
 
         self._magnetic_distortion_matrixes = {}
-        self._vertices = []
+        self.points = []
 
         if isinstance(material, str):
 
@@ -199,68 +199,121 @@ class Plate():
 
             upper_z = height + dimensions / 2.0
             lower_z = height - dimensions / 2.0
-
-
-            # upper radius
-            if upper_z > limiting_z_nose_cone:
-                z_local = abs(nose_tip_from_cso - (height + upper_z))
-                r_upper = nose_cone.radius(z_local)
-            else: 
-                r_upper = rocket.radius
-
-            # lower radius
-            if lower_z > limiting_z_nose_cone:
-                z_local = abs(nose_tip_from_cso - (height + lower_z))
-                r_lower = nose_cone.radius(z_local)
-            else: 
-                r_lower = rocket.radius
             
-
-            # upper part 
-            angle_upper = dimensions / r_upper        # rad
-            lateral_upper = m.sin(angle_upper / 2) * r_upper
-            central_upper = m.cos(angle_upper / 2) * r_upper
-
-            # lower part 
-            angle_l = dimensions / r_lower        # rad
-            lateral_l = m.sin(angle_l / 2) * r_lower
-            central_l = m.cos(angle_l / 2) * r_lower
-
             match position:
+                case 'rigth':
+                    
+                    for z in np.linspace(lower_z, upper_z, 50):
+                        points = []
 
-                case 'right':
-                    self._vertices = [
-                        Vector([central_upper, lateral_upper, upper_z]),
-                        Vector([central_upper, -lateral_upper, upper_z]),
-                        Vector([central_l, lateral_l, lower_z]),
-                        Vector([central_l, -lateral_l, lower_z]),
-                    ]
+                        if z > limiting_z_nose_cone:
+                            z_local = abs(nose_tip_from_cso - (height + z))
+                            r = nose_cone.radius(z_local)
+
+                        else: 
+                            r = rocket.radius
+
+                        angle = 2 * dimensions / r
+                        lateral = m.sin(angle / 2) * r
+                        central = m.cos(angle / 2) * r
+
+                        y_init = - lateral
+                        y_final = lateral
+                
+                        for y in np.linspace(y_init, y_final, 50):
+                            x = r ** 2 - y ** 2
+                            if len(points) <= 25:
+                                points.append([x,-y,z])
+                            else:
+                                points.append([x,y,z])                  
+
 
                 case 'front':
-                    self._vertices = [
-                        Vector([lateral_upper, central_upper, upper_z]),
-                        Vector([-lateral_upper, central_upper, upper_z]),
-                        Vector([lateral_l, central_l, lower_z]),
-                        Vector([-lateral_l, central_l, lower_z]),
-                    ]
+                    
+                    for z in np.linspace(lower_z, upper_z, 50):
+                        points = []
 
-                case 'left':
-                    self._vertices = [
-                        Vector([-central_upper, lateral_upper, upper_z]),
-                        Vector([-central_upper, -lateral_upper, upper_z]),
-                        Vector([-central_l, lateral_l, lower_z]),
-                        Vector([-central_l, -lateral_l, lower_z]),
-                    ]
+                        if z > limiting_z_nose_cone:
+                            z_local = abs(nose_tip_from_cso - (height + z))
+                            r = nose_cone.radius(z_local)
+
+                        else: 
+                            r = rocket.radius
+                        
+                        angle = 2 * dimensions / r
+                        lateral = m.sin(angle / 2) * r
+                        central = m.cos(angle / 2) * r
+
+                        x_init = lateral
+                        x_final = - lateral
+                
+                        for x in np.linspace(x_init, x_final, 50):
+                            y = r ** 2 - x ** 2
+
+                            if len(points) <= 25:
+                                points.append([-x,y,z])
+                            else:
+                                points.append([x,y,z])                  
+
+
+
+                case 'left': 
+                    
+                    for z in np.linspace(lower_z, upper_z, 50):
+                        points = []
+
+                        if z > limiting_z_nose_cone:
+                            z_local = abs(nose_tip_from_cso - (height + z))
+                            r = nose_cone.radius(z_local)
+
+                        else: 
+                            r = rocket.radius
+
+                        angle = 2 * dimensions / r
+                        lateral = m.sin(angle / 2) * r
+                        central = m.cos(angle / 2) * r
+
+                        y_init = lateral
+                        y_final = - lateral
+
+                        for y in np.linspace(y_init, y_final, 50):
+                            x = r ** 2 - y ** 2
+                            if len(points) <= 25:
+                                points.append([x,y,z])
+                            else:
+                                points.append([x,-y,z])                  
+
+
 
                 case 'back':
-                    self._vertices = [
-                        Vector([lateral_upper, -central_upper, upper_z]),
-                        Vector([-lateral_upper, -central_upper, upper_z]),
-                        Vector([lateral_l, -central_l, lower_z]),
-                        Vector([-lateral_l, -central_l, lower_z]),
-                    ]
-            
-         
+                    
+                    for z in np.linspace(lower_z, upper_z, 50):
+                        points = []
+
+                        if z > limiting_z_nose_cone:
+                            z_local = abs(nose_tip_from_cso - (height + z))
+                            r = nose_cone.radius(z_local)
+
+                        else: 
+                            r = rocket.radius
+                        
+                        angle = 2 * dimensions / r
+                        lateral = m.sin(angle / 2) * r
+                        central = m.cos(angle / 2) * r
+
+                        x_init = - lateral
+                        x_final = lateral
+
+                        for x in np.linspace(x_init, x_final, 50):
+                            y = r ** 2 - x ** 2
+
+                            if len(points) <= 25:
+                                points.append([-x,y,z])
+                            else:
+                                points.append([x,y,z])      
+
+            self.points = points
+
 
         elif shape == 'circular': 
 
@@ -310,48 +363,48 @@ class Plate():
             match position:
 
                 case 'right':
-                    self._vertices = [
-                        Vector([total_central, total_lateral, mid_z]),
-                        Vector([total_central, -total_lateral, mid_z]),
-                        Vector([inner_central_upper, inner_lateral_upper, upper_z]),
-                        Vector([inner_central_upper, -inner_lateral_upper, upper_z]),
-                        Vector([inner_central_lower, inner_lateral_lower, lower_z]),
-                        Vector([inner_central_lower, -inner_lateral_lower, lower_z]),
+                    self.points = [
+                        [total_central, total_lateral, mid_z],
+                        [total_central, -total_lateral, mid_z],
+                        [inner_central_upper, inner_lateral_upper, upper_z],
+                        [inner_central_upper, -inner_lateral_upper, upper_z],
+                        [inner_central_lower, inner_lateral_lower, lower_z],
+                        [inner_central_lower, -inner_lateral_lower, lower_z],
                     ]
 
                 case 'front':
-                    self._vertices = [
-                        Vector([total_lateral, total_central, mid_z]),
-                        Vector([-total_lateral, total_central, mid_z]),
-                        Vector([inner_lateral_upper, inner_central_upper, upper_z]),
-                        Vector([-inner_lateral_upper, inner_central_upper, upper_z]),
-                        Vector([inner_lateral_lower, inner_central_lower, lower_z]),
-                        Vector([-inner_lateral_lower, inner_central_lower, lower_z]),
+                    self.points = [
+                        [total_lateral, total_central, mid_z],
+                        [-total_lateral, total_central, mid_z],
+                        [inner_lateral_upper, inner_central_upper, upper_z],
+                        [-inner_lateral_upper, inner_central_upper, upper_z],
+                        [inner_lateral_lower, inner_central_lower, lower_z],
+                        [-inner_lateral_lower, inner_central_lower, lower_z],
                     ]
 
                 case 'left':
-                    self._vertices = [
-                        Vector([- total_central, total_lateral, mid_z]),
-                        Vector([-total_central, -total_lateral, mid_z]),
-                        Vector([-inner_central_upper, inner_lateral_upper, upper_z]),
-                        Vector([-inner_central_upper, -inner_lateral_upper, upper_z]),
-                        Vector([-inner_central_lower, inner_lateral_lower, lower_z]),
-                        Vector([-inner_central_lower, -inner_lateral_lower, lower_z]),
+                    self.points = [
+                        [- total_central, total_lateral, mid_z],
+                        [-total_central, -total_lateral, mid_z],
+                        [-inner_central_upper, inner_lateral_upper, upper_z],
+                        [-inner_central_upper, -inner_lateral_upper, upper_z],
+                        [-inner_central_lower, inner_lateral_lower, lower_z],
+                        [-inner_central_lower, -inner_lateral_lower, lower_z],
                     ]
 
                 case 'back':
-                    self._vertices = [
-                        Vector([total_lateral, -total_central, mid_z]),
-                        Vector([-total_lateral, -total_central, mid_z]),
-                        Vector([inner_lateral_upper, -inner_central_upper, upper_z]),
-                        Vector([-inner_lateral_upper, -inner_central_upper, upper_z]),
-                        Vector([inner_lateral_lower, -inner_central_lower, lower_z]),
-                        Vector([-inner_lateral_lower, -inner_central_lower, lower_z]),
+                    self.points = [
+                        [total_lateral, -total_central, mid_z],
+                        [-total_lateral, -total_central, mid_z],
+                        [inner_lateral_upper, -inner_central_upper, upper_z],
+                        [-inner_lateral_upper, -inner_central_upper, upper_z],
+                        [inner_lateral_lower, -inner_central_lower, lower_z],
+                        [-inner_lateral_lower, -inner_central_lower, lower_z],
                     ]
 
         else:
-            self._vertices = dimensions
-            self.area = calculate_area_3D(self._vertices)
+            self.points = dimensions
+            self.area = calculate_area_3D(self.points)
             self.volume = self.area * self.thickness
 
 
@@ -381,7 +434,8 @@ class Plate():
 
         induced_matrix = Matrix.zeros()
         diff_magnetic = self.relative_magnetic_permeability - 1.0
-        num_vertices = len(self._vertices)
+        num_vertices = len(self.points)
+        print(num_vertices)
         dV = self.volume / num_vertices
         dipole_scalar = (diff_magnetic * dV) / (4.0 * np.pi) 
 
@@ -394,13 +448,11 @@ class Plate():
             raise ValueError('Position Vector can only be a tuple, list or Vector')
 
 
-        for _vertex in self._vertices: 
+        for point in self.points: 
 
-            r_V = position_vector - _vertex 
+            r_V = position_vector - Vector(point) 
             r = abs(r_V)
             r_unit = r_V / r 
-
-
             
             rx, ry, rz = r_unit[0], r_unit[1], r_unit[2]
 
