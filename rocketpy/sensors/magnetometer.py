@@ -327,6 +327,7 @@ class Magnetometer(InertialSensor):
 
         '''
         
+        self.magnetic_interference = [0, 0, 0]
 
         if isinstance(power_interference, (int,float)):
 
@@ -672,8 +673,8 @@ class Magnetometer(InertialSensor):
         
         self.magnetic_interference = [0, 0, 0]
 
-        B = self.apply_soft_iron(B)
-        B = self.apply_hard_iron(B)                                                                                      # T
+        B = self.apply_soft_iron(B)                                                                                   # T
+        B = self.apply_hard_iron(B)                                                                                   # T
         B = self.apply_power_interference(B, rocket, parachute_events, burn_start_time, initial_time, current_time)   # T
 
 
@@ -713,19 +714,22 @@ class Magnetometer(InertialSensor):
 
         if self.initial_soft_iron_distortion == 'plates':
             if self._soft_iron_distortion == Matrix.zeros():
+
                 for plate in rocket.plates:
                     if not self.sensor_from_cso_t in plate._magnetic_distortion_matrixes: 
 
                         plate.calculate_soft_iron_distortion_matrix(self._sensor_from_cso)
                         self._soft_iron_distortion  = self._soft_iron_distortion + plate._magnetic_distortion_matrixes[self.sensor_from_cso_t]
 
-                B = B * self._soft_iron_distortion
+                B = self._soft_iron_distortion @ B
 
             else:
-                B = B *  self._soft_iron_distortion
+                B = self._soft_iron_distortion @ B
 
         elif self.initial_soft_iron_distortion == 'number':
-            B = B * self._soft_iron_distortion
+            B = self._soft_iron_distortion @ B
+
+        return B 
     
     
 
@@ -852,13 +856,13 @@ class Magnetometer(InertialSensor):
                                                         self.communications_interference[1] + communication_wire.magnetic_field[self.sensor_from_cso_t][1], 
                                                         self.communications_interference[2] + communication_wire.magnetic_field[self.sensor_from_cso_t][2]
                                                         ]
-                        
-
+                    
                     self._communications_interference = Vector(self.communications_interference)
                     B = B + self._communications_interference
 
                 else:
                     B = B + self._communications_interference
+
 
             else:
                 raise ValueError('You must define first some communication wires, to be able to consider the magnetic distrubance cretaed by them')
