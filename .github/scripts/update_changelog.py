@@ -37,7 +37,11 @@ import sys
 
 REPO = "RocketPy-Team/RocketPy"
 PULL_URL = f"https://github.com/{REPO}/pull"
-MODEL = "gemini-2.5-flash"
+# Alias for the newest stable "flash" model. Using the alias (rather than a
+# pinned version like gemini-3.6-flash) keeps the job working when a specific
+# version is retired -- pinned gemini-2.5-flash already became unavailable to
+# new API keys. Output is validated regardless, so model drift is safe here.
+MODEL = "gemini-flash-latest"
 
 # Max characters the LLM-rewritten block may grow relative to the original.
 # One new entry plus light reformatting; anything larger is treated as suspect.
