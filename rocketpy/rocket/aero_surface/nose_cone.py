@@ -479,42 +479,14 @@ class NoseCone(AeroSurface):
             - the origin at the tip of the nose cone and
             - the Z axis along the longitudinal axis of symmetry, positive downwards (top -> bottom).
         '''
-        radius_list = []
-        r_prev = np.inf
-        num_points = 0
-        added = False
 
-        for x, y in np.column_stack(self.shape_vec):
-
-            r = m.hypot(x, y) 
-            if r_prev - 1e-3 < r < r_prev + 1e-3:
-                num_points = num_points + 1
-
-                if num_points >= 10 and added == False: 
-                    radius_list.append(r)
-                    added = True
-            else:
-                r_prev = r
-                num_points = 0
-                added = False
-
-        z_list = list(np.linspace(0, self.length, len(radius_list)))
-        
-        data = np.column_stack((z_list, radius_list))
-        print(data)
+        data = np.column_stack(self.shape_vec)
 
         return Function(
                 data,
                 inputs = 'z',
                 outputs = 'nose_radius')
     
-
-        
-
-
-
-        
-
 
 
             

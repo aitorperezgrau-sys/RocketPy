@@ -194,213 +194,325 @@ class Plate():
 
         if shape == 'squared': 
             
+            
             self.area = dimensions * dimensions
             self.volume = self.area * self.thickness
 
             upper_z = height + dimensions / 2.0
             lower_z = height - dimensions / 2.0
             
+
             match position:
+
                 case 'rigth':
+
+                    self.points = []
                     
-                    for z in np.linspace(lower_z, upper_z, 50):
-                        points = []
+                    for z in np.linspace(lower_z, upper_z, 25):
+                        z_points = []
 
                         if z > limiting_z_nose_cone:
-                            z_local = abs(nose_tip_from_cso - (height + z))
+                            z_local = abs(nose_cone.length - (z - limiting_z_nose_cone))
                             r = nose_cone.radius(z_local)
 
                         else: 
                             r = rocket.radius
+                        
+                        if dimensions > np.pi * r:
+                            raise ValueError('The side length cannot be bigger than the radius')
 
-                        angle = 2 * dimensions / r
+
+                        angle = dimensions / r
                         lateral = m.sin(angle / 2) * r
-                        central = m.cos(angle / 2) * r
 
                         y_init = - lateral
                         y_final = lateral
                 
-                        for y in np.linspace(y_init, y_final, 50):
-                            x = r ** 2 - y ** 2
-                            if len(points) <= 25:
-                                points.append([x,-y,z])
-                            else:
-                                points.append([x,y,z])                  
+                        for y in np.linspace(y_init, y_final, 25):
+
+                            x = m.sqrt(r ** 2 - y ** 2)  
+                            z_points.append([x, y, z])
+                                
+                        self.points.extend(z_points)           
 
 
                 case 'front':
-                    
-                    for z in np.linspace(lower_z, upper_z, 50):
-                        points = []
+
+                    self.points = []
+
+                    for z in np.linspace(lower_z, upper_z, 25):
+                        z_points = []
 
                         if z > limiting_z_nose_cone:
-                            z_local = abs(nose_tip_from_cso - (height + z))
+                            z_local = abs(nose_cone.length - (z - limiting_z_nose_cone))
                             r = nose_cone.radius(z_local)
 
                         else: 
                             r = rocket.radius
+
+                        if dimensions > np.pi * r:
+                            raise ValueError('The side length cannot be bigger than the radius')
                         
-                        angle = 2 * dimensions / r
+                        angle = dimensions / r
                         lateral = m.sin(angle / 2) * r
-                        central = m.cos(angle / 2) * r
 
                         x_init = lateral
                         x_final = - lateral
                 
-                        for x in np.linspace(x_init, x_final, 50):
-                            y = r ** 2 - x ** 2
+                        for x in np.linspace(x_init, x_final, 25):
 
-                            if len(points) <= 25:
-                                points.append([-x,y,z])
-                            else:
-                                points.append([x,y,z])                  
+                            y = m.sqrt(r ** 2 - x ** 2)
+                            z_points.append([x, y, z])
+
+                        self.points.extend(z_points)
+                        
+                                      
 
 
 
                 case 'left': 
+
+                    self.points = []
                     
-                    for z in np.linspace(lower_z, upper_z, 50):
-                        points = []
+                    for z in np.linspace(lower_z, upper_z, 25):
+                        z_points = []
 
                         if z > limiting_z_nose_cone:
-                            z_local = abs(nose_tip_from_cso - (height + z))
+                            z_local = abs(nose_cone.length - (z - limiting_z_nose_cone))
                             r = nose_cone.radius(z_local)
 
                         else: 
                             r = rocket.radius
 
-                        angle = 2 * dimensions / r
+                        if dimensions > np.pi * r:
+                            raise ValueError('The side length cannot be bigger than the radius')
+                        
+                        angle = dimensions / r
                         lateral = m.sin(angle / 2) * r
-                        central = m.cos(angle / 2) * r
 
                         y_init = lateral
                         y_final = - lateral
 
-                        for y in np.linspace(y_init, y_final, 50):
-                            x = r ** 2 - y ** 2
-                            if len(points) <= 25:
-                                points.append([x,y,z])
-                            else:
-                                points.append([x,-y,z])                  
+                        for y in np.linspace(y_init, y_final, 25):
+
+                            x = m.sqrt(r ** 2 - y ** 2)
+                            z_points.append([x, y, z])
+                            
+                        self.points.extend(z_points)
+                                 
 
 
 
                 case 'back':
+                    self.points = []
                     
-                    for z in np.linspace(lower_z, upper_z, 50):
-                        points = []
+                    for z in np.linspace(lower_z, upper_z, 25):
+
+                        z_points = []
 
                         if z > limiting_z_nose_cone:
-                            z_local = abs(nose_tip_from_cso - (height + z))
+
+                            z_local = abs(nose_cone.length - (z - limiting_z_nose_cone))
                             r = nose_cone.radius(z_local)
 
+
                         else: 
-                            r = rocket.radius
+                            r = rocket.radius 
+
                         
-                        angle = 2 * dimensions / r
+                        if dimensions > np.pi * r:
+                            raise ValueError(f'The side length, {dimensions} cannot be bigger than half of the perimeter for a given radius {r}')      
+                                         
+                        angle = dimensions / r
                         lateral = m.sin(angle / 2) * r
-                        central = m.cos(angle / 2) * r
 
                         x_init = - lateral
                         x_final = lateral
 
-                        for x in np.linspace(x_init, x_final, 50):
-                            y = r ** 2 - x ** 2
+                        for x in np.linspace(x_init, x_final, 25):
 
-                            if len(points) <= 25:
-                                points.append([-x,y,z])
-                            else:
-                                points.append([x,y,z])      
+                            y = -m.sqrt(r ** 2 - x ** 2) 
+                            z_points.append([x, y, z])
 
-            self.points = points
+                        self.points.extend(z_points)   
 
+
+            
 
         elif shape == 'circular': 
 
             self.area = np.pi * (dimensions ** 2)
             self.volume = self.area * self.thickness
 
-            z_offset_abs = m.cos(np.pi / 3) * (dimensions / 2)
-            upper_z = height + z_offset_abs
-            mid_z = height
-            lower_z = height - z_offset_abs
+            upper_z = height + dimensions 
+            lower_z = height - dimensions 
+            center_z = (lower_z + upper_z) / 2
 
-            # upper radius
-            if upper_z > limiting_z_nose_cone:
-                z_local = abs(nose_tip_from_cso - (height + upper_z))
-                r_upper = nose_cone.radius(z_local)
-            else: 
-                r_upper = rocket.radius
 
-            # mid radius
-            if mid_z > limiting_z_nose_cone:
-                z_local = abs(nose_tip_from_cso - (height + mid_z))
-                r_mid = nose_cone.radius(z_local)
-            else: 
-                r_mid = rocket.radius
-
-            # lower radius
-            if lower_z > limiting_z_nose_cone:
-                z_local = abs(nose_tip_from_cso - (height + lower_z))
-                r_lower = nose_cone.radius(z_local)
-            else: 
-                r_lower = rocket.radius
-
-            # Mid-level calculations
-            total_angle = 2 * dimensions / r_mid
-            total_lateral = m.sin(total_angle / 2) * r_mid
-            total_central = m.cos(total_angle / 2) * r_mid
-
-            # Upper and Lower inner angle calculations
-            inner_angle_upper = (dimensions / 2) / r_upper
-            inner_lateral_upper = m.sin(inner_angle_upper / 2) * r_upper
-            inner_central_upper = m.cos(inner_angle_upper / 2) * r_upper
-
-            inner_angle_lower = (dimensions / 2) / r_lower
-            inner_lateral_lower = m.sin(inner_angle_lower / 2) * r_lower
-            inner_central_lower = m.cos(inner_angle_lower / 2) * r_lower      
-            
             match position:
 
                 case 'right':
-                    self.points = [
-                        [total_central, total_lateral, mid_z],
-                        [total_central, -total_lateral, mid_z],
-                        [inner_central_upper, inner_lateral_upper, upper_z],
-                        [inner_central_upper, -inner_lateral_upper, upper_z],
-                        [inner_central_lower, inner_lateral_lower, lower_z],
-                        [inner_central_lower, -inner_lateral_lower, lower_z],
-                    ]
+
+                    self.points = []
+
+                    for z in np.linspace(lower_z, upper_z, 25):
+
+                        z_points = []
+
+                        if z > limiting_z_nose_cone:
+                            z_local = abs(nose_cone.length - (z - limiting_z_nose_cone))
+                            r = nose_cone.radius(z_local)
+                        else: 
+                            r = rocket.radius 
+
+                        dz = z - center_z
+
+                        inside_sqrt = dimensions ** 2 - dz ** 2
+                        if inside_sqrt < 0:
+                            inside_sqrt = 0
+
+                        arc_length = 2 * m.sqrt(inside_sqrt)
+                        
+                        if arc_length > np.pi * r:
+                            raise ValueError(f'The side length, {arc_length} cannot be bigger than half of the perimeter for a given radius {r}')      
+
+                        angle = arc_length / r
+                        lateral = m.sin(angle / 2) * r
+
+                        y_init = - lateral
+                        y_final = lateral
+
+                        for y in np.linspace(y_init, y_final, 25):
+
+                            x = m.sqrt(r ** 2 - y ** 2) 
+                            z_points.append([x, y, z])
+
+                        self.points.extend(z_points)  
+
 
                 case 'front':
-                    self.points = [
-                        [total_lateral, total_central, mid_z],
-                        [-total_lateral, total_central, mid_z],
-                        [inner_lateral_upper, inner_central_upper, upper_z],
-                        [-inner_lateral_upper, inner_central_upper, upper_z],
-                        [inner_lateral_lower, inner_central_lower, lower_z],
-                        [-inner_lateral_lower, inner_central_lower, lower_z],
-                    ]
+
+                    self.points = []
+                    
+                    for z in np.linspace(lower_z, upper_z, 25):
+
+                        z_points = []
+
+                        if z > limiting_z_nose_cone:
+                            z_local = abs(nose_cone.length - (z - limiting_z_nose_cone))
+                            r = nose_cone.radius(z_local)
+                        else: 
+                            r = rocket.radius 
+
+                        dz = z - center_z
+
+                        inside_sqrt = dimensions ** 2 - dz ** 2
+                        if inside_sqrt < 0:
+                            inside_sqrt = 0
+
+                        inside_sqrt = dimensions ** 2 - dz ** 2
+                        if inside_sqrt < 0:
+                            inside_sqrt = 0
+
+                        arc_length = 2 * m.sqrt(inside_sqrt)
+                        
+                        if arc_length > np.pi * r:
+                            raise ValueError(f'The side length, {arc_length} cannot be bigger than half of the perimeter for a given radius {r}')      
+
+                        angle = arc_length / r
+                        lateral = m.sin(angle / 2) * r
+
+                        x_init = lateral
+                        x_final = - lateral
+
+                        for x in np.linspace(x_init, x_final, 25):
+
+                            y = m.sqrt(r ** 2 - x ** 2) 
+                            z_points.append([x, y, z])
+
+                        self.points.extend(z_points)   
+
+
 
                 case 'left':
-                    self.points = [
-                        [- total_central, total_lateral, mid_z],
-                        [-total_central, -total_lateral, mid_z],
-                        [-inner_central_upper, inner_lateral_upper, upper_z],
-                        [-inner_central_upper, -inner_lateral_upper, upper_z],
-                        [-inner_central_lower, inner_lateral_lower, lower_z],
-                        [-inner_central_lower, -inner_lateral_lower, lower_z],
-                    ]
+
+                    self.points = []
+
+                    for z in np.linspace(lower_z, upper_z, 25):
+
+                        z_points = []
+
+                        if z > limiting_z_nose_cone:
+                            z_local = abs(nose_cone.length - (z - limiting_z_nose_cone))
+                            r = nose_cone.radius(z_local)
+                        else: 
+                            r = rocket.radius 
+
+                        dz = z - center_z
+
+                        inside_sqrt = dimensions ** 2 - dz ** 2
+                        if inside_sqrt < 0:
+                            inside_sqrt = 0
+
+                        arc_length = 2 * m.sqrt(inside_sqrt)      
+                                      
+                        if arc_length > np.pi * r:
+                            raise ValueError(f'The side length, {arc_length} cannot be bigger than half of the perimeter for a given radius {r}')      
+
+                        angle = arc_length / r
+                        lateral = m.sin(angle / 2) * r
+
+                        y_init = lateral
+                        y_final = - lateral
+
+                        for y in np.linspace(y_init, y_final, 25):
+
+                            x = - m.sqrt(r ** 2 - y ** 2) 
+                            z_points.append([x, y, z])
+
+                        self.points.extend(z_points)  
+
 
                 case 'back':
-                    self.points = [
-                        [total_lateral, -total_central, mid_z],
-                        [-total_lateral, -total_central, mid_z],
-                        [inner_lateral_upper, -inner_central_upper, upper_z],
-                        [-inner_lateral_upper, -inner_central_upper, upper_z],
-                        [inner_lateral_lower, -inner_central_lower, lower_z],
-                        [-inner_lateral_lower, -inner_central_lower, lower_z],
-                    ]
+
+                    self.points = []
+                    
+                    for z in np.linspace(lower_z, upper_z, 25):
+
+                        z_points = []
+
+                        if z > limiting_z_nose_cone:
+                            z_local = abs(nose_cone.length - (z - limiting_z_nose_cone))
+                            r = nose_cone.radius(z_local)
+                        else: 
+                            r = rocket.radius 
+
+                        dz = z - center_z
+
+                        inside_sqrt = dimensions ** 2 - dz ** 2
+                        if inside_sqrt < 0:
+                            inside_sqrt = 0
+
+                        arc_length = 2 * m.sqrt(inside_sqrt)
+                        
+                        if arc_length > np.pi * r:
+                            raise ValueError(f'The side length, {arc_length} cannot be bigger than half of the perimeter for a given radius {r}')      
+
+                        angle = arc_length / r
+                        lateral = m.sin(angle / 2) * r
+
+                        x_init = -lateral
+                        x_final = lateral
+
+                        for x in np.linspace(x_init, x_final, 25):
+
+                            y = - m.sqrt(r ** 2 - x ** 2) 
+                            z_points.append([x, y, z])
+
+                        self.points.extend(z_points)   
+
+
+
 
         else:
             self.points = dimensions
@@ -434,9 +546,9 @@ class Plate():
 
         induced_matrix = Matrix.zeros()
         diff_magnetic = self.relative_magnetic_permeability - 1.0
-        num_vertices = len(self.points)
-        print(num_vertices)
-        dV = self.volume / num_vertices
+        num_points = len(self.points)
+        print(num_points)
+        dV = self.volume / num_points
         dipole_scalar = (diff_magnetic * dV) / (4.0 * np.pi) 
 
 
@@ -463,10 +575,10 @@ class Plate():
             [rz * rx, rz * ry, rz * rz]
             ])
             
-            adjustment_dimensions = 1e-4
+
             dipole_kernel = (
             3.0 * projection_tensor - Matrix.identity()
-             ) / ((r ** 3) + adjustment_dimensions) 
+             ) / ((r ** 3)) 
 
             induced_matrix = induced_matrix + (dipole_scalar * dipole_kernel)
         
