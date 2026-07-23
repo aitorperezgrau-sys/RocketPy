@@ -148,6 +148,10 @@ class Wire():
             position vector of the point in which the magnetic field
             is going to be measured relative to the coordiante system origin choosen
             by the user. 
+
+        Returns:
+        ---------
+            None
         '''
         # definition of the required values
         if self.current_direction == 'anticlockwise':
@@ -211,6 +215,10 @@ class Wire():
 
             - If a tuple or float, it assumes that the wire genertes the given magnetic
               field. 
+
+        Returns:
+        ---------
+            None
         '''
         if isinstance(position_vector, (tuple, list, Vector)):
             if len(position_vector) == 3:
@@ -238,6 +246,10 @@ class Wire():
         wire_edges_from_cso: list, tuple, Vector formed by Vectors 
             containing the edges position relative to the the coordiante system
             origin. 
+
+        Returns:
+        -------
+            None
         '''
         
         if isinstance(wire_edges_from_cso, (list, tuple)):
@@ -255,6 +267,10 @@ class Wire():
         Data is a dictionary that must contain the same keys as the initialization
         parameter of the Wire class. In the case some parameter is not 
         defined, the default value matches the default intializaiton of the constructor
+
+        Returns:
+        ---------
+            Wire object
         '''
         return cls(
             # Mandatory Parameters 
