@@ -3,7 +3,7 @@ from rocketpy.rocket.aero_surface import NoseCone
 from rocketpy.mathutils import Vector, Matrix
 import math as m
 import numpy as np
-from rocketpy.tools import calculate_area_3D
+from matplotlib.path import Path  
 
 
 
@@ -126,7 +126,7 @@ class Plate():
             self.thickness = thickness
     
 
-    def define_plate_position(self, shape, dimensions, position, height, rocket):
+    def define_plate_position(self, shape, dimensions, position, height, rocket, grid_spacing):
         '''
         This function defines the geometry of the plate
         with respect to the cso from the shape, position,
@@ -175,8 +175,9 @@ class Plate():
 
         rocket: Rocket
             RocketPy class.
+        grid_spacing: 
+            spaces between grid points, for the personalized case
         '''
- 
         # definition of the position of the NoseCone relative to the cso
         nose_cone = None
 
@@ -194,160 +195,84 @@ class Plate():
 
         if shape == 'squared': 
             
-            
+            self.generate_points(shape, dimensions, position, height, rocket, grid_spacing)
             self.area = dimensions * dimensions
             self.volume = self.area * self.thickness
 
-            upper_z = height + dimensions / 2.0
-            lower_z = height - dimensions / 2.0
             
-
-            match position:
-
-                case 'rigth':
-
-                    self.points = []
-                    
-                    for z in np.linspace(lower_z, upper_z, 25):
-                        z_points = []
-
-                        if z > limiting_z_nose_cone:
-                            z_local = abs(nose_cone.length - (z - limiting_z_nose_cone))
-                            r = nose_cone.radius(z_local)
-
-                        else: 
-                            r = rocket.radius
-                        
-                        if dimensions > np.pi * r:
-                            raise ValueError('The side length cannot be bigger than the radius')
-
-
-                        angle = dimensions / r
-                        lateral = m.sin(angle / 2) * r
-
-                        y_init = - lateral
-                        y_final = lateral
-                
-                        for y in np.linspace(y_init, y_final, 25):
-
-                            x = m.sqrt(r ** 2 - y ** 2)  
-                            z_points.append([x, y, z])
-                                
-                        self.points.extend(z_points)           
-
-
-                case 'front':
-
-                    self.points = []
-
-                    for z in np.linspace(lower_z, upper_z, 25):
-                        z_points = []
-
-                        if z > limiting_z_nose_cone:
-                            z_local = abs(nose_cone.length - (z - limiting_z_nose_cone))
-                            r = nose_cone.radius(z_local)
-
-                        else: 
-                            r = rocket.radius
-
-                        if dimensions > np.pi * r:
-                            raise ValueError('The side length cannot be bigger than the radius')
-                        
-                        angle = dimensions / r
-                        lateral = m.sin(angle / 2) * r
-
-                        x_init = lateral
-                        x_final = - lateral
-                
-                        for x in np.linspace(x_init, x_final, 25):
-
-                            y = m.sqrt(r ** 2 - x ** 2)
-                            z_points.append([x, y, z])
-
-                        self.points.extend(z_points)
-                        
-                                      
-
-
-
-                case 'left': 
-
-                    self.points = []
-                    
-                    for z in np.linspace(lower_z, upper_z, 25):
-                        z_points = []
-
-                        if z > limiting_z_nose_cone:
-                            z_local = abs(nose_cone.length - (z - limiting_z_nose_cone))
-                            r = nose_cone.radius(z_local)
-
-                        else: 
-                            r = rocket.radius
-
-                        if dimensions > np.pi * r:
-                            raise ValueError('The side length cannot be bigger than the radius')
-                        
-                        angle = dimensions / r
-                        lateral = m.sin(angle / 2) * r
-
-                        y_init = lateral
-                        y_final = - lateral
-
-                        for y in np.linspace(y_init, y_final, 25):
-
-                            x = m.sqrt(r ** 2 - y ** 2)
-                            z_points.append([x, y, z])
-                            
-                        self.points.extend(z_points)
-                                 
-
-
-
-                case 'back':
-                    self.points = []
-                    
-                    for z in np.linspace(lower_z, upper_z, 25):
-
-                        z_points = []
-
-                        if z > limiting_z_nose_cone:
-
-                            z_local = abs(nose_cone.length - (z - limiting_z_nose_cone))
-                            r = nose_cone.radius(z_local)
-
-
-                        else: 
-                            r = rocket.radius 
-
-                        
-                        if dimensions > np.pi * r:
-                            raise ValueError(f'The side length, {dimensions} cannot be bigger than half of the perimeter for a given radius {r}')      
-                                         
-                        angle = dimensions / r
-                        lateral = m.sin(angle / 2) * r
-
-                        x_init = - lateral
-                        x_final = lateral
-
-                        for x in np.linspace(x_init, x_final, 25):
-
-                            y = -m.sqrt(r ** 2 - x ** 2) 
-                            z_points.append([x, y, z])
-
-                        self.points.extend(z_points)   
-
-
-            
-
         elif shape == 'circular': 
 
+            self.generate_points(shape, dimensions, position, height, rocket, grid_spacing)
             self.area = np.pi * (dimensions ** 2)
             self.volume = self.area * self.thickness
+
+        elif shape == 'personalized':
+
+            self.generate_points(shape, dimensions, position, height, rocket, grid_spacing)
+            self.area = len(self.points) * (grid_spacing ** 2) 
+            self.volume = self.area * self.thickness
+
+
+
+
+    def generate_points(self, shape, dimensions, position, height, rocket, grid_spacing):
+        '''
+        This function generates the points required to calculate the
+        soft iron distoriton matrix: 
+
+        Input:
+        ------------
+        shape: str
+            The shape of the plate, allowed parameters are:
+
+            'circular': then the plate is assumed to be 
+            a circle, and the input 'dimension' refers to
+            the radius
+            'squared': then the plate is assumed to be a 
+            square and the input 'dimensions' refers to the 
+            side 
+            'personalized': then the plate will have the shape 
+            specified by the vertices defined in 'dimensions'
+
+        dimensions: float, int, list
+            Dimensions of the plate, which depend on 'shape' 
+            definition:
+
+            When it is 'circular', the dimension is a float or int,
+            which represents the radius, when the shape is flat. 
+
+            when it is 'squared', the dimension is a float or int,
+            which represents the side lenght, when the shape is flat.
+
+            when it is 'personalized', dimensions must be a list
+            with the vertices that form the shape. The vertices
+            components are given as a Vector. 
+
+        position: str, optional
+            position of the plate, when the shape is not 'personalized'
+            Allowed entries are:
+            'left', 'right', 'back', 'front'
+            The plate will be located with the geometric center
+            along the chosen lateral position, which is defined based
+            on the coordinate system origin. 
+
+        height: float, int, optional
+            Position of the geometric center of plate when the shape is not 
+            'personalized' along the z axis relative to the cso. 
+
+        rocket: Rocket
+            RocketPy class.
+
+        grid_spacing: 
+            spaces between grid points, for the personalized case
+
+        '''
+
+        if shape == 'circular':
 
             upper_z = height + dimensions 
             lower_z = height - dimensions 
             center_z = (lower_z + upper_z) / 2
-
 
             match position:
 
@@ -359,11 +284,7 @@ class Plate():
 
                         z_points = []
 
-                        if z > limiting_z_nose_cone:
-                            z_local = abs(nose_cone.length - (z - limiting_z_nose_cone))
-                            r = nose_cone.radius(z_local)
-                        else: 
-                            r = rocket.radius 
+                        r = rocket.general_radius(z)
 
                         dz = z - center_z
 
@@ -398,11 +319,7 @@ class Plate():
 
                         z_points = []
 
-                        if z > limiting_z_nose_cone:
-                            z_local = abs(nose_cone.length - (z - limiting_z_nose_cone))
-                            r = nose_cone.radius(z_local)
-                        else: 
-                            r = rocket.radius 
+                        r = rocket.general_radius(z)
 
                         dz = z - center_z
 
@@ -442,11 +359,7 @@ class Plate():
 
                         z_points = []
 
-                        if z > limiting_z_nose_cone:
-                            z_local = abs(nose_cone.length - (z - limiting_z_nose_cone))
-                            r = nose_cone.radius(z_local)
-                        else: 
-                            r = rocket.radius 
+                        r = rocket.general_radius(z)
 
                         dz = z - center_z
 
@@ -481,11 +394,7 @@ class Plate():
 
                         z_points = []
 
-                        if z > limiting_z_nose_cone:
-                            z_local = abs(nose_cone.length - (z - limiting_z_nose_cone))
-                            r = nose_cone.radius(z_local)
-                        else: 
-                            r = rocket.radius 
+                        r = rocket.general_radius(z)
 
                         dz = z - center_z
 
@@ -511,28 +420,225 @@ class Plate():
 
                         self.points.extend(z_points)   
 
+        elif shape == 'squared':
+
+            upper_z = height + dimensions / 2.0
+            lower_z = height - dimensions / 2.0
+
+            match position:
+
+                case 'rigth':
+
+                    self.points = []
+                    
+                    for z in np.linspace(lower_z, upper_z, 25):
+                        z_points = []
+
+                        r = rocket.general_radius(z)
+                        
+                        if dimensions > np.pi * r:
+                            raise ValueError('The side length cannot be bigger than the radius')
+
+
+                        angle = dimensions / r
+                        lateral = m.sin(angle / 2) * r
+
+                        y_init = - lateral
+                        y_final = lateral
+                
+                        for y in np.linspace(y_init, y_final, 25):
+
+                            x = m.sqrt(r ** 2 - y ** 2)  
+                            z_points.append([x, y, z])
+                                
+                        self.points.extend(z_points)           
+
+
+                case 'front':
+
+                    self.points = []
+
+                    for z in np.linspace(lower_z, upper_z, 25):
+                        z_points = []
+
+                        r = rocket.general_radius(z)
+
+                        if dimensions > np.pi * r:
+                            raise ValueError('The side length cannot be bigger than the radius')
+                        
+                        angle = dimensions / r
+                        lateral = m.sin(angle / 2) * r
+
+                        x_init = lateral
+                        x_final = - lateral
+                
+                        for x in np.linspace(x_init, x_final, 25):
+
+                            y = m.sqrt(r ** 2 - x ** 2)
+                            z_points.append([x, y, z])
+
+                        self.points.extend(z_points)
+                        
+                                      
 
 
 
-        else:
-            self.points = dimensions
-            self.area = calculate_area_3D(self.points)
-            self.volume = self.area * self.thickness
+                case 'left': 
+
+                    self.points = []
+                    
+                    for z in np.linspace(lower_z, upper_z, 25):
+                        z_points = []
+
+                        r = rocket.general_radius(z)
+
+                        if dimensions > np.pi * r:
+                            raise ValueError('The side length cannot be bigger than the radius')
+                        
+                        angle = dimensions / r
+                        lateral = m.sin(angle / 2) * r
+
+                        y_init = lateral
+                        y_final = - lateral
+
+                        for y in np.linspace(y_init, y_final, 25):
+
+                            x = m.sqrt(r ** 2 - y ** 2)
+                            z_points.append([x, y, z])
+                            
+                        self.points.extend(z_points)
+                                 
 
 
 
+                case 'back':
+                    self.points = []
+                    
+                    for z in np.linspace(lower_z, upper_z, 25):
+
+                        z_points = []
+
+                        r = rocket.general_radius(z)
+                        
+                        if dimensions > np.pi * r:
+                            raise ValueError(f'The side length, {dimensions} cannot be bigger than half of the perimeter for a given radius {r}')      
+                                         
+                        angle = dimensions / r
+                        lateral = m.sin(angle / 2) * r
+
+                        x_init = - lateral
+                        x_final = lateral
+
+                        for x in np.linspace(x_init, x_final, 25):
+
+                            y = -m.sqrt(r ** 2 - x ** 2) 
+                            z_points.append([x, y, z])
+
+                        self.points.extend(z_points)   
+
+
+
+        elif shape == 'personalized':
+            self.generate_personalized_internal_plate(dimensions, rocket.general_radius, grid_spacing)
+
+
+
+
+    def generate_personalized_internal_plate(self, vertices_3d, radius_func, grid_spacing):
+        '''
+        Generates a 3D grid of points bounded by an arbitrary set of vertices,
+        forced flat, and filtered to remain inside the rocket hull.
         
-    
+        Parameters:
+        - vertices_3d: list of lists or tuples [[X1, Y1, Z1], [X2, Y2, Z2], ...]
+        - radius_func: A callable function that takes Z and returns the rocket radius
+        - grid_spacing: Distance between generated points (in your native units, e.g., meters)
+        '''
+        # looking if the input values are outside the rocket
+        for point in vertices_3d:
+            x = point[0]
+            y = point[1]
+            z = point[2]
+            r_point = m.sqrt(x ** 2 + y ** 2)
+            r_rocket = radius_func(z)
+            if r_point > r_rocket: #the function that calculates the radius as a funciton of z, already determines if the z is outside the range of the rocket
+                raise ValueError(f'The point: {point} is outside the rocket, it has a radius of {r_point} while the rocket at that z has a radius of {r_rocket}')
 
-    
+
+        pts = np.array(vertices_3d)
+        
+        centroid = np.mean(pts, axis=0)
+        centered_pts = pts - centroid
+
+        _, _, Vh = np.linalg.svd(centered_pts)
+        normal = Vh[2, :]
+
+        if np.abs(normal[0]) > 0.5 or np.abs(normal[1]) > 0.5:
+            arbitrary_vec = np.array([0, 0, 1])
+        else:
+            arbitrary_vec = np.array([1, 0, 0])
+            
+        u_vec = np.cross(normal, arbitrary_vec)
+        u_vec /= np.linalg.norm(u_vec)
+        v_vec = np.cross(normal, u_vec)
+        
+
+        u_coords = np.dot(centered_pts, u_vec)
+        v_coords = np.dot(centered_pts, v_vec)
+        uv_vertices = np.column_stack((u_coords, v_coords))
+        
+        plate_path = Path(uv_vertices)
+        
+
+        u_min, u_max = np.min(u_coords), np.max(u_coords)
+        v_min, v_max = np.min(v_coords), np.max(v_coords)
+        
+        u_grid, v_grid = np.meshgrid(
+            np.arange(u_min, u_max, grid_spacing),
+            np.arange(v_min, v_max, grid_spacing)
+        )
+        
+        uv_test_points = np.column_stack((u_grid.ravel(), v_grid.ravel()))
+        
+        inside_mask = plate_path.contains_points(uv_test_points)
+        valid_uv = uv_test_points[inside_mask]
+        
+        u_valid = valid_uv[:, 0][:, np.newaxis]
+        v_valid = valid_uv[:, 1][:, np.newaxis]
+        
+        points_3d = centroid + (u_valid * u_vec) + (v_valid * v_vec)
+        
+        X = points_3d[:, 0]
+        Y = points_3d[:, 1]
+        Z = points_3d[:, 2]
+        
+        r_points = np.sqrt(X**2 + Y**2)
+        
+        v_radius_func = np.vectorize(radius_func)
+        
+        r_rocket_max = v_radius_func(Z)
+        
+        condition_inside_rocket = r_points < r_rocket_max
+        print(f"Generated grid points: {len(uv_test_points)}")
+        print(f"Points inside polygon: {len(valid_uv)}")
+        print(f"3D points: {len(points_3d)}")
+        print(f"Points inside rocket: {np.sum(condition_inside_rocket)}")
+        print("r_points:", np.min(r_points), np.max(r_points))
+        print("r_rocket:", np.min(r_rocket_max), np.max(r_rocket_max)) 
+
+
+        self.points = list(points_3d[condition_inside_rocket])
+
+
+
+
 
     def calculate_soft_iron_distortion_matrix(self, position_vector: Vector):
 
         '''
         This function allows to calculate the soft iron
-        distortion matrix from the position of the vertices 
+        distortion matrix from the position of the points 
         of the plate and the parameters defined for the surface. 
-
 
         input: 
         ------------
@@ -543,48 +649,57 @@ class Plate():
             of the point in m for which we want to calculate the 
             soft iron distortion matrix. 
         '''
-
-        induced_matrix = Matrix.zeros()
-        diff_magnetic = self.relative_magnetic_permeability - 1.0
-        num_points = len(self.points)
-        print(num_points)
-        dV = self.volume / num_points
-        dipole_scalar = (diff_magnetic * dV) / (4.0 * np.pi) 
-
-
-        if isinstance(position_vector, (list, tuple)):
-            position_vector = Vector(position_vector)
-        elif isinstance(position_vector, Vector):
-            position_vector = position_vector
-        else:
-            raise ValueError('Position Vector can only be a tuple, list or Vector')
-
-
-        for point in self.points: 
-
-            r_V = position_vector - Vector(point) 
-            r = abs(r_V)
-            r_unit = r_V / r 
+        print(type(self.points))
+        if isinstance(self.points, list):
             
-            rx, ry, rz = r_unit[0], r_unit[1], r_unit[2]
+            if self.points != []:
+
+                induced_matrix = Matrix.zeros()
+                diff_magnetic = self.relative_magnetic_permeability - 1.0
+                num_points = len(self.points)
+                print(num_points)
+                dV = self.volume / num_points
+                dipole_scalar = (diff_magnetic * dV) / (4.0 * np.pi) 
 
 
-            projection_tensor = Matrix([
-            [rx * rx, rx * ry, rx * rz],
-            [ry * rx, ry * ry, ry * rz],
-            [rz * rx, rz * ry, rz * rz]
-            ])
+                if isinstance(position_vector, (list, tuple)):
+                    position_vector = Vector(position_vector)
+                elif isinstance(position_vector, Vector):
+                    position_vector = position_vector
+                else:
+                    raise ValueError('Position Vector can only be a tuple, list or Vector')
+
+
+                for point in self.points: 
+
+                    r_V = position_vector - Vector(point) 
+                    r = abs(r_V)
+                    r_unit = r_V / r 
+                    
+                    rx, ry, rz = r_unit[0], r_unit[1], r_unit[2]
+
+
+                    projection_tensor = Matrix([
+                    [rx * rx, rx * ry, rx * rz],
+                    [ry * rx, ry * ry, ry * rz],
+                    [rz * rx, rz * ry, rz * rz]
+                    ])
+                    
+
+                    dipole_kernel = (
+                    3.0 * projection_tensor - Matrix.identity()
+                    ) / ((r ** 3)) 
+
+                    induced_matrix = induced_matrix + (dipole_scalar * dipole_kernel)
+                
+                distortion_matrix = Matrix.identity() + induced_matrix 
+
+                self._magnetic_distortion_matrixes[tuple(position_vector)] = distortion_matrix
+
+            else:
+                raise ValueError('To calculate the soft iron distortion matrix, first the plate must be added to the rocket, points list cannot be empty')
             
-
-            dipole_kernel = (
-            3.0 * projection_tensor - Matrix.identity()
-             ) / ((r ** 3)) 
-
-            induced_matrix = induced_matrix + (dipole_scalar * dipole_kernel)
-        
-        distortion_matrix = Matrix.identity() + induced_matrix 
-
-        self._magnetic_distortion_matrixes[tuple(position_vector)] = distortion_matrix
+        else: raise ValueError('The points defining the plate must be a list')
 
 
 
@@ -606,3 +721,8 @@ class Plate():
             # Optional Parameter 
             absolute_magnetic_permeability = data.get('absolute_magnetic_permeability', None)
         )
+    
+
+
+            
+        

@@ -17,6 +17,7 @@ from rocketpy.exceptions import (
 from rocketpy.mathutils.function import Function
 from rocketpy.mathutils.vector_matrix import Matrix, Vector
 from rocketpy.motors.empty_motor import EmptyMotor
+from rocketpy.motors.motor import Motor
 from rocketpy.plots.rocket_plots import _RocketPlots
 from rocketpy.prints.rocket_prints import _RocketPrints
 from rocketpy.rocket.aero_surface import (
@@ -362,6 +363,10 @@ class Rocket:
         self.radius = radius
         self.area = np.pi * self.radius**2
 
+        #Other attributes
+        self._radius_function = None
+        self._nose_tip_from_cso = None
+
         # Eccentricity data initialization
         self.cm_eccentricity_x = 0
         self.cm_eccentricity_y = 0
@@ -506,7 +511,7 @@ class Rocket:
     @property
     def tails(self):
         """A list with all the tails currently added to the rocket"""
-        return self.aerodynamic_surfaces.get_by_type(Tail)
+        return self.aerodynamic_surfaces.get_by_type(Tail)   
 
     def evaluate_total_mass(self):
         """Calculates and returns the rocket's total mass. The total
@@ -1201,6 +1206,9 @@ class Rocket:
             self.rail_buttons.add(surface, position)
         else:
             self.aerodynamic_surfaces.add(surface, position)
+            if isinstance(surface, NoseCone):
+                self.nose_cone = surface
+                self._nose_tip_from_cso = position[2]
         self.__evaluate_single_surface_cp_to_cdm(surface, position)
 
     def add_surfaces(self, surfaces, positions):
@@ -1381,6 +1389,7 @@ class Rocket:
             name=name,
         )
         self.add_surfaces(nose, position)
+        
         return nose
 
     @deprecated(
@@ -1946,6 +1955,7 @@ class Rocket:
             dimensions,
             position = None,
             height = None,
+            grid_spacing = 0.001
         ):
 
         '''
@@ -1961,10 +1971,14 @@ class Rocket:
 
             'circular': then the plate is assumed to be 
             a circle, and the input 'dimension' refers to
-            the radius
+            the radius. The plate will be located in the 
+            rocket body or nose cone. 
+
             'squared': then the plate is assumed to be a 
             square and the input 'dimensions' refers to the 
-            side 
+            side. The plate will be located in the 
+            rocket body or nose cone. 
+
             'personalized': then the plate will have the shape 
             specified by the vertexes defined in 'dimensions'
 
@@ -1976,7 +1990,7 @@ class Rocket:
             which represents the radius, when the shape is flat. 
 
             when it is 'squared', the dimension is a float or int,
-            which represents the side lenght, when the shape is flat.
+            which represents the side length, when the shape is flat.
 
             when it is 'personalized', dimensions must be a list
             with lists as the vertixes that form the shape. They must be
@@ -1992,6 +2006,12 @@ class Rocket:
         height: float, int, optional,  when the shape is not 'personalized'
             Position of the plate when the shape is not 
             'personalized' along the z axis. 
+
+        grid_spacing: float, optional, 
+            it is used only when the shape is personalized and determines 
+            the space between the points of the approximated shape defined
+            by the vertices. 
+          
               
         '''
 
@@ -2051,32 +2071,22 @@ class Rocket:
                         else:
                             raise ValueError('The vertex must be defiened with 3 components')
                         
+                if not isinstance(grid_spacing, (float, int)):
+                    raise ValueError('Grid spacing must be a float or int')
 
-
-                
+                    
             else:
                 raise ValueError('The accepted shapes are circular, squared and personalized')
         else:
             raise ValueError('The shape must be defined as a string')
-                
+        
 
-        plate.define_plate_position(shape, dimensions, position, height, self)
+        plate.define_plate_position(shape, dimensions, position, height, self, grid_spacing)
         self.plates.append(plate)
         
         
 
-            
-
-
-
-                
-                
-
-                    
-
-
-
-        
+    
 
 
     def add_air_brakes(
@@ -2423,6 +2433,79 @@ class Rocket:
             and webp (these are the formats supported by matplotlib).
         """
         self.plots.draw(vis_args, plane, filename=filename)
+
+
+
+    def general_radius(self, z: float):
+        '''
+        Function return the radius of the rocket, including the
+        nose cone and the radius variations in the body, as a function of 
+        the distance along the z axis from the coordiante system
+        origin
+
+        Input:
+        ----------------
+        z: float, int
+            Position along the z axis relative to the cso
+            in which we want to calculate the radius
+        
+        Returns:
+        r: float, int
+            Radius for the z value in the whole rocket
+
+        '''
+
+
+        if isinstance(z, (float, int)):
+
+           
+
+            if  not isinstance(self.nose_cone, NoseCone):
+                raise ValueError('Define a nose cone first')
+            
+            if not isinstance(self.motor, Motor):
+                raise ValueError('Define a nose cone first')
+
+
+            z_min = min(self._nose_tip_from_cso, self.motor_position)
+            z_max = max(self._nose_tip_from_cso, self.motor_position)
+
+            if z < z_min or z > z_max:
+                raise ValueError('Define a position inside the rocket')
+            
+            distance_from_nose = abs(z - self._nose_tip_from_cso)
+
+            if distance_from_nose <= self.nose_cone.length:
+                r = self.nose_cone.radius(distance_from_nose)
+            else:
+                r = self._calculate_radius_z_intermediate(z)
+
+        else: 
+            raise ValueError('The z component must be a float or int')
+        return r
+
+
+    def _calculate_radius_z_intermediate(self, z: float):
+        '''
+        This is an auxiliary funciton that calcualtes the radius of the 
+        rocket in the body, thus z must be bellow the nose cone
+
+        Input:
+        ----------------
+        z: float, int
+            Position along the z axis relative to the cso
+            in which we want to calculate the radius
+        
+        Returns:
+        r: float, int
+            Radius for the z value
+        '''
+
+        r = self.radius
+        
+        return r 
+        
+
 
     def info(self):
         """Prints out a summary of the data and graphs available about
