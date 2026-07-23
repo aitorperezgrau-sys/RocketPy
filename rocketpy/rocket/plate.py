@@ -52,17 +52,13 @@ class Plate():
         to the cso. 
 
     '''
-    
-
     def __init__(
             self,
             material,
             thickness, 
             absolute_magnetic_permeability = None
     ):
-    
         '''
-
         Parameters:
         --------------
 
@@ -79,41 +75,29 @@ class Plate():
             Magnetic permeability of the material, which is 
             the measure of a material abilty to allow magnetic
             field lines to pass through it. 
-        '''
 
+        '''
         self._magnetic_distortion_matrixes = {}
         self.points = []
 
         if isinstance(material, str):
-
             if material == 'iron':
-
                 self.material = 'iron'
                 self.absolute_magnetic_permeability = 1.25e-3
-               
             elif material == 'carbon_steel':
-
                 self.material = 'carbon_steel'
                 self.absolute_magnetic_permeability = 1.2e-4
-
             elif material == 'personalized':
-
                 self.material = 'personalized'
 
                 if absolute_magnetic_permeability == None:
-
                     raise ValueError('The magnetic permeability is compulsory when personalized is chosen')
-                
                 elif not isinstance(absolute_magnetic_permeability, (int, float)):
-
                     raise ValueError('The magnetic permeability must be an int or float')
-                
                 else:
                     self.absolute_magnetic_permeability = absolute_magnetic_permeability
-
             else:
                 raise ValueError('Material argument can only be iron, carbon_steel or personalized')
-
         else: 
             raise ValueError('material argument can only be a string')
 
@@ -177,42 +161,20 @@ class Plate():
             RocketPy class.
         grid_spacing: 
             spaces between grid points, for the personalized case
+
         '''
-        # definition of the position of the NoseCone relative to the cso
-        nose_cone = None
-
-        for aerodynamic_surface, _position_relative_to_cso in rocket.aerodynamic_surfaces:
-
-            if  isinstance(aerodynamic_surface, NoseCone):
-
-                nose_cone = aerodynamic_surface
-                nose_tip_from_cso = _position_relative_to_cso[2]
-                limiting_z_nose_cone = nose_tip_from_cso - nose_cone.length
- 
-        if nose_cone == None:
-            raise ValueError('To define the plate, first the nose cone must be added to the rocket.')
-
-
-        if shape == 'squared': 
-            
+        if shape == 'squared':
             self.generate_points(shape, dimensions, position, height, rocket, grid_spacing)
             self.area = dimensions * dimensions
             self.volume = self.area * self.thickness
-
-            
         elif shape == 'circular': 
-
             self.generate_points(shape, dimensions, position, height, rocket, grid_spacing)
             self.area = np.pi * (dimensions ** 2)
             self.volume = self.area * self.thickness
-
         elif shape == 'personalized':
-
             self.generate_points(shape, dimensions, position, height, rocket, grid_spacing)
             self.area = len(self.points) * (grid_spacing ** 2) 
             self.volume = self.area * self.thickness
-
-
 
 
     def generate_points(self, shape, dimensions, position, height, rocket, grid_spacing):
@@ -267,25 +229,17 @@ class Plate():
             spaces between grid points, for the personalized case
 
         '''
-
         if shape == 'circular':
-
             upper_z = height + dimensions 
             lower_z = height - dimensions 
             center_z = (lower_z + upper_z) / 2
 
             match position:
-
                 case 'right':
-
                     self.points = []
-
                     for z in np.linspace(lower_z, upper_z, 25):
-
                         z_points = []
-
                         r = rocket.general_radius(z)
-
                         dz = z - center_z
 
                         inside_sqrt = dimensions ** 2 - dz ** 2
@@ -304,28 +258,17 @@ class Plate():
                         y_final = lateral
 
                         for y in np.linspace(y_init, y_final, 25):
-
                             x = m.sqrt(r ** 2 - y ** 2) 
                             z_points.append([x, y, z])
 
                         self.points.extend(z_points)  
 
-
                 case 'front':
-
                     self.points = []
-                    
                     for z in np.linspace(lower_z, upper_z, 25):
-
                         z_points = []
-
                         r = rocket.general_radius(z)
-
                         dz = z - center_z
-
-                        inside_sqrt = dimensions ** 2 - dz ** 2
-                        if inside_sqrt < 0:
-                            inside_sqrt = 0
 
                         inside_sqrt = dimensions ** 2 - dz ** 2
                         if inside_sqrt < 0:
@@ -343,24 +286,16 @@ class Plate():
                         x_final = - lateral
 
                         for x in np.linspace(x_init, x_final, 25):
-
                             y = m.sqrt(r ** 2 - x ** 2) 
                             z_points.append([x, y, z])
 
                         self.points.extend(z_points)   
 
-
-
                 case 'left':
-
                     self.points = []
-
                     for z in np.linspace(lower_z, upper_z, 25):
-
                         z_points = []
-
                         r = rocket.general_radius(z)
-
                         dz = z - center_z
 
                         inside_sqrt = dimensions ** 2 - dz ** 2
@@ -379,23 +314,16 @@ class Plate():
                         y_final = - lateral
 
                         for y in np.linspace(y_init, y_final, 25):
-
                             x = - m.sqrt(r ** 2 - y ** 2) 
                             z_points.append([x, y, z])
 
                         self.points.extend(z_points)  
 
-
                 case 'back':
-
                     self.points = []
-                    
                     for z in np.linspace(lower_z, upper_z, 25):
-
                         z_points = []
-
                         r = rocket.general_radius(z)
-
                         dz = z - center_z
 
                         inside_sqrt = dimensions ** 2 - dz ** 2
@@ -414,26 +342,20 @@ class Plate():
                         x_final = lateral
 
                         for x in np.linspace(x_init, x_final, 25):
-
                             y = - m.sqrt(r ** 2 - x ** 2) 
                             z_points.append([x, y, z])
 
                         self.points.extend(z_points)   
 
         elif shape == 'squared':
-
             upper_z = height + dimensions / 2.0
             lower_z = height - dimensions / 2.0
 
             match position:
-
                 case 'rigth':
-
                     self.points = []
-                    
                     for z in np.linspace(lower_z, upper_z, 25):
                         z_points = []
-
                         r = rocket.general_radius(z)
                         
                         if dimensions > np.pi * r:
@@ -447,20 +369,15 @@ class Plate():
                         y_final = lateral
                 
                         for y in np.linspace(y_init, y_final, 25):
-
                             x = m.sqrt(r ** 2 - y ** 2)  
                             z_points.append([x, y, z])
                                 
                         self.points.extend(z_points)           
 
-
                 case 'front':
-
                     self.points = []
-
                     for z in np.linspace(lower_z, upper_z, 25):
                         z_points = []
-
                         r = rocket.general_radius(z)
 
                         if dimensions > np.pi * r:
@@ -473,23 +390,15 @@ class Plate():
                         x_final = - lateral
                 
                         for x in np.linspace(x_init, x_final, 25):
-
                             y = m.sqrt(r ** 2 - x ** 2)
                             z_points.append([x, y, z])
 
                         self.points.extend(z_points)
-                        
-                                      
-
-
 
                 case 'left': 
-
                     self.points = []
-                    
                     for z in np.linspace(lower_z, upper_z, 25):
                         z_points = []
-
                         r = rocket.general_radius(z)
 
                         if dimensions > np.pi * r:
@@ -502,22 +411,15 @@ class Plate():
                         y_final = - lateral
 
                         for y in np.linspace(y_init, y_final, 25):
-
                             x = m.sqrt(r ** 2 - y ** 2)
                             z_points.append([x, y, z])
                             
                         self.points.extend(z_points)
-                                 
-
-
-
+    
                 case 'back':
                     self.points = []
-                    
                     for z in np.linspace(lower_z, upper_z, 25):
-
                         z_points = []
-
                         r = rocket.general_radius(z)
                         
                         if dimensions > np.pi * r:
@@ -530,18 +432,13 @@ class Plate():
                         x_final = lateral
 
                         for x in np.linspace(x_init, x_final, 25):
-
                             y = -m.sqrt(r ** 2 - x ** 2) 
                             z_points.append([x, y, z])
 
                         self.points.extend(z_points)   
 
-
-
         elif shape == 'personalized':
             self.generate_personalized_internal_plate(dimensions, rocket.general_radius, grid_spacing)
-
-
 
 
     def generate_personalized_internal_plate(self, vertices_3d, radius_func, grid_spacing):
@@ -549,86 +446,114 @@ class Plate():
         Generates a 3D grid of points bounded by an arbitrary set of vertices,
         forced flat, and filtered to remain inside the rocket hull.
         
-        Parameters:
-        - vertices_3d: list of lists or tuples [[X1, Y1, Z1], [X2, Y2, Z2], ...]
-        - radius_func: A callable function that takes Z and returns the rocket radius
-        - grid_spacing: Distance between generated points (in your native units, e.g., meters)
+        Input:
+        ---------
+        vertices_3d: list[list]
+            list of lists or tuples [[X1, Y1, Z1], [X2, Y2, Z2], ...]
+
+        radius_func:
+            A callable function that takes Z and returns the rocket radius
+
+        grid_spacing: float, int
+            istance between generated points 
+
         '''
-        # looking if the input values are outside the rocket
         for point in vertices_3d:
-            x = point[0]
-            y = point[1]
-            z = point[2]
-            r_point = m.sqrt(x ** 2 + y ** 2)
-            r_rocket = radius_func(z)
-            if r_point > r_rocket: #the function that calculates the radius as a funciton of z, already determines if the z is outside the range of the rocket
-                raise ValueError(f'The point: {point} is outside the rocket, it has a radius of {r_point} while the rocket at that z has a radius of {r_rocket}')
+                x, y, z = point[0], point[1], point[2]
+                r_point = m.sqrt(x**2 + y**2)
+                r_rocket = radius_func(z)
+                if r_point > r_rocket:
+                    raise ValueError(
+                        f'The point: {point} is outside the rocket. '
+                        f'Point radius = {r_point}, max rocket radius at z={z} is {r_rocket}'
+                    )
 
-
-        pts = np.array(vertices_3d)
+        total_x, total_y, total_z = 0.0, 0.0, 0.0
+        num_pts = len(vertices_3d)
         
-        centroid = np.mean(pts, axis=0)
-        centered_pts = pts - centroid
-
-        _, _, Vh = np.linalg.svd(centered_pts)
-        normal = Vh[2, :]
-
-        if np.abs(normal[0]) > 0.5 or np.abs(normal[1]) > 0.5:
-            arbitrary_vec = np.array([0, 0, 1])
-        else:
-            arbitrary_vec = np.array([1, 0, 0])
+        for pt in vertices_3d:
+            total_x += pt[0]
+            total_y += pt[1]
+            total_z += pt[2]
             
-        u_vec = np.cross(normal, arbitrary_vec)
-        u_vec /= np.linalg.norm(u_vec)
-        v_vec = np.cross(normal, u_vec)
-        
+        centroid_x = total_x / num_pts
+        centroid_y = total_y / num_pts
+        centroid_z = total_z / num_pts
 
-        u_coords = np.dot(centered_pts, u_vec)
-        v_coords = np.dot(centered_pts, v_vec)
-        uv_vertices = np.column_stack((u_coords, v_coords))
-        
+        v0 = vertices_3d[0]
+        v1 = vertices_3d[1]
+        v2 = vertices_3d[2]
+
+        a_x, a_y, a_z = v1[0] - v0[0], v1[1] - v0[0], v1[2] - v0[2]
+        b_x, b_y, b_z = v2[0] - v0[0], v2[1] - v0[0], v2[2] - v0[2]
+
+        nx = a_y * b_z - a_z * b_y
+        ny = a_z * b_x - a_x * b_z
+        nz = a_x * b_y - a_y * b_x
+
+        norm_val = m.sqrt(nx**2 + ny**2 + nz**2)
+        nx, ny, nz = nx / norm_val, ny / norm_val, nz / norm_val
+
+        # Define 2D Local Coordinate System (u_vec, v_vec)
+        if abs(nx) > 0.5 or abs(ny) > 0.5:
+            arb_x, arb_y, arb_z = 0.0, 0.0, 1.0
+        else:
+            arb_x, arb_y, arb_z = 1.0, 0.0, 0.0
+
+        ux = ny * arb_z - nz * arb_y
+        uy = nz * arb_x - nx * arb_z
+        uz = nx * arb_y - ny * arb_x
+        u_norm = m.sqrt(ux**2 + uy**2 + uz**2)
+        ux, uy, uz = ux / u_norm, uy / u_norm, uz / u_norm
+
+        vx = ny * uz - nz * uy
+        vy = nz * ux - nx * uz
+        vz = nx * uy - ny * ux
+
+        uv_vertices = []
+        u_coords = []
+        v_coords = []
+
+        for pt in vertices_3d:
+            cx = pt[0] - centroid_x
+            cy = pt[1] - centroid_y
+            cz = pt[2] - centroid_z
+
+            u_val = cx * ux + cy * uy + cz * uz
+            v_val = cx * vx + cy * vy + cz * vz
+
+            u_coords.append(u_val)
+            v_coords.append(v_val)
+            uv_vertices.append((u_val, v_val))
+
+        # Generate 2D bounding grid 
+        u_min, u_max = min(u_coords), max(u_coords)
+        v_min, v_max = min(v_coords), max(v_coords)
+
         plate_path = Path(uv_vertices)
-        
-
-        u_min, u_max = np.min(u_coords), np.max(u_coords)
-        v_min, v_max = np.min(v_coords), np.max(v_coords)
-        
-        u_grid, v_grid = np.meshgrid(
-            np.arange(u_min, u_max, grid_spacing),
-            np.arange(v_min, v_max, grid_spacing)
-        )
-        
-        uv_test_points = np.column_stack((u_grid.ravel(), v_grid.ravel()))
-        
-        inside_mask = plate_path.contains_points(uv_test_points)
-        valid_uv = uv_test_points[inside_mask]
-        
-        u_valid = valid_uv[:, 0][:, np.newaxis]
-        v_valid = valid_uv[:, 1][:, np.newaxis]
-        
-        points_3d = centroid + (u_valid * u_vec) + (v_valid * v_vec)
-        
-        X = points_3d[:, 0]
-        Y = points_3d[:, 1]
-        Z = points_3d[:, 2]
-        
-        r_points = np.sqrt(X**2 + Y**2)
-        
-        v_radius_func = np.vectorize(radius_func)
-        
-        r_rocket_max = v_radius_func(Z)
-        
-        condition_inside_rocket = r_points < r_rocket_max
-        print(f"Generated grid points: {len(uv_test_points)}")
-        print(f"Points inside polygon: {len(valid_uv)}")
-        print(f"3D points: {len(points_3d)}")
-        print(f"Points inside rocket: {np.sum(condition_inside_rocket)}")
-        print("r_points:", np.min(r_points), np.max(r_points))
-        print("r_rocket:", np.min(r_rocket_max), np.max(r_rocket_max)) 
+        final_3d_points = []
 
 
-        self.points = list(points_3d[condition_inside_rocket])
+        curr_u = u_min
+        while curr_u <= u_max:
+            curr_v = v_min
+            while curr_v <= v_max:
+                if plate_path.contains_point((curr_u, curr_v)):
+                    p3d_x = centroid_x + (curr_u * ux) + (curr_v * vx)
+                    p3d_y = centroid_y + (curr_u * uy) + (curr_v * vy)
+                    p3d_z = centroid_z + (curr_u * uz) + (curr_v * vz)
 
+                    # Final geometry check: point must lie within internal radius at the corresponding height 
+                    r_point = m.sqrt(p3d_x**2 + p3d_y**2)
+                    r_allowed = radius_func(p3d_z)
+
+                    if r_point < r_allowed:
+                        final_3d_points.append([p3d_x, p3d_y, p3d_z])
+
+                curr_v += grid_spacing
+            curr_u += grid_spacing
+
+        self.points = final_3d_points
 
 
 
@@ -648,16 +573,13 @@ class Plate():
             to the coordinate system origin 
             of the point in m for which we want to calculate the 
             soft iron distortion matrix. 
-        '''
-        print(type(self.points))
-        if isinstance(self.points, list):
-            
-            if self.points != []:
 
+        '''
+        if isinstance(self.points, list):
+            if self.points != []:
                 induced_matrix = Matrix.zeros()
                 diff_magnetic = self.relative_magnetic_permeability - 1.0
                 num_points = len(self.points)
-                print(num_points)
                 dV = self.volume / num_points
                 dipole_scalar = (diff_magnetic * dV) / (4.0 * np.pi) 
 
@@ -671,7 +593,6 @@ class Plate():
 
 
                 for point in self.points: 
-
                     r_V = position_vector - Vector(point) 
                     r = abs(r_V)
                     r_unit = r_V / r 
@@ -706,14 +627,13 @@ class Plate():
 
     @classmethod
     def from_dict(cls, data: dict):
-
         '''
         Creates an instance of Plate class from a dictionary object, data. 
         Data is a dictionary that must contain the same keys as the initialization
         parameter of the Plate class. In the case some parameter is not 
         defined, the default value matches the default intializaiton of the constructor
-        '''
 
+        '''
         return cls(
             # Mandatory Parameter 
             material                       = data['material'],

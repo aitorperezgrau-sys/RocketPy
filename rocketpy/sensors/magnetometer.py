@@ -15,7 +15,6 @@ from rocketpy.rocket import Rocket
 
 
 class Magnetometer(InertialSensor):
-
     ''' 
     class for the magnetometer sensor, this class inherits from 
     InertialSensor rocketpy subclass which, in turn inhertis from Sensor class.
@@ -123,8 +122,8 @@ class Magnetometer(InertialSensor):
     measured_data : list
         The stored measured data of the sensor after quantization, noise and
         temperature drift.
-    '''
 
+    '''
     def __init__(
             self,
             sampling_rate,
@@ -147,8 +146,6 @@ class Magnetometer(InertialSensor):
             cross_axis_sensitivity                = 0,
             name                                  = 'Magnetometer',
         ):
-
-
         '''
         Initialize the magnetometer sensor
 
@@ -326,30 +323,21 @@ class Magnetometer(InertialSensor):
             The name of the sensor. Default is 'Magnetometer'.
 
         '''
-        
         self.magnetic_interference = [0, 0, 0]
 
         if isinstance(power_interference, (int,float)):
-
             self.power_interference = [power_interference, power_interference, power_interference]
             self._power_interference = Vector(self.power_interference)
             self.initial_power_interference = 'number'
-
         elif isinstance(power_interference, (list, tuple)):
-
             if len(power_interference) == 3:
-
                 self.power_interference = list(power_interference)
                 self._power_interference = Vector(self.power_interference)
                 self.initial_power_interference = 'number'
-                
             else:
                 raise ValueError('The length of the list must be 3: x,y,z')
-            
         elif isinstance(power_interference, str):
-
             if power_interference.lower() == 'wires':
-
                 self.power_interference = [0, 0, 0]
                 self.communications_interference = [0, 0, 0]
                 self.communications_computed = False
@@ -358,83 +346,57 @@ class Magnetometer(InertialSensor):
                 self.initial_power_interference = 'wires'
                 self.initial_communications_interference = 'wires'
                 self.initial_activation_signal_interference = 'wires'
-
             elif power_interference.lower() == 'personalized':
-
                 self.initial_power_interference = 'personalized'
 
                 if activation_signal_interference is None or communications_interference is None:
-
                     raise ValueError(
                         "For 'personalized' interference, you must provide values for both "
                         "activation_signal_interference and communications_interference."
                     )
-
+                
                 if isinstance(activation_signal_interference, (int, float)):
-                        
                         self.activation_signal_interference = [activation_signal_interference, activation_signal_interference, activation_signal_interference]
                         self._activation_signal_interference = Vector(self.activation_signal_interference)
                         self.initial_activation_signal_interference = 'number'
-
                 elif isinstance(activation_signal_interference, (list, tuple)):
-
                     if len(activation_signal_interference) == 3:
-
                         self.activation_signal_interference = list(activation_signal_interference)
                         self._activation_signal_interference = Vector(self.activation_signal_interference)
                         self.initial_activation_signal_interference = 'number'
-
                     else:
                         raise ValueError('The length of the list must be 3: x,y,z')
-
                 elif isinstance(activation_signal_interference, str):
-
                     if activation_signal_interference.lower() == 'wires':
-
                         self.activation_signal_interference = [0, 0, 0]
                         self.initial_activation_signal_interference = 'wires'
-
                     else:
                         raise ValueError('The accepted string is wires')  
                 else:
                     raise ValueError('The accepted values are list, tuple, str, int or float')
                     
-
-
                 if isinstance(communications_interference, (int, float)):
-                        
                         self.communications_interference = [communications_interference, communications_interference, communications_interference]
                         self._communications_interference = Vector(self.communications_interference)
                         self.initial_communications_interference = 'number'
-
                 elif isinstance(communications_interference, (list, tuple)):
-
                     if len(communications_interference) == 3:
-
                         self.communications_interference = list(communications_interference)
                         self._communications_interference = Vector(self.communications_interference)
                         self.initial_communications_interference = 'number'
-
-
                     else:
                         raise ValueError('The length of the list must be 3: x,y,z')
-
                 elif isinstance(communications_interference, str):
-
                     if communications_interference.lower() == 'wires':
-
                         self.communications_interference = [0, 0, 0]
                         self.initial_communications_interference = 'wires'
                         self.communications_computed = False
-
                     else:
                         raise ValueError('The accepted string is wires')
                 else: 
                     raise ValueError('The accepted values are list, tuple, str, int or float')
-
             else:
                 raise ValueError('The accepted strings are wires or personalized')
-                
         else:
             raise ValueError('The accepted values are list, tuple, str, int or float')
 
@@ -444,11 +406,8 @@ class Magnetometer(InertialSensor):
 
         # initialize hard_iron_distortion attribute
         if isinstance(hard_iron_distortion, (float, int)):
-
             self.hard_iron_distortion = [hard_iron_distortion, hard_iron_distortion, hard_iron_distortion]
-
         elif isinstance(hard_iron_distortion, (list, tuple)):
-
             if len(hard_iron_distortion) == 3: 
                 self.hard_iron_distortion = list(hard_iron_distortion)
             else:
@@ -462,7 +421,6 @@ class Magnetometer(InertialSensor):
         
         # initialize soft_iron_distortion attribute
         if isinstance(soft_iron_distortion, Matrix):
-
             for element in soft_iron_distortion:
                 if not isinstance(element, (float, int)):
                     raise ValueError('The elements inside the matrix must be float or int')
@@ -476,16 +434,10 @@ class Magnetometer(InertialSensor):
                 self._soft_iron_distortion = Matrix.zeros()
                 self.initial_soft_iron_distortion = 'plates'
                 self.total_soft_iron_distortion_computed = False
-
             else:
                 raise ValueError('The accepted string must be plates')
         else:
             raise ValueError('The soft iron distortion can only be a Matrix or a string')
-
-                
-
-
-
 
         # Get current decimal year
         current_date = datetime.now().strftime('%Y-%m-%d')
@@ -493,7 +445,6 @@ class Magnetometer(InertialSensor):
 
         # Initialize the magnetic model
         self.wmm = WMMv2()
-
 
         # Initialize InertialSensor class
         super().__init__(
@@ -513,9 +464,7 @@ class Magnetometer(InertialSensor):
             name                      = name,
         )
 
-
     def measure(self, time, **kwargs):
-
         '''
         obtain the simulated reading of the magnetometer for a given time step
             
@@ -556,8 +505,8 @@ class Magnetometer(InertialSensor):
 
             - environment : Environment
                 Environment object containing the atmospheric conditions.
+
         '''
-        
         # initialization of input parameters
         u = kwargs["u"] #state vector
         parachute_events = kwargs["parachute_events"]
@@ -569,15 +518,10 @@ class Magnetometer(InertialSensor):
         earth_radius = kwargs["environment"].earth_radius
         rocket = kwargs["rocket"]
 
-
-        
         quaternion = u[6:10]  # Quaternion represents the com orientation with respect to the inertial frame.
         rotation_com_to_inertial = Matrix.transformation(quaternion) # rotation matrix from com to inertial frame
 
-
-
         #--- obtain the current longitude, latitude and elevation ---
-
         sensor_from_inertial = rotation_com_to_inertial @ sensor_from_com
 
         # obtain the sensor coordinates in the inertial frame, by adding the offset to the positon vector 
@@ -593,10 +537,7 @@ class Magnetometer(InertialSensor):
         bearing = (2 * math.pi - math.atan2(-x_inertial, y_inertial)) * (180 / math.pi)
         latitude, longitude = inverted_haversine(lat0, lon0, drift, bearing, earth_radius)
 
-
-
         #--- obtain the magnetic field in the NED (North-East-Down axis) --
-
         # Calculate all field components at once 
         calculate_geomagnetic(self.wmm, latitude, longitude, self.year, altitude_wgs84_km)
 
@@ -611,10 +552,8 @@ class Magnetometer(InertialSensor):
         b_inertial_z = - b_down     # T
         B_inertial   = Vector([b_inertial_x, b_inertial_y, b_inertial_z])  # T
      
-
         # --- from Rocketpy's inertial frame to com frame ---
         rotation_inertial_to_com = rotation_com_to_inertial.transpose 
-
         B_com = rotation_inertial_to_com @ B_inertial  # T
 
         # B_com is already aligned with the body axes (CSO) because the axes are parallel
@@ -625,13 +564,11 @@ class Magnetometer(InertialSensor):
 
         B_sensor = rotation_cso_to_sensor @ B_cso  # T
 
-
         #--- Apply noise + bias and quantize ---
         B_sensor = self.apply_magnetic_interference(B_sensor, rocket, parachute_events, burn_start_time, initial_time, current_time)  # T
         B_sensor = self.apply_temperature_drift(B_sensor)                                                                             # T
         B_sensor = self.apply_noise(B_sensor)                                                                                         # T
         B_sensor = self.quantize(B_sensor)                                                                                            # T
-
 
         self.measurement = (B_sensor.x, B_sensor.y, B_sensor.z)   # T                                  
         self._save_data((time, *B_sensor))        
@@ -676,25 +613,21 @@ class Magnetometer(InertialSensor):
             and power interference
 
         '''
-        
         self.magnetic_interference = [0, 0, 0]
 
         B = self.apply_soft_iron(B, rocket)                                                                                   # T
         B = self.apply_hard_iron(B)                                                                                   # T
         B = self.apply_power_interference(B, rocket, parachute_events, burn_start_time, initial_time, current_time)   # T
 
-
         self.magnetic_interference = [
             self.power_interference[0] + self.hard_iron_distortion[0],
             self.power_interference[1] + self.hard_iron_distortion[1], 
             self.power_interference[2] + self.hard_iron_distortion[2] 
         ]
-
         return B 
     
 
     def apply_soft_iron(self, B, rocket: Rocket):
-
         '''
         This function applies the soft iron distortion which is the distoriton 
         of the magnetic field due to the higher magnetic permeability of 
@@ -726,27 +659,19 @@ class Magnetometer(InertialSensor):
                     if not self.sensor_from_cso_t in plate._magnetic_distortion_matrixes: 
 
                         plate.calculate_soft_iron_distortion_matrix(self._sensor_from_cso)
-                        print(f'soft iron distortion matrix: {plate._magnetic_distortion_matrixes[self.sensor_from_cso_t]}')
                         self._soft_iron_distortion  = self._soft_iron_distortion + plate._magnetic_distortion_matrixes[self.sensor_from_cso_t]
-
 
                 self.total_soft_iron_distortion_computed = True
                 B = self._soft_iron_distortion @ B
-
-
-
             else:
                 B = self._soft_iron_distortion @ B
-
         elif self.initial_soft_iron_distortion == 'number':
             B = self._soft_iron_distortion @ B
-
         return B 
     
     
 
     def apply_hard_iron(self, B):
-
         '''
         This funtion applies the hard iron distortion. 
         This magnetic distortion is caused by permanent magnets or 
@@ -763,16 +688,14 @@ class Magnetometer(InertialSensor):
         -------
         B: Vector
             Magnetic field after hard_iron_distortion. 
+
         '''
-
         B = B + self._hard_iron_distortion
-
         return B
     
 
 
     def apply_power_interference(self, B: Vector, rocket: Rocket, parachute_events, burn_start_time: float, initial_time: float, current_time: float):
-
         '''
         This funtion applies the electromagnetic interference to the 
         magnetic field vector, when a signal is triggered. 
@@ -809,28 +732,21 @@ class Magnetometer(InertialSensor):
             Magnetic field after adjustment of both the 
             activation signal interference and communications
             interference
-    
 
         '''
-
         if self.initial_power_interference == 'wires' or self.initial_power_interference == 'personalized':
-
             self.power_interference = [0,0,0]
 
             B = self.apply_communications_interference(B, rocket)
             B = self.apply_activation_signal_interference(B, rocket, parachute_events, burn_start_time, initial_time,  current_time)
-
             self.power_interference = [
                 self.activation_signal_interference[0] + self.communications_interference[0],
                 self.activation_signal_interference[1] + self.communications_interference[1], 
                 self.activation_signal_interference[2] + self.communications_interference[2]
             ]
-
             self._power_interference = Vector(self.power_interference)
-
         elif self.initial_power_interference == 'number':
             B = B + self._power_interference
-
         return B
     
 
@@ -851,17 +767,12 @@ class Magnetometer(InertialSensor):
         B: Vector
             Magnetic field after adjustment of communications
             magnetic interference. 
-
         
         '''
-
-
         if self.initial_communications_interference == 'wires':
             if rocket.communication_wires: 
-
                 if not self.communications_computed:
                     for communication_wire in rocket.communication_wires:
-
                         communication_wire.measure_magnetic_field(self._sensor_from_cso)
                         self.communications_interference = [
                                                         self.communications_interference[0] + communication_wire.magnetic_field[self.sensor_from_cso_t][0],
@@ -872,17 +783,12 @@ class Magnetometer(InertialSensor):
                     self._communications_interference = Vector(self.communications_interference)
                     B = B + self._communications_interference
                     self.communications_computed = True
-
                 else:
                     B = B + self._communications_interference
-
-
             else:
                 raise ValueError('You must define first some communication wires, to be able to consider the magnetic distrubance cretaed by them')
-            
         elif  self.initial_communications_interference == 'number':
             B = B + self._communications_interference
-
         return B
 
 
@@ -924,22 +830,15 @@ class Magnetometer(InertialSensor):
         '''
         
         if self.initial_activation_signal_interference == 'wires':
-
             if rocket.ignition_wires: 
                 self.activation_signal_interference = [0, 0, 0]
-
                 for ingition_wire in rocket.ignition_wires:
-
                     if ingition_wire.ignition_wire_function == 'parachute_ignition':
-
                         for parachute_event in parachute_events:
                             ejection_time = parachute_event[0]
                             parachute = parachute_event[1]
-
                             if parachute.name == ingition_wire.parachute_name and ejection_time != 0:
-
                                 if not self.sensor_from_cso_t in ingition_wire._magnetic_field:
-
                                     ingition_wire.measure_magnetic_field(self._sensor_from_cso)
                                     B = B + ingition_wire._magnetic_field[self.sensor_from_cso_t]
                                     self.activation_signal_interference = [
@@ -948,20 +847,15 @@ class Magnetometer(InertialSensor):
                                                                         self.activation_signal_interference[2] + ingition_wire.magnetic_field[self.sensor_from_cso_t][2],
                                                                         ]
                                 else: 
-
                                     B = B + ingition_wire._magnetic_field[self.sensor_from_cso_t]
                                     self.activation_signal_interference = [
                                                                         self.activation_signal_interference[0] + ingition_wire.magnetic_field[self.sensor_from_cso_t][0],
                                                                         self.activation_signal_interference[1] + ingition_wire.magnetic_field[self.sensor_from_cso_t][1],
                                                                         self.activation_signal_interference[2] + ingition_wire.magnetic_field[self.sensor_from_cso_t][2],
                                                                         ]
-
                     elif ingition_wire.ignition_wire_function == 'solid_motor_ignition':
-
                         if current_time - initial_time <= burn_start_time: 
-
                             if not self.sensor_from_cso_t in ingition_wire._magnetic_field:
-
                                 ingition_wire.measure_magnetic_field(self._sensor_from_cso)
                                 B = B + ingition_wire._magnetic_field[self.sensor_from_cso_t]
                                 self.activation_signal_interference = [
@@ -969,9 +863,6 @@ class Magnetometer(InertialSensor):
                                                                     self.activation_signal_interference[1] + ingition_wire.magnetic_field[self.sensor_from_cso_t][1],
                                                                     self.activation_signal_interference[2] + ingition_wire.magnetic_field[self.sensor_from_cso_t][2],
                                                                     ]
-
-                            
-
                             else: 
                                 B = B + ingition_wire._magnetic_field[self.sensor_from_cso_t]
                                 self.activation_signal_interference = [
@@ -981,10 +872,8 @@ class Magnetometer(InertialSensor):
                                                                     ]
                     else:
                         raise ValueError('The accepted strings for the ignition_wire_function are solid_motor_ignition and parachute_ignition')
-                    
             else:
                 raise ValueError('You must define some ignition wire to be able to consider its magnetic disturbance.')
-
         elif self.initial_activation_signal_interference == 'number':
             B = B + self._activation_signal_interference
 
@@ -1005,8 +894,8 @@ class Magnetometer(InertialSensor):
         Returns
         -------
         None
-        '''
 
+        '''
         self._generic_export_measured_data(
             filename    = filename,
             file_format = file_format,
@@ -1016,14 +905,12 @@ class Magnetometer(InertialSensor):
 
     @classmethod
     def from_dict(cls, data: dict):
-
         '''
         Creates an instance of Magnetometer from a dictionary object, data. 
         Data is a dictionary that must contain the same keys as the initialization
         parameter of the Magnetometer class. In the case some parameter is not 
         defined, the default value matches the default intializaiton of the constructor
         '''
-
         return cls(
             # Mandatory Parameter 
             sampling_rate                         = data['sampling_rate'],
@@ -1037,7 +924,6 @@ class Magnetometer(InertialSensor):
             power_interference                    = data.get('power_interference', 'wires'),
             activation_signal_interference        = data.get('activation_signal_interference', None),
             communications_interference           = data.get('communications_interference', None),
-
 
             # Noise Profiles
             noise_density                         = data.get('noise_density', 0),

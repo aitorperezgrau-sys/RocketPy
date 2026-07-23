@@ -1844,6 +1844,7 @@ class Rocket:
             radius, drag_coefficient, height, porosity and name. Furthermore,
             it stores clean_pressure_signal, noise_signal and
             noisyPressureSignal which are filled in during Flight simulation.
+            
         """
         parachute = Parachute(
             name,
@@ -1860,15 +1861,16 @@ class Rocket:
         self.parachutes.append(parachute)
         return self.parachutes[-1]
 
+
     def add_sensor(self, sensor, position):
         """Adds a sensor to the rocket.
 
         Parameters
         ----------
-        sensor : Sensor
+        sensor: Sensor
             Sensor to be added to the rocket.
             
-        position : int, float, tuple, list, Vector
+        position: int, float, tuple, list, Vector
             Position of the sensor. If a Vector, tuple or list is passed, it
             must be in the format (x, y, z) where x, y, and z are defined in the
             rocket's user defined coordinate system. If a single value is
@@ -1896,7 +1898,6 @@ class Rocket:
             self, 
             wire: Wire, 
             position_edges):
-
         '''
         Adds the wire to the rocket.
         Wires are used to calculate the magnetic 
@@ -1915,20 +1916,15 @@ class Rocket:
             if a list with a int or a float, the position is assumed to be along the z axis.
 
         '''
-
         edges = []
         if not isinstance(wire, Wire):
             raise ValueError('The wire must be a wire instance')
 
         if isinstance(position_edges, (list, tuple)):
-
             if len(position_edges) == 2:
-
                 for position_edge in position_edges:
-
                     if isinstance(position_edge, (int, float)):
                         edges.append(Vector(0, 0, position_edge))
-
                     elif isinstance(position_edge, (tuple, list)):
                         edges.append(Vector(position_edge))
             else: 
@@ -1936,13 +1932,10 @@ class Rocket:
         else: 
             raise ValueError('Position edges must be a list')
         
-        
         wire._set_wire_edges_from_cso(edges)
         
-
         if wire.wire_type == 'communications':
                 self.communication_wires.append(wire)                
-
         else:
                 self.ignition_wires.append(wire)
 
@@ -1957,7 +1950,6 @@ class Rocket:
             height = None,
             grid_spacing = 0.001
         ):
-
         '''
         Adds the plate defined, into 
         the rocket. 
@@ -2001,29 +1993,26 @@ class Rocket:
             Allowed entries are:
             'left', 'right', 'back', 'front'
             The plate will be located with the geometric center
-            along the chosen lateral position
+            along the chosen lateral position. Default is None
 
         height: float, int, optional,  when the shape is not 'personalized'
             Position of the plate when the shape is not 
-            'personalized' along the z axis. 
+            'personalized' along the z axis. Default is None
 
         grid_spacing: float, optional, 
             it is used only when the shape is personalized and determines 
             the space between the points of the approximated shape defined
-            by the vertices. 
+            by the vertices. Default is 0.001
           
-              
         '''
-
         if not isinstance(plate, Plate):
             raise ValueError('The plate parameter must be a Plate object')
-
+        
         if isinstance(shape, str):
             if shape == 'circular' or shape == 'squared':
-
                 if not isinstance(dimensions, (float, int)):
                     raise ValueError('The dimensions must be a float or int, when the shape is circular or squared')
-                
+
                 if position == None:
                     raise ValueError('The position when the shape is circular or squared must be defined')
                 elif not isinstance(position, str):
@@ -2032,62 +2021,38 @@ class Rocket:
                     if not (position == 'left' or position == 'right' or position == 'back' or position == 'front'):
                         raise ValueError('The position can only be left, right, back or front')
                     
-
-
                 if height == None:
                     raise ValueError('The height when the shape is circular or squared must be defined')
                 
                 if not isinstance(dimensions, (float, int)):
                     raise ValueError('The height must be a float or int, when the shape is circular or squared')
-
-
-                
             elif shape == 'personalized':
-
                 if not isinstance(dimensions, (tuple, list)):
-                    
                     raise ValueError('The dimensions must be a list or tuple, when the shape is personalized')
-                
                 elif len(dimensions) < 3:
-
                     raise ValueError('At least 3 points must be defined to create a surface')
                 else:
-
                     for num_vertex in range(len(dimensions)):
-
                         if len(dimensions[num_vertex]) == 3:
-
                             if isinstance(dimensions[num_vertex], (list, tuple)):
-
                                 dimensions[num_vertex] = Vector(dimensions[num_vertex])
-
                             elif isinstance(dimensions[num_vertex], Vector):
-                                
                                 dimensions[num_vertex] = dimensions[num_vertex]
-
                             else: 
-                                raise ValueError('The vertex components must be given as a list, tuple or Vector')
-                            
+                                raise ValueError('The vertex components must be given as a list, tuple or Vector')                         
                         else:
-                            raise ValueError('The vertex must be defiened with 3 components')
-                        
+                            raise ValueError('The vertex must be defiened with 3 components')       
+                                      
                 if not isinstance(grid_spacing, (float, int)):
-                    raise ValueError('Grid spacing must be a float or int')
-
-                    
+                    raise ValueError('Grid spacing must be a float or int')               
             else:
                 raise ValueError('The accepted shapes are circular, squared and personalized')
         else:
             raise ValueError('The shape must be defined as a string')
         
-
         plate.define_plate_position(shape, dimensions, position, height, self, grid_spacing)
         self.plates.append(plate)
         
-        
-
-    
-
 
     def add_air_brakes(
         self,
@@ -2454,18 +2419,11 @@ class Rocket:
             Radius for the z value in the whole rocket
 
         '''
-
-
         if isinstance(z, (float, int)):
-
-           
-
             if  not isinstance(self.nose_cone, NoseCone):
                 raise ValueError('Define a nose cone first')
-            
             if not isinstance(self.motor, Motor):
                 raise ValueError('Define a nose cone first')
-
 
             z_min = min(self._nose_tip_from_cso, self.motor_position)
             z_max = max(self._nose_tip_from_cso, self.motor_position)
@@ -2479,7 +2437,6 @@ class Rocket:
                 r = self.nose_cone.radius(distance_from_nose)
             else:
                 r = self._calculate_radius_z_intermediate(z)
-
         else: 
             raise ValueError('The z component must be a float or int')
         return r
