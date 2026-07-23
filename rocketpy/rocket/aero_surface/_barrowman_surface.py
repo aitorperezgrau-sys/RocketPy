@@ -96,9 +96,7 @@ class _BarrowmanSurface(LinearGenericSurface):
         # Axisymmetric Barrowman normal force: equal-magnitude slopes in the
         # pitch and yaw planes. The yaw-plane (side-force) slope is opposite in
         # sign due to the body-frame axis convention.
-        self.cN_alpha = self._mach_coefficient(
-            lambda mach: clalpha.get_value_opt(mach), "cN_alpha"
-        )
+        self.cN_alpha = self._mach_coefficient(clalpha.get_value_opt, "cN_alpha")
         self.cY_beta = self._mach_coefficient(
             lambda mach: -clalpha.get_value_opt(mach), "cY_beta"
         )
@@ -116,9 +114,7 @@ class _BarrowmanSurface(LinearGenericSurface):
             self.cl_0 = self._mach_coefficient(
                 lambda mach: clf_delta.get_value_opt(mach) * cant_angle_rad, "cl_0"
             )
-            self.cl_p = self._mach_coefficient(
-                lambda mach: cld_omega.get_value_opt(mach), "cl_p"
-            )
+            self.cl_p = self._mach_coefficient(cld_omega.get_value_opt, "cl_p")
 
     def compute_forces_and_moments(
         self,
@@ -160,8 +156,8 @@ class _BarrowmanSurface(LinearGenericSurface):
             component (``omega[2]``) is used, by fin sets.
         *args
             Extra positional arguments accepted for signature compatibility with
-            the generic surface (``density``, ``dynamic_viscosity``, ``z``,
-            ``alpha_dot``, ``beta_dot``); unused by the Barrowman model.
+            the generic surface (``density``, ``dynamic_viscosity``, ``z``);
+            unused by the Barrowman model.
 
         Returns
         -------
@@ -225,7 +221,6 @@ class _BarrowmanSurface(LinearGenericSurface):
         return AeroCoefficient(
             func_of_mach,
             depends_on=("mach",),
-            unsteady_aero=self._unsteady_aero,
             control_variables=self.control_variables,
             name=name,
         )
