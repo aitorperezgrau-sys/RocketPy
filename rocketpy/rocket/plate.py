@@ -438,10 +438,10 @@ class Plate():
                         self.points.extend(z_points)   
 
         elif shape == 'personalized':
-            self.generate_personalized_internal_plate(dimensions, rocket.general_radius, grid_spacing)
+            self.generate_personalized_internal_plate(dimensions, rocket.general_radius, rocket.z_bounds_check, grid_spacing)
 
 
-    def generate_personalized_internal_plate(self, vertices_3d, radius_func, grid_spacing):
+    def generate_personalized_internal_plate(self, vertices_3d, radius_func, z_checking_funciton, grid_spacing):
         '''
         Generates a 3D grid of points bounded by an arbitrary set of vertices,
         forced flat, and filtered to remain inside the rocket hull.
@@ -454,20 +454,27 @@ class Plate():
         radius_func:
             A callable function that takes Z and returns the rocket radius
 
+        z_checking_function:
+            A callable function that takes z and returns True if it is inside the rocket, False, otherwise
+
         grid_spacing: float, int
             istance between generated points 
 
         '''
         for point in vertices_3d:
-                x, y, z = point[0], point[1], point[2]
-                r_point = m.sqrt(x**2 + y**2)
-                r_rocket = radius_func(z)
-                if r_point > r_rocket:
-                    raise ValueError(
-                        f'The point: {point} is outside the rocket. '
-                        f'Point radius = {r_point}, max rocket radius at z={z} is {r_rocket}'
-                    )
+            x, y, z = point[0], point[1], point[2]
+            
+            # height boundds
+            flag, range = self.z_bounds_check(z)
+            if not flag:
+                raise ValueError(f'The z component: {z} of {point} is outside the rocket range {range}')
 
+            # radial bounds
+            r_point = x ** 2 + y ** 2
+            r = self.general_radius(z)
+            if r_point > r:
+                raise ValueError(f'The point with coordinates {point} is outside the rocket since the radius {r_point} is bigger than the radius of the rocket at that z: {z}, which is: {r}')
+ 
         total_x, total_y, total_z = 0.0, 0.0, 0.0
         num_pts = len(vertices_3d)
         
