@@ -33,9 +33,10 @@ Attention: The newest changes should be on top -->
 ### Added
 
 - ENH: update master with develop [#1081](https://github.com/RocketPy-Team/RocketPy/pull/1081)
+
 ### Changed
 
-### Fixed
+- CI: make changelog automation LLM-based (Gemini) and race-safe [#1082](https://github.com/RocketPy-Team/RocketPy/pull/1082)
 
 ## [v1.13.0] - 2026-07-21
 
