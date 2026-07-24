@@ -15,10 +15,6 @@ class Wire():
     wire_current: float, int
         Intensity of the current through the wire in A
 
-    wire_current_direction: string
-        Direction of the current through the wire, it can either be 
-        clockwise or anticlockwise
-
     magnetic_field: dict
         Dictionary of all the magnetic fields calculated, 
         the key is the position vector of the point relative
@@ -44,7 +40,6 @@ class Wire():
     def __init__(
             self,
             current,
-            current_direction,
             wire_type,
             ignition_wire_function = None,
             parachute_name = None, 
@@ -53,12 +48,8 @@ class Wire():
         current: float, int, list
             Intensity of the current through the communication wires to calculate 
             the magnetic distortion experienced by the sensor due to activation signals
-            in Amperes (A). Default is 1 A. 
-
-        current_direction: string
-            Direction of the current passing the communication wires to calculate the
-            magnetic distortion experienced by the sensor due to activation signals 
-            in Amperes (A). Default is anticlockwise
+            in Amperes (A). Default is 1 A. The current goes from the first to the second
+            edge defined in add_wire
         
         wire_type: str
             type of wire.
@@ -84,14 +75,6 @@ class Wire():
                 conditions will be taken from the parachute definition.
 
         '''
-        # handling of direction of the current
-        if not isinstance(current_direction, str):
-            raise ValueError('The current direction parameter must be a string')
-        
-        elif  not (current_direction == 'anticlockwise' or current_direction == 'clockwise'): 
-            raise ValueError('The accepted strings are anticlockwise and clockwise')
-        else: 
-            self.current_direction = current_direction
        
         # define current of the wire
         if not isinstance(current, (float, int)):
@@ -154,12 +137,8 @@ class Wire():
             None
         '''
         # definition of the required values
-        if self.current_direction == 'anticlockwise':
-            r1 = self._wire_edges_from_cso[0]  # m
-            r2 = self._wire_edges_from_cso[1]  # m
-        else: 
-            r1 = self._wire_edges_from_cso[1]  # m
-            r2 = self._wire_edges_from_cso[0]  # m
+        r1 = self._wire_edges_from_cso[0]  # m
+        r2 = self._wire_edges_from_cso[1]  # m
 
         if len(position_vector) == 3:
             if isinstance(position_vector, (list, tuple)):
@@ -172,7 +151,7 @@ class Wire():
                 raise ValueError('The only accepted parameters are list, tuple or Vector')
         else:
             raise ValueError('The length of the position vector must be 3, x,y,z')    
-
+        
         l = r2 - r1 #m
         self.wire_length = abs(l) # m
 
@@ -191,9 +170,6 @@ class Wire():
        
         self.magnetic_field[r_t]  = list(b_V)
         self._magnetic_field[r_t] = b_V
-
-
-
 
     
     def define_magnetic_field(self, position_vector, magnetic_field):
@@ -236,7 +212,7 @@ class Wire():
             raise ValueError('The position_vector must be a list, tuple or Vector')
         
 
-    def _set_wire_edges_from_cso (self, wire_edges_from_cso):
+    def _set_wire_edges_from_cso (self, _wire_edges_from_cso):
         '''
         save as an attribute the position of the wire edges from the coordiante system
         origin, chosen by the user.
@@ -250,15 +226,10 @@ class Wire():
         Returns:
         -------
             None
-        '''
-        
-        if isinstance(wire_edges_from_cso, (list, tuple)):
-            self._wire_edges_from_cso = wire_edges_from_cso
-        elif isinstance(wire_edges_from_cso, Vector):
-            self._wire_edges_from_cso = list(wire_edges_from_cso)
-        else:
-            raise ValueError(' wire_edges_from_cso can only be a list or a tuple')
 
+        '''
+
+        self._wire_edges_from_cso = _wire_edges_from_cso
 
     @classmethod
     def from_dict(cls, data: dict):
@@ -280,5 +251,5 @@ class Wire():
             
             # Optional Parameters 
             ignition_wire_function       = data.get('ignition_wire_function', None),
-            parachute_name               = data.get('parachute_mame', None)
+            parachute_name               = data.get('parachute_name', None)
         )
