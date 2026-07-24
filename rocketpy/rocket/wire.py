@@ -30,7 +30,7 @@ class Wire():
     ignition_wire_function: str
         sub-type of the wire, when it is an ignition wire
         because it is a HIL wire it can be:
-        'parachute' or 'solid_motor_ignition
+        'parachute' or 'motor_ignition
     
     parachute_name: str
         Name of the parachute to which it is attached the wire
@@ -62,7 +62,8 @@ class Wire():
         ignition_wire_function: str, mandatory if type is ingition
             type of ingnition wire. This parameter must be a string, for a solid rocket
             the only ignitions are the parachutes and the motor at the beggining 
-            of the flight. In this case, the valid arguments are 'solid_motor_ignition'
+            of the flight. In this case, the valid arguments are 'motor_ignition'
+            'hybrid_motor_ignition' or 'liquid_motor_ignition'
             or 'parachute_ignitions'. Default is None. 
 
         parachute_name: str, mandatory when it is an ignition wire whose function is parachute 
