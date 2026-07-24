@@ -352,7 +352,7 @@ class Plate():
             lower_z = height - dimensions / 2.0
 
             match position:
-                case 'rigth':
+                case 'right':
                     self.points = []
                     for z in np.linspace(lower_z, upper_z, 25):
                         z_points = []
@@ -465,13 +465,13 @@ class Plate():
             x, y, z = point[0], point[1], point[2]
             
             # height boundds
-            flag, range = self.z_bounds_check(z)
+            flag, range_z = z_checking_funciton(z)
             if not flag:
-                raise ValueError(f'The z component: {z} of {point} is outside the rocket range {range}')
+                raise ValueError(f'The z component: {z} of {point} is outside the rocket range {range_z}')
 
             # radial bounds
-            r_point = x ** 2 + y ** 2
-            r = self.general_radius(z)
+            r_point = m.sqrt(x ** 2 + y ** 2)
+            r = radius_func(z)
             if r_point > r:
                 raise ValueError(f'The point with coordinates {point} is outside the rocket since the radius {r_point} is bigger than the radius of the rocket at that z: {z}, which is: {r}')
  
@@ -491,8 +491,8 @@ class Plate():
         v1 = vertices_3d[1]
         v2 = vertices_3d[2]
 
-        a_x, a_y, a_z = v1[0] - v0[0], v1[1] - v0[0], v1[2] - v0[2]
-        b_x, b_y, b_z = v2[0] - v0[0], v2[1] - v0[0], v2[2] - v0[2]
+        a_x, a_y, a_z = v1[0] - v0[0], v1[1] - v0[1], v1[2] - v0[2]
+        b_x, b_y, b_z = v2[0] - v0[0], v2[1] - v0[1], v2[2] - v0[2]
 
         nx = a_y * b_z - a_z * b_y
         ny = a_z * b_x - a_x * b_z
@@ -563,10 +563,7 @@ class Plate():
         self.points = final_3d_points
 
 
-
-
     def calculate_soft_iron_distortion_matrix(self, position_vector: Vector):
-
         '''
         This function allows to calculate the soft iron
         distortion matrix from the position of the points 
@@ -590,14 +587,12 @@ class Plate():
                 dV = self.volume / num_points
                 dipole_scalar = (diff_magnetic * dV) / (4.0 * np.pi) 
 
-
                 if isinstance(position_vector, (list, tuple)):
                     position_vector = Vector(position_vector)
                 elif isinstance(position_vector, Vector):
                     position_vector = position_vector
                 else:
                     raise ValueError('Position Vector can only be a tuple, list or Vector')
-
 
                 for point in self.points: 
                     r_V = position_vector - Vector(point) 
@@ -606,30 +601,24 @@ class Plate():
                     
                     rx, ry, rz = r_unit[0], r_unit[1], r_unit[2]
 
-
                     projection_tensor = Matrix([
                     [rx * rx, rx * ry, rx * rz],
                     [ry * rx, ry * ry, ry * rz],
                     [rz * rx, rz * ry, rz * rz]
                     ])
                     
-
                     dipole_kernel = (
                     3.0 * projection_tensor - Matrix.identity()
                     ) / ((r ** 3)) 
 
                     induced_matrix = induced_matrix + (dipole_scalar * dipole_kernel)
                 
-                distortion_matrix = Matrix.identity() + induced_matrix 
-
-                self._magnetic_distortion_matrixes[tuple(position_vector)] = distortion_matrix
+                self._magnetic_distortion_matrixes[tuple(position_vector)] = induced_matrix
 
             else:
                 raise ValueError('To calculate the soft iron distortion matrix, first the plate must be added to the rocket, points list cannot be empty')
             
         else: raise ValueError('The points defining the plate must be a list')
-
-
 
 
     @classmethod
@@ -644,6 +633,7 @@ class Plate():
         return cls(
             # Mandatory Parameter 
             material                       = data['material'],
+            thickness                      = data['thickness'],
 
             # Optional Parameter 
             absolute_magnetic_permeability = data.get('absolute_magnetic_permeability', None)

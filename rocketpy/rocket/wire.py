@@ -57,7 +57,7 @@ class Wire():
             have only information communicated from one component to 
             another, thus they will have a constatn effect on 
             the magnetic field. If 'ignition', the wire is considered
-            to have flow of current only when there is a ignition.
+            to have flow of current only when there is an ignition.
 
         ignition_wire_function: str, mandatory if type is ingition
             type of ingnition wire. This parameter must be a string, for a solid rocket
@@ -65,7 +65,7 @@ class Wire():
             of the flight. In this case, the valid arguments are 'solid_motor_ignition'
             or 'parachute_ignitions'. Default is None. 
 
-        parachute_name: str, mandatory when it is a ignition wire whose function is parachute 
+        parachute_name: str, mandatory when it is an ignition wire whose function is parachute 
 
             In the case ignition_wire_function is parachute: 
                 Name of the parachtue in whose deployment we want the wire to have
@@ -90,7 +90,7 @@ class Wire():
             elif wire_type == 'ignition':
                 self.wire_type = 'ignition'
                 if ignition_wire_function == None:
-                    raise ValueError('The ignition type is compulsory when it is a ignition wire')
+                    raise ValueError('The ignition type is compulsory when it is an ignition wire')
                 elif isinstance(ignition_wire_function, str):
                     if ignition_wire_function.lower() == 'parachute_ignition':
                         self.ignition_wire_function = 'parachute_ignition'
@@ -105,7 +105,7 @@ class Wire():
                 else: 
                     raise ValueError('The type of ignition wire must be a str')
             else:
-                raise ValueError('The type must be a ignition or communication')
+                raise ValueError('The type must be an ignition or communication')
         else: 
             raise ValueError('The type must be a string')
 
@@ -166,7 +166,7 @@ class Wire():
         if cross_norm_r1_r2 < 1e-12: #along the same line, cross product is zero -> magnetic field is 0
             b_V = Vector([0,0,0]) 
         else:
-            b_V = (1e-7 * self.current) * (cross_r1_r2 / cross_norm_r1_r2) * dot_term # T
+            b_V = (1e-7 * self.current) * (cross_r1_r2 / (cross_norm_r1_r2 ** 2)) * dot_term # T
        
         self.magnetic_field[r_t]  = list(b_V)
         self._magnetic_field[r_t] = b_V
@@ -189,7 +189,7 @@ class Wire():
             - If a float, it assumes that the wire genertes the same magnetic field
               on each axis, with the given value. 
 
-            - If a tuple or float, it assumes that the wire genertes the given magnetic
+            - If a tuple or list, it assumes that the wire genertes the given magnetic
               field. 
 
         Returns:
@@ -200,12 +200,19 @@ class Wire():
             if len(position_vector) == 3:
                 position_vector_t = tuple(position_vector)
                 if isinstance(magnetic_field, (float, int)):
-                    self._magnetic_field[position_vector_t] = [magnetic_field, magnetic_field, magnetic_field]
-                elif isinstance(magnetic_field, (list, tuple)):
+                    m_field = [magnetic_field, magnetic_field, magnetic_field]
+                    self._magnetic_field[position_vector_t] = Vector(m_field)
+                    self.magnetic_field[position_vector_t] = m_field
+                elif isinstance(magnetic_field, (list, tuple, Vector)):
                     if len(magnetic_field) == 3: 
-                        self._magnetic_field[position_vector_t] = list(magnetic_field)
+                        if isinstance(magnetic_field, (list, tuple)):
+                            self._magnetic_field[position_vector_t] = Vector(magnetic_field)
+                            self.magnetic_field[position_vector_t] = magnetic_field
+                        elif isinstance(magnetic_field, Vector):
+                            self._magnetic_field[position_vector_t] = magnetic_field
+                            self.magnetic_field[position_vector_t] = list(magnetic_field)
                     else:
-                        raise Exception('If a list is passed, it must have a value for each axis. Therefore, it must have length 3')
+                        raise Exception('If a list, tuple or Vector is passed, it must have one value for each axis. Therefore, it must have length 3')
             else:
                 raise ValueError('The position_vector must be a list, tuple or Vector with 3 elements')
         else:
@@ -214,7 +221,7 @@ class Wire():
 
     def _set_wire_edges_from_cso (self, _wire_edges_from_cso):
         '''
-        save as an attribute the position of the wire edges from the coordiante system
+        Save as an attribute the position of the wire edges from the coordiante system
         origin, chosen by the user.
         
         input:
@@ -226,9 +233,7 @@ class Wire():
         Returns:
         -------
             None
-
         '''
-
         self._wire_edges_from_cso = _wire_edges_from_cso
 
     @classmethod
@@ -246,7 +251,6 @@ class Wire():
         return cls(
             # Mandatory Parameters 
             current                      = data['current'],
-            current_direction            = data['current_direction'],
             wire_type                    = data['wire_type'],
             
             # Optional Parameters 

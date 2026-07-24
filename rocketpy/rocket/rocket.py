@@ -7,6 +7,7 @@ import warnings
 from typing import Iterable
 
 import numpy as np
+import math as m
 
 from rocketpy.control.controller import _Controller
 from rocketpy.exceptions import (
@@ -1928,12 +1929,12 @@ class Rocket:
             x,y,z = edge[0], edge[1], edge[2]
             
             # height boundds
-            flag, range = self.z_bounds_check(z)
+            flag, range_z= self.z_bounds_check(z)
             if not flag:
-                raise ValueError(f'The z component: {z} of {name} is outside the rocket range {range}')
+                raise ValueError(f'The z component: {z} of {name} is outside the rocket range {range_z}')
 
             # radial bounds
-            r_edge = x ** 2 + y ** 2
+            r_edge = m.sqrt(x ** 2 + y ** 2)
             r = self.general_radius(z)
             if r_edge > r:
                 raise ValueError(f'{name} with coordinates {edge} is outside the rocket since the radius {r_edge} is bigger than the radius of the rocket at that z: {z}, which is: {r}')
@@ -2057,7 +2058,7 @@ class Rocket:
         grid_spacing: float, optional, 
             it is used only when the shape is personalized and determines 
             the space between the points of the approximated shape defined
-            by the vertices. Default is 0.001
+            by the vertices. Default is 0.001. 
           
         '''
         if not isinstance(plate, Plate):
@@ -2098,7 +2099,10 @@ class Rocket:
                         else:
                             raise ValueError('The vertex must be defiened with 3 components')       
                                       
-                if not isinstance(grid_spacing, (float, int)):
+                if isinstance(grid_spacing, (float, int)):
+                    if grid_spacing <= 0:
+                        raise ValueError('Grid spacing must be greater than 0')
+                else:
                     raise ValueError('Grid spacing must be a float or int')               
             else:
                 raise ValueError('The accepted shapes are circular, squared and personalized')
@@ -2498,7 +2502,7 @@ class Rocket:
 
         Returns:
         bool: False if it is outside, True if it is inside
-        range: tuple
+        tuple
             Tuple formed by the range of the z relative to the cso:
         '''
         if isinstance(z, (float, int)):
@@ -2517,7 +2521,6 @@ class Rocket:
             
         else: 
             raise ValueError('The z component must be a float or int')
-
 
     def _calculate_radius_z_intermediate(self, z: float):
         '''
