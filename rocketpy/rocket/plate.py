@@ -5,6 +5,9 @@ import math as m
 import numpy as np
 from matplotlib.path import Path  
 from rocketpy.mathutils.function import Function
+from rocketpy.plots.plate_plots import _PlatePlots
+from rocketpy.prints.plate_prints import _PlatePrints
+
 
 
 
@@ -25,7 +28,7 @@ class Plate():
     absolute_magnetic_permeability: float
         Magnetic permeability of the material,
 
-    relative_magnetic_permeabiltiy: float
+    relative_magnetic_permeability: float
         ratio of the magnetic permeability to 
         the magnetic permeability of vacuum
 
@@ -56,8 +59,9 @@ class Plate():
     def __init__(
             self,
             material,
-            thickness, 
-            absolute_magnetic_permeability = None
+            absolute_magnetic_permeability: float | int | None = None, 
+            thickness: int | float = 0.001,
+            name = 'Plate', 
     ):
         '''
         Parameters:
@@ -72,7 +76,7 @@ class Plate():
         thickness: float, int
             Thickness of the plate in m. 
 
-        magnetic_permeability: float, int, optional
+        absolute_magnetic_permeability: float, int, optional
             Magnetic permeability of the material, which is 
             the measure of a material abilty to allow magnetic
             field lines to pass through it. 
@@ -80,6 +84,8 @@ class Plate():
         '''
         self._magnetic_distortion_matrixes = {}
         self.points = []
+        self.plots = _PlatePlots(self)
+        self.prints = _PlatePrints(self)
 
         if isinstance(material, str):
             if material == 'iron':
@@ -109,6 +115,12 @@ class Plate():
             raise ValueError('Thickness must be a float or int')
         else:
             self.thickness = thickness
+            
+        if isinstance(name, str):
+            self.name = name
+        else: 
+            raise ValueError('The name must be a str')
+        
     
 
     def define_plate_position(self, 
@@ -637,6 +649,57 @@ class Plate():
                 raise ValueError('To calculate the soft iron distortion matrix, first the plate must be added to the rocket, points list cannot be empty')
             
         else: raise ValueError('The points defining the plate must be a list')
+
+    def plot_plate(self, 
+                   color: str = 'blue', 
+                   marker: str = 'o', 
+                   filename = None):
+        '''
+        Draws the plate in a matplotlib figure
+
+        Parameters
+        ----------
+        color : str
+            Color of the points. 
+            A full list of color names can be found at:
+            https://matplotlib.org//gallery/color/named_colors
+            
+        marker: str
+            shape of the points from which the plate is formed. 
+            A full list of markers can be found at: 
+            https://matplotlib.org/stable/api/markers_api.html
+
+        filename : str | None, optional
+            The path the plot should be saved to. By default None, in which case
+            the plot will be shown instead of saved. Supported file endings are:
+            eps, jpg, jpeg, pdf, pgf, png, ps, raw, rgba, svg, svgz, tif, tiff
+            and webp (these are the formats supported by matplotlib).
+
+        '''
+        self.plots.points(color, marker, filename)
+
+
+    def info(self):
+        '''
+        print a summary of the information stored in the plate object
+
+        Returns
+        -------
+        None
+        '''
+        self.prints.all()
+
+
+    def all_info(self):
+        '''
+        Prints out all data and graphs available about the Plate.
+
+        Returns
+        -------
+        None
+        '''
+        self.plots.all()
+        self.prints.all()
 
 
     @classmethod
