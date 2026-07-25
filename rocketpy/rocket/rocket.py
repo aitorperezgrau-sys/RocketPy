@@ -1895,10 +1895,7 @@ class Rocket:
             sensor._attached_rockets[self] = 1
 
 
-    def add_wire(
-            self, 
-            wire: Wire, 
-            position_edges):
+    def add_wire(self, wire: Wire, position_edges: list | tuple [tuple | list | float | int ]) -> None:
         '''
         Adds the wire to the rocket.
         Wires are used to calculate the magnetic 
@@ -1949,7 +1946,7 @@ class Rocket:
 
 
 
-    def _define_3D_edges(self, position_edges):
+    def _define_3D_edges(self, position_edges: list | tuple [tuple | list | float | int ]) -> list[Vector[float], Vector[float]]:
         '''
         This function creates the 3D position vector of the 
         edges from the input values
@@ -1996,13 +1993,13 @@ class Rocket:
 
     def add_plate(
             self, 
-            plate,
-            shape, 
-            dimensions,
-            position = None,
-            height = None,
-            grid_spacing = 0.001
-        ):
+            plate: Plate,
+            shape: str, 
+            dimensions: float | int | list,
+            position: str | None = None,
+            height: float | int | None = None,
+            grid_spacing: int | float = 0.001
+        ) -> None:
         '''
         Adds the plate defined, into the rocket. Plates can 
         be used to define the soft iron distortion of 
@@ -2459,7 +2456,7 @@ class Rocket:
         self.plots.draw(vis_args, plane, filename=filename)
 
 
-    def general_radius(self, z: float):
+    def general_radius(self, z: float) -> float:
         '''
         Function return the radius of the rocket, including the
         nose cone and the radius variations in the body, as a function of 
@@ -2473,7 +2470,7 @@ class Rocket:
             in which we want to calculate the radius
         
         Returns:
-        r: float, int
+        r: float
             Radius for the z value in the whole rocket
 
         '''
@@ -2491,18 +2488,20 @@ class Rocket:
             raise ValueError('The z component must be a float or int')
         return r
 
-    def z_bounds_check(self, z):
+    def z_bounds_check(self, z: float) -> tuple[bool, tuple[float, float]]:
         '''
         This funciton is used to check if a given z 
         relative to the cso is inside or outside the defined rocket
 
-        Input: 
+        Parameters: 
         ---------
         z: float, int
 
         Returns:
-        bool: False if it is outside, True if it is inside
-        tuple
+        ---------
+        is_inside: bool
+            False if it is outside, True if it is inside
+        bounds:
             Tuple formed by the range of the z relative to the cso:
         '''
         if isinstance(z, (float, int)):
@@ -2513,16 +2512,14 @@ class Rocket:
 
             z_min = min(self._nose_tip_from_cso, self.motor_position)
             z_max = max(self._nose_tip_from_cso, self.motor_position)
-
-            if z < z_min or z > z_max:
-                return False, (z_min, z_max)
-            else: 
-                return True, (z_min, z_max)
+            
+            is_inside = z_min <= z <= z_max
+            return is_inside, (z_min, z_max)
             
         else: 
             raise ValueError('The z component must be a float or int')
 
-    def _calculate_radius_z_intermediate(self, z: float):
+    def _calculate_radius_z_intermediate(self, z: float) -> float:
         '''
         This is an auxiliary funciton that calcualtes the radius of the 
         rocket in the body, thus z must be bellow the nose cone

@@ -4,6 +4,7 @@ from rocketpy.mathutils import Vector, Matrix
 import math as m
 import numpy as np
 from matplotlib.path import Path  
+from rocketpy.mathutils.function import Function
 
 
 
@@ -110,23 +111,30 @@ class Plate():
             self.thickness = thickness
     
 
-    def define_plate_position(self, shape, dimensions, position, height, rocket, grid_spacing):
+    def define_plate_position(self, 
+                            rocket,
+                            shape: str, 
+                            dimensions: float | int | list,
+                            position: str | None = None,
+                            height: float | int | None = None,
+                            grid_spacing: int | float = 0.001,
+                            ) -> None:
         '''
         This function defines the geometry of the plate
         with respect to the cso from the shape, position,
         dimensions and height defined in the add_plate()
         rocket class method. 
 
-        Input:
+        Parameters:
         ------------
         shape: str
             The shape of the plate, allowed parameters are:
 
             'circular': then the plate is assumed to be 
-            a circle, and the input 'dimension' refers to
+            a circle, and the Parameters 'dimension' refers to
             the radius
             'squared': then the plate is assumed to be a 
-            square and the input 'dimensions' refers to the 
+            square and the Parameters 'dimensions' refers to the 
             side 
             'personalized': then the plate will have the shape 
             specified by the vertices defined in 'dimensions'
@@ -159,6 +167,7 @@ class Plate():
 
         rocket: Rocket
             RocketPy class.
+
         grid_spacing: 
             spaces between grid points, for the personalized case
 
@@ -177,21 +186,28 @@ class Plate():
             self.volume = self.area * self.thickness
 
 
-    def generate_points(self, shape, dimensions, position, height, rocket, grid_spacing):
+    def generate_points(self,
+                        rocket,
+                        shape: str, 
+                        dimensions: float | int | list,
+                        position: str | None = None,
+                        height: float | int | None = None,
+                        grid_spacing: int | float = 0.001,
+                        ) -> None:
         '''
         This function generates the points required to calculate the
         soft iron distoriton matrix: 
 
-        Input:
+        Parameters:
         ------------
         shape: str
             The shape of the plate, allowed parameters are:
 
             'circular': then the plate is assumed to be 
-            a circle, and the input 'dimension' refers to
+            a circle, and the Parameters 'dimension' refers to
             the radius
             'squared': then the plate is assumed to be a 
-            square and the input 'dimensions' refers to the 
+            square and the Parameters 'dimensions' refers to the 
             side 
             'personalized': then the plate will have the shape 
             specified by the vertices defined in 'dimensions'
@@ -441,12 +457,16 @@ class Plate():
             self.generate_personalized_internal_plate(dimensions, rocket.general_radius, rocket.z_bounds_check, grid_spacing)
 
 
-    def generate_personalized_internal_plate(self, vertices_3d, radius_func, z_checking_funciton, grid_spacing):
+    def generate_personalized_internal_plate(self, 
+                                             vertices_3d: list[list], 
+                                             radius_func: Function, 
+                                             z_checking_funciton: Function, 
+                                             grid_spacing: int | float = 0.001):
         '''
         Generates a 3D grid of points bounded by an arbitrary set of vertices,
         forced flat, and filtered to remain inside the rocket hull.
         
-        Input:
+        Parameters:
         ---------
         vertices_3d: list[list]
             list of lists or tuples [[X1, Y1, Z1], [X2, Y2, Z2], ...]
@@ -563,15 +583,14 @@ class Plate():
         self.points = final_3d_points
 
 
-    def calculate_soft_iron_distortion_matrix(self, position_vector: Vector):
+    def calculate_soft_iron_distortion_matrix(self, position_vector: Vector) -> None:
         '''
         This function allows to calculate the soft iron
         distortion matrix from the position of the points 
         of the plate and the parameters defined for the surface. 
 
-        input: 
+        Parameters: 
         ------------
-
         position_vector: Vector, list, tuple
             Vector containing the position relative 
             to the coordinate system origin 
@@ -622,7 +641,7 @@ class Plate():
 
 
     @classmethod
-    def from_dict(cls, data: dict):
+    def from_dict(cls, data: dict) -> "Plate":
         '''
         Creates an instance of Plate class from a dictionary object, data. 
         Data is a dictionary that must contain the same keys as the initialization
