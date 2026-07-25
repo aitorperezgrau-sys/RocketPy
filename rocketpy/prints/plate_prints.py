@@ -23,9 +23,13 @@ class _PlatePrints():
         len_points = len(self.plate.points)
         print(f'Number of points that form the plate: {len_points}')
     
-
-    def relative_magnetic_print(self):
-        print(f'Relative magnetic permeability: {self.plate.relative_magnetic_permeability}')
+    
+    def properties_material(self):
+        
+        print(f'Relative magnetic permeability of the material: {self.plate.relative_magnetic_permeability}')
+        print(f'Thickness: {self.plate.thickness}')
+        print(f'Area: {self.plate.area}')
+        print(f'Volume: {self.plate.volume}')
 
 
     def magnetic_distortion_matrix(self):
@@ -35,6 +39,6 @@ class _PlatePrints():
 
     def all(self):
         print(f'\n{self.plate.name} information: ')
+        self.properties_material()
         self.len_points_print()
-        self.relative_magnetic_print()
         self.magnetic_distortion_matrix()

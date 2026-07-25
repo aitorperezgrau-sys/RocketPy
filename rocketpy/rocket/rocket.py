@@ -1938,6 +1938,7 @@ class Rocket:
  
 
         wire._set_wire_edges_from_cso([edge_a, edge_b])
+        wire._rocket_belonging(self)
         
         if wire.wire_type == 'communications':
                 self.communication_wires.append(wire)                
@@ -2107,6 +2108,7 @@ class Rocket:
             raise ValueError('The shape must be defined as a string')
         
         plate.define_plate_position(self, shape, dimensions, position, height, grid_spacing)
+        plate._rocket_belonging(self)
         self.plates.append(plate)
         
 

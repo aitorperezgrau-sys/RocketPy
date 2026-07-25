@@ -84,7 +84,7 @@ class Plate():
         '''
         self._magnetic_distortion_matrixes = {}
         self.points = []
-        self.plots = _PlatePlots(self)
+        self.plots = None
         self.prints = _PlatePrints(self)
 
         if isinstance(material, str):
@@ -650,7 +650,8 @@ class Plate():
             
         else: raise ValueError('The points defining the plate must be a list')
 
-    def plot_plate(self, 
+
+    def draw_3D(self, 
                    color: str = 'blue', 
                    marker: str = 'o', 
                    filename = None):
@@ -676,8 +677,23 @@ class Plate():
             and webp (these are the formats supported by matplotlib).
 
         '''
-        self.plots.points(color, marker, filename)
+        self.plots.draw_3D(color, marker, filename)
 
+    def _rocket_belonging(self, rocket):
+        '''
+        This funciton is used to initializate _WirePlot class by
+        passing the rocket instance to which it belogns
+
+        Parameter:
+        ----------
+        rocket: Rocket
+            rocket instance to which it belongs
+        
+        Returns: 
+        -------
+        None
+        '''
+        self.plots = _PlatePlots(self, rocket)
 
     def info(self):
         '''

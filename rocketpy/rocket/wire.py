@@ -1,6 +1,8 @@
 import math
 import numpy as np
 from rocketpy.mathutils.vector_matrix import Matrix, Vector
+from rocketpy.prints.wire_prints import _WirePrints
+from rocketpy.plots.wire_plots import _WirePlots
 
 
 
@@ -40,6 +42,9 @@ class Wire():
         Name of the parachute to which it is attached the wire
         in the case ignition_wire_function is parachute
     
+    name : str, optional
+        Name of the wire. Default is 'wire'
+    
     '''
     def __init__(
             self,
@@ -49,6 +54,7 @@ class Wire():
             lead_ignition_time: float = 0,
             extra_ignition_time: float = 0,
             parachute_name: str | None = None, 
+            name: str = 'wire'
     ):
         '''
         current : float, int, list
@@ -144,10 +150,19 @@ class Wire():
         else: 
             raise ValueError('The type must be a string')
 
+        if isinstance(name, str):
+            self.name = name
+        else: 
+            raise ValueError('The name must be a str')
+        
         self._magnetic_field = {}
         self.magnetic_field = {}
         self._wire_edges_from_cso = None
         self.wire_length = 0
+
+        # prints and plots
+        self.prints = _WirePrints(self)
+        self.plots = None
     
 
     def measure_magnetic_field(self, position_vector: list | tuple | Vector) -> None: 
@@ -253,22 +268,64 @@ class Wire():
             raise ValueError('The position_vector must be a list, tuple or Vector')
         
 
-    def _set_wire_edges_from_cso (self, _wire_edges_from_cso: Vector) -> None: 
+    def _set_wire_edges_from_cso(self, _wire_edges_from_cso: list | tuple | Vector [Vector, Vector]) -> None: 
         '''
         Save as an attribute the position of the wire edges from the coordiante system
         origin, chosen by the user.
         
         Parameters:
         ------------
-        wire_edges_from_cso: Vector formed by Vectors 
+        wire_edges_from_cso: list/tuple/Vector [Vector, Vector]
             containing the edges position relative to the the coordiante system
-            origin. 
+            origin as a Vector instances.  
 
         Returns:
         --------
             None
         '''
         self._wire_edges_from_cso = _wire_edges_from_cso
+
+
+    def _rocket_belonging(self, rocket):
+        '''
+        This funciton is used to initializate _WirePlot class by
+        passing the rocket instance to which it belogns
+
+        Parameter:
+        ----------
+        rocket: Rocket
+            rocket instance to which it belongs
+        
+        Returns: 
+        -------
+        None
+        '''
+        self.plots = _WirePlots(self, rocket)
+
+
+
+    def info(self):
+        '''
+        Print a summary of the information stored in the plate object
+
+        Returns
+        -------
+        None
+        '''
+        self.prints.all()
+
+
+    def all_info(self):
+        '''
+        Prints out all data and graphs available about the Plate.
+
+        Returns
+        -------
+        None
+        '''
+        self.plots.all()
+        self.prints.all()
+
 
     @classmethod
     def from_dict(cls, data: dict) -> "Wire":
