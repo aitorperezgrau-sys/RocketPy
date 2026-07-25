@@ -173,18 +173,17 @@ class Plate():
 
         '''
         if shape == 'squared':
-            self.generate_points(shape, dimensions, position, height, rocket, grid_spacing)
+            self.generate_points(rocket, shape, dimensions, position, height, grid_spacing)
             self.area = dimensions * dimensions
             self.volume = self.area * self.thickness
         elif shape == 'circular': 
-            self.generate_points(shape, dimensions, position, height, rocket, grid_spacing)
+            self.generate_points(rocket, shape, dimensions, position, height, grid_spacing)
             self.area = np.pi * (dimensions ** 2)
             self.volume = self.area * self.thickness
         elif shape == 'personalized':
-            self.generate_points(shape, dimensions, position, height, rocket, grid_spacing)
+            self.generate_points(rocket, shape, dimensions, position, height, grid_spacing)
             self.area = len(self.points) * (grid_spacing ** 2) 
             self.volume = self.area * self.thickness
-
 
     def generate_points(self,
                         rocket,
@@ -200,6 +199,9 @@ class Plate():
 
         Parameters:
         ------------
+        rocket: Rocket
+            RocketPy class.
+
         shape: str
             The shape of the plate, allowed parameters are:
 
@@ -238,9 +240,6 @@ class Plate():
             Position of the geometric center of plate when the shape is not 
             'personalized' along the z axis relative to the cso. 
 
-        rocket: Rocket
-            RocketPy class.
-
         grid_spacing: 
             spaces between grid points, for the personalized case
 
@@ -253,7 +252,7 @@ class Plate():
             match position:
                 case 'right':
                     self.points = []
-                    for z in np.linspace(lower_z, upper_z, 25):
+                    for z in np.linspace(lower_z, upper_z, 40):
                         z_points = []
                         r = rocket.general_radius(z)
                         dz = z - center_z
@@ -273,7 +272,7 @@ class Plate():
                         y_init = - lateral
                         y_final = lateral
 
-                        for y in np.linspace(y_init, y_final, 25):
+                        for y in np.linspace(y_init, y_final, 60):
                             x = m.sqrt(r ** 2 - y ** 2) 
                             z_points.append([x, y, z])
 
@@ -281,7 +280,7 @@ class Plate():
 
                 case 'front':
                     self.points = []
-                    for z in np.linspace(lower_z, upper_z, 25):
+                    for z in np.linspace(lower_z, upper_z, 40):
                         z_points = []
                         r = rocket.general_radius(z)
                         dz = z - center_z
@@ -301,7 +300,7 @@ class Plate():
                         x_init = lateral
                         x_final = - lateral
 
-                        for x in np.linspace(x_init, x_final, 25):
+                        for x in np.linspace(x_init, x_final, 60):
                             y = m.sqrt(r ** 2 - x ** 2) 
                             z_points.append([x, y, z])
 
@@ -309,7 +308,7 @@ class Plate():
 
                 case 'left':
                     self.points = []
-                    for z in np.linspace(lower_z, upper_z, 25):
+                    for z in np.linspace(lower_z, upper_z, 40):
                         z_points = []
                         r = rocket.general_radius(z)
                         dz = z - center_z
@@ -329,7 +328,7 @@ class Plate():
                         y_init = lateral
                         y_final = - lateral
 
-                        for y in np.linspace(y_init, y_final, 25):
+                        for y in np.linspace(y_init, y_final, 60):
                             x = - m.sqrt(r ** 2 - y ** 2) 
                             z_points.append([x, y, z])
 
@@ -337,7 +336,7 @@ class Plate():
 
                 case 'back':
                     self.points = []
-                    for z in np.linspace(lower_z, upper_z, 25):
+                    for z in np.linspace(lower_z, upper_z, 40):
                         z_points = []
                         r = rocket.general_radius(z)
                         dz = z - center_z
@@ -357,7 +356,7 @@ class Plate():
                         x_init = -lateral
                         x_final = lateral
 
-                        for x in np.linspace(x_init, x_final, 25):
+                        for x in np.linspace(x_init, x_final, 60):
                             y = - m.sqrt(r ** 2 - x ** 2) 
                             z_points.append([x, y, z])
 
@@ -370,7 +369,7 @@ class Plate():
             match position:
                 case 'right':
                     self.points = []
-                    for z in np.linspace(lower_z, upper_z, 25):
+                    for z in np.linspace(lower_z, upper_z, 30):
                         z_points = []
                         r = rocket.general_radius(z)
                         
@@ -384,7 +383,7 @@ class Plate():
                         y_init = - lateral
                         y_final = lateral
                 
-                        for y in np.linspace(y_init, y_final, 25):
+                        for y in np.linspace(y_init, y_final, 50):
                             x = m.sqrt(r ** 2 - y ** 2)  
                             z_points.append([x, y, z])
                                 
@@ -392,7 +391,7 @@ class Plate():
 
                 case 'front':
                     self.points = []
-                    for z in np.linspace(lower_z, upper_z, 25):
+                    for z in np.linspace(lower_z, upper_z, 30):
                         z_points = []
                         r = rocket.general_radius(z)
 
@@ -405,7 +404,7 @@ class Plate():
                         x_init = lateral
                         x_final = - lateral
                 
-                        for x in np.linspace(x_init, x_final, 25):
+                        for x in np.linspace(x_init, x_final, 50):
                             y = m.sqrt(r ** 2 - x ** 2)
                             z_points.append([x, y, z])
 
@@ -413,7 +412,7 @@ class Plate():
 
                 case 'left': 
                     self.points = []
-                    for z in np.linspace(lower_z, upper_z, 25):
+                    for z in np.linspace(lower_z, upper_z, 30):
                         z_points = []
                         r = rocket.general_radius(z)
 
@@ -426,7 +425,7 @@ class Plate():
                         y_init = lateral
                         y_final = - lateral
 
-                        for y in np.linspace(y_init, y_final, 25):
+                        for y in np.linspace(y_init, y_final, 50):
                             x = m.sqrt(r ** 2 - y ** 2)
                             z_points.append([x, y, z])
                             
@@ -434,7 +433,7 @@ class Plate():
     
                 case 'back':
                     self.points = []
-                    for z in np.linspace(lower_z, upper_z, 25):
+                    for z in np.linspace(lower_z, upper_z, 30):
                         z_points = []
                         r = rocket.general_radius(z)
                         
@@ -447,7 +446,7 @@ class Plate():
                         x_init = - lateral
                         x_final = lateral
 
-                        for x in np.linspace(x_init, x_final, 25):
+                        for x in np.linspace(x_init, x_final, 50):
                             y = -m.sqrt(r ** 2 - x ** 2) 
                             z_points.append([x, y, z])
 

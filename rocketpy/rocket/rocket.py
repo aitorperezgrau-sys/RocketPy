@@ -2106,7 +2106,7 @@ class Rocket:
         else:
             raise ValueError('The shape must be defined as a string')
         
-        plate.define_plate_position(shape, dimensions, position, height, self, grid_spacing)
+        plate.define_plate_position(self, shape, dimensions, position, height, grid_spacing)
         self.plates.append(plate)
         
 
