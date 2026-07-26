@@ -37,6 +37,9 @@ Attention: The newest changes should be on top -->
 ### Changed
 
 - CI: make changelog automation LLM-based (Gemini) and race-safe [#1082](https://github.com/RocketPy-Team/RocketPy/pull/1082)
+- ENH: Resolve pressure_ISA discretization bounds TODO [#1056](https://github.com/RocketPy-Team/RocketPy/pull/1056)
+
+### Fixed
 
 ## [v1.13.0] - 2026-07-21
 

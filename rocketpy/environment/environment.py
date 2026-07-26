@@ -2554,8 +2554,14 @@ class Environment:
                 )
             return P
 
-        # Discretize this Function to speed up the trajectory simulation
-        altitudes = np.linspace(0, 80000, 100)  # TODO: should be -2k instead of 0
+        # Discretize across the full ISA range (geopotential layers -> geometric
+        # height), keeping 0 m as a knot and now covering below sea level too.
+        gph_to_geo = geopotential_height_to_geometric_height
+        min_h = gph_to_geo(geopotential_height[0], earth_radius)
+        altitudes = np.append(
+            np.linspace(min_h, 0, 10, endpoint=False),
+            np.linspace(0, gph_to_geo(geopotential_height[-1], earth_radius), 90),
+        )
         pressures = [pressure_function(h) for h in altitudes]
 
         return np.column_stack([altitudes, pressures])
@@ -2603,7 +2609,7 @@ class Environment:
         >>> env = Environment()
         >>> env.calculate_density_profile()
         >>> float(env.density(1000))
-        1.1115112430077818
+        1.1116196671683787
         """
         # Retrieve pressure P, gas constant R and temperature T
         P = self.pressure

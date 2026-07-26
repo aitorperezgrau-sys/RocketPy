@@ -19,6 +19,7 @@ from rocketpy.environment.tools import (
     utm_to_geodesic,
 )
 from rocketpy.environment.weather_model_mapping import WeatherModelMapping
+from rocketpy.tools import geopotential_height_to_geometric_height
 
 
 class DummyLambertProjection:
@@ -828,6 +829,37 @@ def test_pressure_conversion_factor_autodetect_by_model(
         None, None, model
     )
     assert factor == expected_factor
+
+
+def test_pressure_isa_discretization_bounds(example_plain_env):
+    """The pressure_ISA discretization must span the full range of the
+    Standard Atmosphere model: from the lowest geopotential layer (-2000 m) up
+    to the highest (80000 m), both converted to geometric height. It must also
+    be a physically sane pressure curve: altitude strictly increasing, pressure
+    strictly decreasing, and sea level (0 m) sampled exactly.
+    """
+
+    # Act
+    pressure_isa_function = example_plain_env.pressure_ISA
+    source_array = pressure_isa_function.source
+    altitudes = source_array[:, 0]
+    pressures = source_array[:, 1]
+
+    # Expected min/max geometric heights
+    earth_radius = example_plain_env.earth_radius
+    expected_min_height = geopotential_height_to_geometric_height(-2000, earth_radius)
+    expected_max_height = geopotential_height_to_geometric_height(80000, earth_radius)
+
+    # Assert
+    assert len(altitudes) == 100
+    assert np.isclose(altitudes[0], expected_min_height)
+    assert np.isclose(altitudes[-1], expected_max_height)
+    assert expected_min_height < 0 < expected_max_height
+    # Sea level must be one of the sampled points (split boundary)
+    assert np.any(np.isclose(altitudes, 0.0))
+    # Physical sanity: altitude increasing, pressure decreasing monotonically
+    assert np.all(np.diff(altitudes) > 0)
+    assert np.all(np.diff(pressures) < 0)
 
 
 @pytest.mark.parametrize(
