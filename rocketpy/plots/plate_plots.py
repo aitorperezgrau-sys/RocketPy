@@ -28,45 +28,58 @@ class _PlatePlots():
         self.plate = plate
         self.rocket = rocket
 
-    def draw_3D(self, color = 'blue', marker = 'o', elev = None, azim = None, filename = None):
+    def draw_3D(self, 
+                color: str = 'teal', 
+                marker: str = 'o', 
+                elev: float | int | None = None, 
+                azim: float | int | None = None,
+                filename: str | None = None) -> None:
         '''
-        plots the scatter plot of the plate formed by the points
-        used to model the magnetic distortion. 
+        Plots the scatter plot of the plate formed by the points
+        used to model the magnetic distortion in 3D. 
 
-        color : str, default: 'blue'. 
+        Parameters:
+        ----------------
+        color : str, optional
             Color of the points. 
             A full list of color names can be found at:
             https://matplotlib.org//gallery/color/named_colors
+            Default: 'teal'. 
 
-            
-        marker: str, default: 'o'.
+        marker: str, optional
             shape of the points from which the plate is formed. 
             A full list of markers can be found at: 
             https://matplotlib.org/stable/api/markers_api.html
+            Default is 'o'.
  
-        elev : float, default: None
+        elev : float, optional
             The elevation angle in degrees rotates the camera above the plane
             pierced by the vertical axis, with a positive angle corresponding
             to a location above that plane. For example, with the default
             vertical axis of 'z', the elevation defines the angle of the camera
             location above the x-y plane.
             If None, then the initial value as specified in the `Axes3D`
-            constructor is used.
+            constructor is used. Default is None
 
-        azim : float, default: None
+        azim : float, optional
             The azimuthal angle in degrees rotates the camera about the
             vertical axis, with a positive angle corresponding to a
             right-handed rotation. For example, with the default vertical axis
             of 'z', a positive azimuth rotates the camera about the origin from
             its location along the +x axis towards the +y axis.
             If None, then the initial value as specified in the `Axes3D`
-            constructor is used.
+            constructor is used. Default is None
 
-        filename : str, default: None
+        filename : str, optional
             The path the plot should be saved to. By default None, in which case
             the plot will be shown instead of saved. Supported file endings are:
             eps, jpg, jpeg, pdf, pgf, png, ps, raw, rgba, svg, svgz, tif, tiff
-            and webp (these are the formats supported by matplotlib).
+            and webp (these are the formats supported by matplotlib). Default is None
+
+
+        Returns: 
+        ----------
+        None
         '''
         # Unpack columns into separate x, y, and z components
         x, y, z = zip(*self.plate.points)
@@ -89,12 +102,17 @@ class _PlatePlots():
 
 
     def draw(self,
-             vis_args = None,
-             plane = 'xz',
-             color = 'green',
+             vis_args: dict | None = None,
+             plane: str = 'xz',
+             color: str = 'darkgree',
              marker = 'o',
-             filename = None):
+             filename = None) -> None:
         '''
+        Plots the plate together with the outline of the rocket
+        in 2D. 
+
+        Parameters:
+        -------------
         vis_args : dict, optional
             Determines the visual aspects when drawing the rocket. If ``None``,
             default values are used. Default values are:
@@ -123,16 +141,20 @@ class _PlatePlots():
             Color of the points. 
             A full list of color names can be found at:
             https://matplotlib.org//gallery/color/named_colors
-            Default is 'green'. 
+            Default is 'darkgreen'. 
         
-        filename : str | None, optional
+        filename : str, optional
             The path the plot should be saved to. By default None, in which case
             the plot will be shown instead of saved. Supported file endings are:
             eps, jpg, jpeg, pdf, pgf, png, ps, raw, rgba, svg, svgz, tif, tiff
             and webp (these are the formats supported by matplotlib).
+
+            
+        Returns: 
+        --------
+        None
+
         '''
-
-
         if vis_args is None:
             vis_args = {
                 "background": "#EEEEEE",
@@ -161,10 +183,28 @@ class _PlatePlots():
 
     def _plot_plate_rocket(self,
                             ax,
-                            plane = 'xz',
-                            color = 'green'):
+                            plane: str = 'xz',
+                            color: str = 'darkgreen') -> None:
         ''''
         This function plots the plate on the rocket:
+
+        Parameters:
+        ------------
+        plane : str, optional
+            Plane that it is wanted to be represented:
+            Accepted options are 'xz' and 'yz'
+            Default value is 'xz'
+
+        color : str, optional
+            Color of the points. 
+            A full list of color names can be found at:
+            https://matplotlib.org//gallery/color/named_colors
+            Default is 'green'.  
+
+            
+        Returns: 
+        ---------
+        None
         '''
         x, y, z = zip(*self.plate.points)
 
@@ -185,7 +225,8 @@ class _PlatePlots():
     def all(self):
         '''
         Prints out all graphs available about the Plate. It simply calls
-        all the other plotter methods in this class.
+        all the other plotter methods in this class with all the 
+        default parameters. 
 
         Returns:
         --------

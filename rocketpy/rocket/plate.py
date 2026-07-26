@@ -284,7 +284,7 @@ class Plate():
                         y_init = - lateral
                         y_final = lateral
 
-                        for y in np.linspace(y_init, y_final, 60):
+                        for y in np.linspace(y_init, y_final, 70):
                             x = m.sqrt(r ** 2 - y ** 2) 
                             z_points.append([x, y, z])
 
@@ -312,7 +312,7 @@ class Plate():
                         x_init = lateral
                         x_final = - lateral
 
-                        for x in np.linspace(x_init, x_final, 60):
+                        for x in np.linspace(x_init, x_final, 70):
                             y = m.sqrt(r ** 2 - x ** 2) 
                             z_points.append([x, y, z])
 
@@ -340,7 +340,7 @@ class Plate():
                         y_init = lateral
                         y_final = - lateral
 
-                        for y in np.linspace(y_init, y_final, 60):
+                        for y in np.linspace(y_init, y_final, 70):
                             x = - m.sqrt(r ** 2 - y ** 2) 
                             z_points.append([x, y, z])
 
@@ -372,7 +372,7 @@ class Plate():
                         x_init = -lateral
                         x_final = lateral
 
-                        for x in np.linspace(x_init, x_final, 60):
+                        for x in np.linspace(x_init, x_final, 70):
                             y = - m.sqrt(r ** 2 - x ** 2) 
                             z_points.append([x, y, z])
 
@@ -399,7 +399,7 @@ class Plate():
                         y_init = - lateral
                         y_final = lateral
                 
-                        for y in np.linspace(y_init, y_final, 50):
+                        for y in np.linspace(y_init, y_final, 60):
                             x = m.sqrt(r ** 2 - y ** 2)  
                             z_points.append([x, y, z])
                                 
@@ -420,7 +420,7 @@ class Plate():
                         x_init = lateral
                         x_final = - lateral
                 
-                        for x in np.linspace(x_init, x_final, 50):
+                        for x in np.linspace(x_init, x_final, 60):
                             y = m.sqrt(r ** 2 - x ** 2)
                             z_points.append([x, y, z])
 
@@ -441,7 +441,7 @@ class Plate():
                         y_init = lateral
                         y_final = - lateral
 
-                        for y in np.linspace(y_init, y_final, 50):
+                        for y in np.linspace(y_init, y_final, 60):
                             x = m.sqrt(r ** 2 - y ** 2)
                             z_points.append([x, y, z])
                             
@@ -462,7 +462,7 @@ class Plate():
                         x_init = - lateral
                         x_final = lateral
 
-                        for x in np.linspace(x_init, x_final, 50):
+                        for x in np.linspace(x_init, x_final, 60):
                             y = -m.sqrt(r ** 2 - x ** 2) 
                             z_points.append([x, y, z])
 

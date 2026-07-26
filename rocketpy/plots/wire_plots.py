@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 from rocketpy.plots.plot_helpers import show_or_save_plot
 import math as m
+from matplotlib.pyplot import Axes
 
 
 class _WirePlots():
@@ -29,12 +30,19 @@ class _WirePlots():
         self.rocket = rocket
 
 
-    def draw(self, vis_args = None, plane = 'xz', color = 'red', marker = 'o', linestyle = '-', edges_names = True, filename = None):
+    def draw(self, 
+             vis_args: dict | None = None, 
+             plane: str = 'xz', 
+             color: str = 'salmon', 
+             marker: str = 'o', 
+             linestyle: str = '-', 
+             edges_names: bool = True, 
+             filename: str | None = None) -> None:
         '''
-        Plots the wire and the rocket together 
+        Plots the wire and the rocket together. 
 
-        Parameters
-        ----------
+        Parameters:
+        ------------
         vis_args : dict, optional
             Determines the visual aspects when drawing the rocket. If ``None``,
             default values are used. Default values are:
@@ -63,7 +71,7 @@ class _WirePlots():
             Color of the points. 
             A full list of color names can be found at:
             https://matplotlib.org//gallery/color/named_colors
-            Default is 'red'. 
+            Default is 'salmon'. 
             
         marker : str, optional
             shape of the points from which the plate is formed. 
@@ -82,11 +90,17 @@ class _WirePlots():
             If False, they will not be displayed
             If True, the name Edge A, and Edge B will be show.
 
-        filename : str | None, optional
+        filename : str, optional
             The path the plot should be saved to. By default None, in which case
             the plot will be shown instead of saved. Supported file endings are:
             eps, jpg, jpeg, pdf, pgf, png, ps, raw, rgba, svg, svgz, tif, tiff
-            and webp (these are the formats supported by matplotlib).
+            and webp (these are the formats supported by matplotlib). Default is 
+            None
+
+
+        Returns: 
+        ---------
+        None
         '''
         if vis_args is None:
             vis_args = {
@@ -115,13 +129,49 @@ class _WirePlots():
         
 
     def _draw_wires(self, 
-                    ax, 
-                    plane = 'xz', 
-                    color = 'red', 
-                    marker = 'o', 
-                    linestyle = '-', 
-                    edges_names = True):
+                    ax: Axes, 
+                    plane: str = 'xz', 
+                    color: str = 'salmon', 
+                    marker: str = 'o', 
+                    linestyle: str = '-', 
+                    edges_names: bool = True) -> None:
         
+        '''
+        This function is an auxiliary function used to plot the edges 
+        and the wire in the rocket on the axes 'ax'.
+
+        Parameters:
+        ------------
+        ax: Axes
+            matplotlib instance in which the wire will be plotted
+
+        color : str, optional
+            Color of the points. 
+            A full list of color names can be found at:
+            https://matplotlib.org//gallery/color/named_colors
+            Default is 'salmon'. 
+            
+        marker : str, optional
+            shape of the points from which the plate is formed. 
+            A full list of markers can be found at: 
+            https://matplotlib.org/stable/api/markers_api.html
+            Default is 'o'. 
+
+        linestyle : str, optional
+            type of the line that will represent the wire. 
+            A full list of linestyles can be found at: 
+            https://matplotlib.org/stable/gallery/lines_bars_and_markers/linestyles.html
+            Default is '-'. 
+
+        edges_names : bool, optional
+            boolean defining whether the names of the edges are displayed.
+            If False, they will not be displayed
+            If True, the name Edge A, and Edge B will be show.
+        
+        Returns: 
+        ---------
+        None
+        '''
         edge_a_x = self.wire._wire_edges_from_cso[0][0]
         edge_b_x = self.wire._wire_edges_from_cso[1][0]
         edge_a_y = self.wire._wire_edges_from_cso[0][1]
@@ -157,7 +207,8 @@ class _WirePlots():
     def all(self):
         '''
         Prints out all graphs available about the Wire. It simply calls
-        all the other plotter methods in this class.
+        all the other plotter methods in this class with all the 
+        default parameters.
 
         Returns:
         --------

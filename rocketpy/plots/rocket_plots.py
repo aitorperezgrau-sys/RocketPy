@@ -5,7 +5,7 @@ from rocketpy.mathutils.vector_matrix import Vector
 from rocketpy.motors import HybridMotor, LiquidMotor, SolidMotor
 from rocketpy.rocket.aero_surface import Fin, Fins, NoseCone, Tail
 from rocketpy.rocket.aero_surface.generic_surface import GenericSurface
-
+from matplotlib.pyplot import Axes
 from .plot_helpers import show_or_save_plot
 
 
@@ -715,10 +715,10 @@ class _RocketPlots:
                    wires = 'all', 
                    vis_args: dict | None = None, 
                    plane: str = 'xz', 
-                   color = 'default', 
-                   marker = 'o', 
-                   linestyle = '-', 
-                   filename = None):
+                   color: str = 'default', 
+                   marker: str = 'o', 
+                   linestyle: str = '-', 
+                   filename: str | None = None) -> None:
         '''
         Plots all the wires that are attached to the rocket
 
@@ -774,11 +774,12 @@ class _RocketPlots:
             https://matplotlib.org/stable/gallery/lines_bars_and_markers/linestyles.html
             Default is '-'. 
 
-        filename : str | None, optional
+        filename : str, optional
             The path the plot should be saved to. By default None, in which case
             the plot will be shown instead of saved. Supported file endings are:
             eps, jpg, jpeg, pdf, pgf, png, ps, raw, rgba, svg, svgz, tif, tiff
-            and webp (these are the formats supported by matplotlib).
+            and webp (these are the formats supported by matplotlib). Default is 
+            None
 
         Returns
         -------
@@ -840,7 +841,7 @@ class _RocketPlots:
                     vis_args: dict | None = None, 
                     plane: str = 'xz', 
                     color: list | str = 'default',
-                    filename = None):
+                    filename = None) -> None:
         '''
         vis_args : dict, optional
             Determines the visual aspects when drawing the rocket. If ``None``,
@@ -874,11 +875,12 @@ class _RocketPlots:
             Default is 'default', meaning a different default color
             will be applied to each wire. 
 
-        filename : str | None, optional
+        filename : str, optional
             The path the plot should be saved to. By default None, in which case
             the plot will be shown instead of saved. Supported file endings are:
             eps, jpg, jpeg, pdf, pgf, png, ps, raw, rgba, svg, svgz, tif, tiff
-            and webp (these are the formats supported by matplotlib).
+            and webp (these are the formats supported by matplotlib). Default is 
+            None. 
 
         Returns
         -------
@@ -973,7 +975,9 @@ class _RocketPlots:
         self.draw_plates()
     
 
-    def _rocket_shape_plot(self, vis_args: dict | None = None, plane: str = 'xz'):
+    def _rocket_shape_plot(self, 
+                           vis_args: dict | None = None, 
+                           plane: str = 'xz') -> tuple[Axes, float, float]:
         '''
         This is an auxiliary function that plots the outline of the rocket
 
@@ -1004,6 +1008,12 @@ class _RocketPlots:
             Default value is 'xz'
 
         Returns: 
+        ax: Axes 
+            Axes instance in which the rocket outline has been displayed
+        radius: float
+            Last radius of the rocket, (y axis in the plot)
+        last_x: float
+            Last x value of the plot, (z axis value in the rocket frame)
 
         '''
         _, ax = plt.subplots(figsize=(8, 6), facecolor=vis_args["background"])
