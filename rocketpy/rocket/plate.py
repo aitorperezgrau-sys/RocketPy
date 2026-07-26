@@ -344,7 +344,11 @@ class Plate():
                             x = - m.sqrt(r ** 2 - y ** 2) 
                             z_points.append([x, y, z])
 
-                        self.points.extend(z_points)  
+                        self.points.extend(z_points) 
+
+
+
+
 
                 case 'back':
                     self.points = []

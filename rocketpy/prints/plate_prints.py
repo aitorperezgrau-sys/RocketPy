@@ -27,9 +27,9 @@ class _PlatePrints():
     def properties_material(self):
         
         print(f'Relative magnetic permeability of the material: {self.plate.relative_magnetic_permeability}')
-        print(f'Thickness: {self.plate.thickness}')
-        print(f'Area: {self.plate.area}')
-        print(f'Volume: {self.plate.volume}')
+        print(f'Thickness: {self.plate.thickness} m')
+        print(f'Area: {self.plate.area} m^2')
+        print(f'Volume: {self.plate.volume} m^3')
 
 
     def magnetic_distortion_matrix(self):

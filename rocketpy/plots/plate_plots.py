@@ -28,26 +28,41 @@ class _PlatePlots():
         self.plate = plate
         self.rocket = rocket
 
-    def draw_3D(self, color = 'blue', marker = 'o', filename = None):
+    def draw_3D(self, color = 'blue', marker = 'o', elev = None, azim = None, filename = None):
         '''
         plots the scatter plot of the plate formed by the points
         used to model the magnetic distortion. 
 
-        color : str, optional
+        color : str, default: 'blue'. 
             Color of the points. 
             A full list of color names can be found at:
             https://matplotlib.org//gallery/color/named_colors
-            Default is 'blue'. 
 
             
-        marker: str, optional
+        marker: str, default: 'o'.
             shape of the points from which the plate is formed. 
             A full list of markers can be found at: 
             https://matplotlib.org/stable/api/markers_api.html
-            Default is 'o'. 
+ 
+        elev : float, default: None
+            The elevation angle in degrees rotates the camera above the plane
+            pierced by the vertical axis, with a positive angle corresponding
+            to a location above that plane. For example, with the default
+            vertical axis of 'z', the elevation defines the angle of the camera
+            location above the x-y plane.
+            If None, then the initial value as specified in the `Axes3D`
+            constructor is used.
 
+        azim : float, default: None
+            The azimuthal angle in degrees rotates the camera about the
+            vertical axis, with a positive angle corresponding to a
+            right-handed rotation. For example, with the default vertical axis
+            of 'z', a positive azimuth rotates the camera about the origin from
+            its location along the +x axis towards the +y axis.
+            If None, then the initial value as specified in the `Axes3D`
+            constructor is used.
 
-        filename : str | None, optional
+        filename : str, default: None
             The path the plot should be saved to. By default None, in which case
             the plot will be shown instead of saved. Supported file endings are:
             eps, jpg, jpeg, pdf, pgf, png, ps, raw, rgba, svg, svgz, tif, tiff
@@ -61,6 +76,7 @@ class _PlatePlots():
 
         # plot individual points
         ax.scatter(x, y, z, color = color, marker = marker, label = self.plate.name)
+        ax.view_init(elev = elev, azim = azim)
 
         # Labels & formatting
         ax.set_xlabel("X (m)")
@@ -166,7 +182,6 @@ class _PlatePlots():
 
 
 
-
     def all(self):
         '''
         Prints out all graphs available about the Plate. It simply calls
@@ -177,3 +192,5 @@ class _PlatePlots():
         None
         '''
         self.draw_3D()
+        self.draw()
+        

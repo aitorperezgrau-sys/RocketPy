@@ -115,10 +115,6 @@ class Magnetometer(InertialSensor):
 
     normal_vector : Vector
         The normal vector of the sensor in the rocket frame of reference.
-
-    rotation_matrix : Matrix
-        The rotation matrix of the sensor from the rocket frame to the sensor
-        frame of reference.
     '''
     def __init__(
             self,
