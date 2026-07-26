@@ -117,27 +117,27 @@ class Magnetometer(InertialSensor):
         The normal vector of the sensor in the rocket frame of reference.
     '''
     def __init__(
-            self,
-            sampling_rate,
-            orientation = (0,0,0),
-            measurement_range = np.inf,
-            resolution = 0,
-            hard_iron_distortion = 0,
-            soft_iron_distortion = Matrix.identity(),
-            power_interference = 0, 
-            activation_signal_interference = None,
-            communications_interference = None,
-            noise_density = 0,
-            noise_variance = 1,
-            random_walk_density = 0,
-            random_walk_variance = 1,
-            constant_bias = 0,
-            operating_temperature = 298,
-            temperature_bias = 0,
-            temperature_scale_factor = 0,
-            cross_axis_sensitivity = 0,
-            name = 'Magnetometer',
-        ):
+        self,
+        sampling_rate,
+        orientation = (0,0,0),
+        measurement_range = np.inf,
+        resolution = 0,
+        hard_iron_distortion = 0,
+        soft_iron_distortion = Matrix.identity(),
+        power_interference = 0, 
+        activation_signal_interference = None,
+        communications_interference = None,
+        noise_density = 0,
+        noise_variance = 1,
+        random_walk_density = 0,
+        random_walk_variance = 1,
+        constant_bias = 0,
+        operating_temperature = 298,
+        temperature_bias = 0,
+        temperature_scale_factor = 0,
+        cross_axis_sensitivity = 0,
+        name = 'Magnetometer',
+    ):
         '''
         initialize the magnetometer sensor
 
@@ -547,7 +547,13 @@ class Magnetometer(InertialSensor):
         self._save_data((time, *B_sensor))        
     
 
-    def apply_magnetic_interference(self, B: Vector, rocket: Rocket, current_time: float | int, parachute_events: list | None = None) -> Vector:
+    def apply_magnetic_interference(
+        self, 
+        B: Vector, 
+        rocket: Rocket, 
+        current_time: float | int, 
+        parachute_events: list | None = None
+    ) -> Vector:
         '''
         This funciton applies the magnetic distortion due to 
         the power interference, hard iron and soft iron.
@@ -656,7 +662,13 @@ class Magnetometer(InertialSensor):
     
 
 
-    def apply_power_interference(self, B: Vector, rocket: Rocket, current_time: float, parachute_events: list | None = None) -> Vector:
+    def apply_power_interference(
+        self, 
+        B: Vector, 
+        rocket: Rocket, 
+        current_time: float, 
+        parachute_events: list | None = None
+    ) -> Vector:
         
         '''
         This funtion applies the electromagnetic interference to the 
@@ -752,7 +764,13 @@ class Magnetometer(InertialSensor):
         return B
 
 
-    def apply_activation_signal_interference(self, B: Vector, rocket: Rocket, current_time: float, parachute_events = None) -> Vector:
+    def apply_activation_signal_interference(
+        self, 
+        B: Vector, 
+        rocket: Rocket, 
+        current_time: float, 
+        parachute_events: list | None = None
+    ) -> Vector:
         '''
         This function applies the interference caused due to the current
         flowing through the ignition wires, during an activation signal

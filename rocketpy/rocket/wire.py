@@ -47,14 +47,14 @@ class Wire():
     
     '''
     def __init__(
-            self,
-            current: float | int,
-            wire_type: str,
-            ignition_wire_function: str | None = None,
-            lead_ignition_time: float = 0,
-            extra_ignition_time: float = 0,
-            parachute_name: str | None = None, 
-            name: str = 'wire'
+        self,
+        current: float | int,
+        wire_type: str,
+        ignition_wire_function: str | None = None,
+        lead_ignition_time: float = 0,
+        extra_ignition_time: float = 0,
+        parachute_name: str | None = None, 
+        name: str = 'wire'
     ):
         '''
         current : float, int, list
@@ -221,7 +221,8 @@ class Wire():
     
     def define_magnetic_field(
         self, position_vector: list | tuple | Vector, 
-        magnetic_field: float | int | list | tuple | Vector) -> None: 
+        magnetic_field: float | int | list | tuple | Vector
+    ) -> None: 
         '''
         This function allows to defined the magnetic field at a certain point
         and this will the value used for the calculations. 

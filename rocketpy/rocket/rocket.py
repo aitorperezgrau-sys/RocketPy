@@ -1993,121 +1993,47 @@ class Rocket:
         
 
     def add_plate(
-            self, 
-            plate: Plate,
-            shape: str, 
-            dimensions: float | int | list,
-            position: str | None = None,
-            height: float | int | None = None,
-            grid_spacing: int | float = 0.001
-        ) -> None:
+        self, 
+        plate: Plate,
+        position: str | None = None,
+        height: float | int | None = None,
+    ) -> None:
         '''
-        Adds the plate defined, into the rocket. Plates can 
-        be used to define the soft iron distortion of 
-        the magnetic field, thus alterting the magnetometer
-        reading if defined. 
+        Adds a Plate object to the rocket.
 
-    
-        Inputs:
-        -----------
-        plate: Plate object
-
-        shape: str
-            The shape of the plate, allowed parameters are:
-
-            'circular': then the plate is assumed to be 
-            a circle, and the input 'dimension' refers to
-            the radius. The plate will be located in the 
-            rocket body or nose cone. 
-
-            'squared': then the plate is assumed to be a 
-            square and the input 'dimensions' refers to the 
-            side. The plate will be located in the 
-            rocket body or nose cone. 
-
-            'personalized': then the plate will have the shape 
-            specified by the vertexes defined in 'dimensions'
-
-        dimensions: float, int, list
-            Dimensions of the plate, which depend on 'shape' 
-            definition:
-
-            When it is 'circular', the dimension is a float or int,
-            which represents the radius, when the shape is flat. 
-
-            when it is 'squared', the dimension is a float or int,
-            which represents the side length, when the shape is flat.
-
-            when it is 'personalized', dimensions must be a list
-            with lists as the vertixes that form the shape. They must be
-            in order and at least 3 vertices must be defined. 
-
-        position: str, optional, mandatory when the shape is not 'personalized'
-            position of the plate, when the shape is not 'personalized'
-            Allowed entries are:
-            'left', 'right', 'back', 'front'
-            The plate will be located with the geometric center
-            along the chosen lateral position. Default is None
-
-        height: float, int, optional,  when the shape is not 'personalized'
-            Position of the plate when the shape is not 
-            'personalized' along the z axis. Default is None
-
-        grid_spacing: float, optional, 
-            it is used only when the shape is personalized and determines 
-            the space between the points of the approximated shape defined
-            by the vertices. Default is 0.001. 
+        Parameters
+        ----------
+        plate : Plate
+            The Plate instance to be attached to the rocket.
+        position : str, optional
+            Lateral position ('left', 'right', 'front', 'back'). 
+            Required if plate shape is 'circular' or 'squared'.
+        height : float or int, optional
+            Z-axis height relative to CSO. 
+            Required if plate shape is 'circular' or 'squared'.
           
         '''
         if not isinstance(plate, Plate):
             raise ValueError('The plate parameter must be a Plate object')
         
-        if isinstance(shape, str):
-            if shape == 'circular' or shape == 'squared':
-                if not isinstance(dimensions, (float, int)):
-                    raise ValueError('The dimensions must be a float or int, when the shape is circular or squared')
-
-                if position == None:
-                    raise ValueError('The position when the shape is circular or squared must be defined')
-                elif not isinstance(position, str):
-                    raise ValueError('The height must be a float or int, when the shape is circular or squared')
-                else:
-                    if not (position == 'left' or position == 'right' or position == 'back' or position == 'front'):
-                        raise ValueError('The position can only be left, right, back or front')
-                    
-                if height == None:
-                    raise ValueError('The height when the shape is circular or squared must be defined')
-                
-                if not isinstance(dimensions, (float, int)):
-                    raise ValueError('The height must be a float or int, when the shape is circular or squared')
-            elif shape == 'personalized':
-                if not isinstance(dimensions, (tuple, list)):
-                    raise ValueError('The dimensions must be a list or tuple, when the shape is personalized')
-                elif len(dimensions) < 3:
-                    raise ValueError('At least 3 points must be defined to create a surface')
-                else:
-                    for num_vertex in range(len(dimensions)):
-                        if len(dimensions[num_vertex]) == 3:
-                            if isinstance(dimensions[num_vertex], (list, tuple)):
-                                dimensions[num_vertex] = Vector(dimensions[num_vertex])
-                            elif isinstance(dimensions[num_vertex], Vector):
-                                dimensions[num_vertex] = dimensions[num_vertex]
-                            else: 
-                                raise ValueError('The vertex components must be given as a list, tuple or Vector')                         
-                        else:
-                            raise ValueError('The vertex must be defiened with 3 components')       
-                                      
-                if isinstance(grid_spacing, (float, int)):
-                    if grid_spacing <= 0:
-                        raise ValueError('Grid spacing must be greater than 0')
-                else:
-                    raise ValueError('Grid spacing must be a float or int')               
+        if plate.shape == 'circular' or plate.shape == 'squared':
+            if position == None:
+                raise ValueError('The position when the shape is circular or squared must be defined')
+            elif not isinstance(position, str):
+                raise ValueError('The height must be a float or int, when the shape is circular or squared')
             else:
-                raise ValueError('The accepted shapes are circular, squared and personalized')
-        else:
-            raise ValueError('The shape must be defined as a string')
+                if not (position == 'left' or position == 'right' or position == 'back' or position == 'front'):
+                    raise ValueError('The position can only be left, right, back or front')
+                
+            if height == None:
+                raise ValueError('The height when the shape is circular or squared must be defined')
+            
+            elif not isinstance(height, (float, int)):
+                raise ValueError('The height must be a float or int, when the shape is circular or squared')
+            
+
         
-        plate.define_plate_position(self, shape, dimensions, position, height, grid_spacing)
+        plate.define_plate_position(self, position, height)
         plate._rocket_belonging(self)
         self.plates.append(plate)
         
@@ -2730,6 +2656,13 @@ class Rocket:
                             "Deserialization will proceed, results may not be accurate."
                         )
             rocket._add_controllers(controller)
+
+        for wire, position_edges in data["wires"]:
+            rocket.add_wire(wire, position_edges)
+        
+        for plate, shape, dimensions, position, height in data["plate"]:
+            rocket.add_plate(plate, shape, dimensions, position, height)
+
 
         return rocket
 

@@ -28,12 +28,14 @@ class _PlatePlots():
         self.plate = plate
         self.rocket = rocket
 
-    def draw_3D(self, 
-                color: str = 'teal', 
-                marker: str = 'o', 
-                elev: float | int | None = None, 
-                azim: float | int | None = None,
-                filename: str | None = None) -> None:
+    def draw_3D(
+        self, 
+        color: str = 'teal', 
+        marker: str = 'o', 
+        elev: float | int | None = None, 
+        azim: float | int | None = None,
+        filename: str | None = None
+    ) -> None:
         '''
         Plots the scatter plot of the plate formed by the points
         used to model the magnetic distortion in 3D. 
@@ -101,12 +103,14 @@ class _PlatePlots():
         show_or_save_plot(filename)
 
 
-    def draw(self,
-             vis_args: dict | None = None,
-             plane: str = 'xz',
-             color: str = 'darkgree',
-             marker = 'o',
-             filename = None) -> None:
+    def draw(
+        self,
+        vis_args: dict | None = None,
+        plane: str = 'xz',
+        color: str = 'darkgree',
+        marker = 'o',
+        filename = None
+    ) -> None:
         '''
         Plots the plate together with the outline of the rocket
         in 2D. 
@@ -181,10 +185,12 @@ class _PlatePlots():
         show_or_save_plot(filename)
     
 
-    def _plot_plate_rocket(self,
-                            ax,
-                            plane: str = 'xz',
-                            color: str = 'darkgreen') -> None:
+    def _plot_plate_rocket(
+        self,
+        ax,
+        plane: str = 'xz',
+        color: str = 'darkgreen'
+    ) -> None:
         ''''
         This function plots the plate on the rocket:
 

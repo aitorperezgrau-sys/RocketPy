@@ -30,14 +30,16 @@ class _WirePlots():
         self.rocket = rocket
 
 
-    def draw(self, 
-             vis_args: dict | None = None, 
-             plane: str = 'xz', 
-             color: str = 'salmon', 
-             marker: str = 'o', 
-             linestyle: str = '-', 
-             edges_names: bool = True, 
-             filename: str | None = None) -> None:
+    def draw(
+        self, 
+        vis_args: dict | None = None, 
+        plane: str = 'xz', 
+        color: str = 'salmon', 
+        marker: str = 'o', 
+        linestyle: str = '-', 
+        edges_names: bool = True, 
+        filename: str | None = None
+    ) -> None:
         '''
         Plots the wire and the rocket together. 
 
@@ -128,13 +130,15 @@ class _WirePlots():
         show_or_save_plot(filename)
         
 
-    def _draw_wires(self, 
-                    ax: Axes, 
-                    plane: str = 'xz', 
-                    color: str = 'salmon', 
-                    marker: str = 'o', 
-                    linestyle: str = '-', 
-                    edges_names: bool = True) -> None:
+    def _draw_wires(
+        self, 
+        ax: Axes, 
+        plane: str = 'xz', 
+        color: str = 'salmon', 
+        marker: str = 'o', 
+        linestyle: str = '-', 
+        edges_names: bool = True
+    ) -> None:
         
         '''
         This function is an auxiliary function used to plot the edges 

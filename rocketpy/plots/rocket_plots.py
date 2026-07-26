@@ -711,14 +711,16 @@ class _RocketPlots:
                     zorder=10,
                 )
 
-    def draw_wires(self, 
-                   wires = 'all', 
-                   vis_args: dict | None = None, 
-                   plane: str = 'xz', 
-                   color: str = 'default', 
-                   marker: str = 'o', 
-                   linestyle: str = '-', 
-                   filename: str | None = None) -> None:
+    def draw_wires(
+        self, 
+        wires = 'all', 
+        vis_args: dict | None = None, 
+        plane: str = 'xz', 
+        color: str = 'default', 
+        marker: str = 'o', 
+        linestyle: str = '-', 
+        filename: str | None = None
+    ) -> None:
         '''
         Plots all the wires that are attached to the rocket
 
@@ -837,11 +839,13 @@ class _RocketPlots:
         show_or_save_plot(filename)
     
     
-    def draw_plates(self,
-                    vis_args: dict | None = None, 
-                    plane: str = 'xz', 
-                    color: list | str = 'default',
-                    filename = None) -> None:
+    def draw_plates(
+        self,
+        vis_args: dict | None = None, 
+        plane: str = 'xz', 
+        color: list | str = 'default',
+        filename = None
+    ) -> None:
         '''
         vis_args : dict, optional
             Determines the visual aspects when drawing the rocket. If ``None``,
@@ -975,9 +979,11 @@ class _RocketPlots:
         self.draw_plates()
     
 
-    def _rocket_shape_plot(self, 
-                           vis_args: dict | None = None, 
-                           plane: str = 'xz') -> tuple[Axes, float, float]:
+    def _rocket_shape_plot(
+        self, 
+        vis_args: dict | None = None, 
+        plane: str = 'xz'
+    ) -> tuple[Axes, float, float]:
         '''
         This is an auxiliary function that plots the outline of the rocket
 
