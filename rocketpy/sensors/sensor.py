@@ -126,7 +126,7 @@ class Sensor(ABC):
         --------
         TODO link to documentation on noise model
         """
-        
+
         self.sampling_rate = sampling_rate
         self.resolution = resolution
         self.operating_temperature = operating_temperature
@@ -191,7 +191,6 @@ class Sensor(ABC):
         added only once to the simulated rocket."""
         self.measured_data.append(data)
 
-
     def _save_data_multiple(self, data):
         """Save the measured data to the sensor data list for a sensor that is
         added multiple times to the simulated rocket."""
@@ -201,35 +200,28 @@ class Sensor(ABC):
         if self._counter == len(self.measured_data):
             self._counter = 0
 
-
-    def _set_sensor_from_cso (self, sensor_from_cso):
-
-        '''
+    def _set_sensor_from_cso(self, sensor_from_cso):
+        """
         save as an attribute the position of the sensor from the coordiante system
         origin.
-        
+
         input:
         ------------------
         sensor_from_cso: list, tuple, Vector
             sensor position relative to the the coordiante system
             origin
-        '''
+        """
 
         if isinstance(sensor_from_cso, Vector):
             self._sensor_from_cso = sensor_from_cso
             self.sensor_from_cso_t = tuple(sensor_from_cso)
 
-
         elif isinstance(sensor_from_cso, (list, tuple)):
             self.sensor_from_cso_t = tuple(sensor_from_cso)
             self._sensor_from_cso = Vector(sensor_from_cso)
-            
+
         else:
-            raise ValueError('sensor_from_cso can only be a list, a tuple or a Vector')
-
-        
-
-        
+            raise ValueError("sensor_from_cso can only be a list, a tuple or a Vector")
 
     @abstractmethod
     def measure(self, time, **kwargs):
@@ -536,7 +528,7 @@ class InertialSensor(Sensor):
             ).round(12)
         else:
             raise ValueError("Invalid orientation format")
-        
+
         self.normal_vector = Vector(
             [
                 self.rotation_sensor_to_body[0][2],
@@ -596,12 +588,12 @@ class InertialSensor(Sensor):
 
         Parameters
         ----------
-        value : Vector 
+        value : Vector
             The Vector value to add noise to
 
         Returns
         -------
-        value: Vector 
+        value: Vector
             The Vector value with added noise
         """
         # white noise
@@ -625,7 +617,7 @@ class InertialSensor(Sensor):
 
         Parameters
         ----------
-        value : float or Vector 
+        value : float or Vector
             The value to apply temperature drift to
 
         Returns
@@ -642,13 +634,14 @@ class InertialSensor(Sensor):
 
         # temperature drift
         temp_delta = self.operating_temperature - 298.15
-        value = value + (temp_delta * self.temperature_bias) 
+        value = value + (temp_delta * self.temperature_bias)
 
         # temperature scale factor
-        scale_factor = (Vector([1, 1, 1]) + (temp_delta / 100) * self.temperature_scale_factor)
-        
-        res = value & scale_factor
+        scale_factor = (
+            Vector([1, 1, 1]) + (temp_delta / 100) * self.temperature_scale_factor
+        )
 
+        res = value & scale_factor
 
         return res
 

@@ -46,6 +46,7 @@ from .rocket import (
     LinearGenericSurface,
     NoseCone,
     Parachute,
+    Plate,
     PointMassRocket,
     RailButtons,
     Rocket,
@@ -56,7 +57,6 @@ from .rocket import (
     Wire,
     Plate,
 )
-
 from .sensitivity import SensitivityModel
 from .sensors import Accelerometer, Barometer, GnssReceiver, Gyroscope, Magnetometer
 from .simulation import Flight, MonteCarlo, MultivariateRejectionSampler

@@ -169,7 +169,6 @@ class Barometer(ScalarSensor):
 
         relative_altitude = (Matrix.transformation(u[6:10]) @ relative_position).z
 
-
         # Calculate the pressure at the sensor location and add noise
         P = pressure(relative_altitude + u[2])
         P = self.apply_noise(P)

@@ -1339,6 +1339,7 @@ def normalize_quaternions(quaternions):
         return 1, 0, 0, 0
     return q_w / q_norm, q_x / q_norm, q_y / q_norm, q_z / q_norm
 
+
 def euler313_to_quaternions(phi, theta, psi):
     """Convert 3-1-3 Euler angles to Euler parameters (quaternions).
 

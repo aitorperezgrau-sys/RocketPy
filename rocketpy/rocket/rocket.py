@@ -2,12 +2,12 @@ import csv
 import inspect
 import logging
 import math
+import math as m
 import numbers
 import warnings
 from typing import Iterable
 
 import numpy as np
-import math as m
 
 from rocketpy.control.controller import _Controller
 from rocketpy.exceptions import (
@@ -31,8 +31,6 @@ from rocketpy.rocket.aero_surface import (
     TrapezoidalFins,
     TubeFins,
 )
-from rocketpy.rocket.wire import Wire
-from rocketpy.rocket.plate import Plate
 from rocketpy.rocket.aero_surface.fins.elliptical_fin import EllipticalFin
 from rocketpy.rocket.aero_surface.fins.free_form_fin import FreeFormFin
 from rocketpy.rocket.aero_surface.fins.free_form_fins import FreeFormFins
@@ -40,12 +38,13 @@ from rocketpy.rocket.aero_surface.fins.trapezoidal_fin import TrapezoidalFin
 from rocketpy.rocket.aero_surface.generic_surface import GenericSurface
 from rocketpy.rocket.components import Components
 from rocketpy.rocket.parachute import Parachute
+from rocketpy.rocket.plate import Plate
+from rocketpy.rocket.wire import Wire
 from rocketpy.tools import (
     deprecated,
     find_obj_from_hash,
     parallel_axis_theorem_from_com,
 )
-
 
 logger = logging.getLogger(__name__)
 
@@ -191,6 +190,12 @@ class Rocket:
         RailButtons object containing the rail buttons information.
     Rocket.motor : Motor
         Rocket's motor. See Motor class for more details.
+    Rocket.communication_wires: list[Wire]
+        Collection of the communication wires attached to the rocket.
+    Rocket.ignition_wires: list[Wire]
+        Collection of the ignition wires attached to the rocket.
+    Rocket.plates: list[Plate]
+        Collection of the plates attached to the rocket.
     Rocket.motor_position : float
         Position, in meters, of the motor's coordinate system origin
         relative to the user defined rocket coordinate system.
@@ -364,7 +369,7 @@ class Rocket:
         self.radius = radius
         self.area = np.pi * self.radius**2
 
-        #Other attributes
+        # Other attributes
         self._radius_function = None
         self._nose_tip_from_cso = None
 
@@ -512,7 +517,7 @@ class Rocket:
     @property
     def tails(self):
         """A list with all the tails currently added to the rocket"""
-        return self.aerodynamic_surfaces.get_by_type(Tail)   
+        return self.aerodynamic_surfaces.get_by_type(Tail)
 
     def evaluate_total_mass(self):
         """Calculates and returns the rocket's total mass. The total
@@ -1209,7 +1214,7 @@ class Rocket:
             self.aerodynamic_surfaces.add(surface, position)
             if isinstance(surface, NoseCone):
                 self.nose_cone = surface
-                self._nose_tip_from_cso = position[2]
+                self._nose_tip_from_cdm = position[2]
         self.__evaluate_single_surface_cp_to_cdm(surface, position)
 
     def add_surfaces(self, surfaces, positions):
@@ -1390,7 +1395,7 @@ class Rocket:
             name=name,
         )
         self.add_surfaces(nose, position)
-        
+
         return nose
 
     @deprecated(
@@ -1862,7 +1867,6 @@ class Rocket:
         self.parachutes.append(parachute)
         return self.parachutes[-1]
 
-
     def add_sensor(self, sensor, position):
         """Adds a sensor to the rocket.
 
@@ -1870,7 +1874,7 @@ class Rocket:
         ----------
         sensor: Sensor
             Sensor to be added to the rocket.
-            
+
         position: int, float, tuple, list, Vector
             Position of the sensor. If a Vector, tuple or list is passed, it
             must be in the format (x, y, z) where x, y, and z are defined in the
@@ -1886,7 +1890,7 @@ class Rocket:
             position = (0, 0, position)
         position = Vector(position)
         self.sensors.add(sensor, position)
-        
+
         sensor._set_sensor_from_cso(position)
 
         try:
@@ -1894,149 +1898,174 @@ class Rocket:
         except KeyError:
             sensor._attached_rockets[self] = 1
 
-
-    def add_wire(self, wire: Wire, position_edges: list | tuple [tuple | list | float | int ]) -> None:
-        '''
+    def add_wire(
+        self, wire: Wire, position_edges: list | tuple[tuple | list | float | int]
+    ) -> None:
+        """
         Adds the wire to the rocket.
-        Wires are used to calculate the magnetic 
+        Wires are used to calculate the magnetic
         distrubance they can create, thus affecting
-        the magnetometer reading if defined. 
+        the magnetometer reading if defined.
 
-        Inputs:
-        --------------
+        Parameters
+        ----------
         wire: Wire
-            Wire object to be added to the rocket
-
+            Wire object to be added to the rocket.
         position_edges: list[list], list[tuple], tuple[list], tuple[tuple], list[int/float]
             list or tuple of lists or tuple with 3 components, x,y,z for the edges
             of the wire A and B relative to the coordiante system origin chosen. It can
-            also be a list with floats, that will be assumed to be the position along the 
-            z axis of each edge. 
-            
-            This is: [Edge_A, Edge_B] relative to CSO. Conventional current flows 
+            also be a list with floats, that will be assumed to be the position along the
+            z axis of each edge.
+
+            This is: [Edge_A, Edge_B] relative to CSO. Conventional current flows
             from Edge_A to Edge_B.
 
-        '''
+        Returns
+        -------
+        None
+        """
         if not isinstance(wire, Wire):
-            raise ValueError('The wire must be a wire instance')
-        
+            raise ValueError("The wire must be a wire instance")
+
         edge_a, edge_b = self._define_3D_edges(position_edges)
 
-        for edge, name in [(edge_a, 'Edge_a'), (edge_b,'Edge_b')]:
-            x,y,z = edge[0], edge[1], edge[2]
-            
-            # height boundds
-            flag, range_z= self.z_bounds_check(z)
-            if not flag:
-                raise ValueError(f'The z component: {z} of {name} is outside the rocket range {range_z}')
+        for edge, name in [(edge_a, "Edge_a"), (edge_b, "Edge_b")]:
+            x, y, z = edge[0], edge[1], edge[2]
 
-            # radial bounds
-            r_edge = m.sqrt(x ** 2 + y ** 2)
+            # height boundds
+            flag, range_z = self.z_bounds_check(z)
+            if not flag:
+                raise ValueError(
+                    f"The z component: {z} of {name} is outside the rocket range {range_z}"
+                )
+
+            # radial bounds
+            r_edge = m.sqrt(x**2 + y**2)
             r = self.general_radius(z)
             if r_edge > r:
-                raise ValueError(f'{name} with coordinates {edge} is outside the rocket since the radius {r_edge} is bigger than the radius of the rocket at that z: {z}, which is: {r}')
- 
+                raise ValueError(
+                    f"{name} with coordinates {edge} is outside the rocket since the radius {r_edge} is bigger than the radius of the rocket at that z: {z}, which is: {r}"
+                )
 
-        wire._set_wire_edges_from_cso([edge_a, edge_b])
+        wire._set_wire_edges_from_bacs(self,[edge_a, edge_b])
         wire._rocket_belonging(self)
-        
-        if wire.wire_type == 'communications':
-                self.communication_wires.append(wire)                
-        elif wire.wire_type == 'ignition':
-                self.ignition_wires.append(wire)
 
+        if wire.wire_type == "communications":
+            self.communication_wires.append(wire)
+        elif wire.wire_type == "ignition":
+            self.ignition_wires.append(wire)
 
-
-    def _define_3D_edges(self, position_edges: list | tuple [tuple | list | float | int ]) -> list[Vector[float], Vector[float]]:
-        '''
-        This function creates the 3D position vector of the 
+    def _define_3D_edges(
+        self, position_edges: list | tuple[tuple | list | float | int]
+    ) -> list[Vector[float], Vector[float]]:
+        """
+        This function creates the 3D position vector of the
         edges from the input values
 
 
-        Input: 
+        Input:
         ----------
         position_edges: list[list], list[tuple], tuple[list], tuple[tuple], list[int/float]
             list or tuple of lists or tuple with 3 components, x,y,z for the edges
             of the wire A and B relative to the coordiante system origin chosen. It can
-            also be a list with floats, that will be assumed to be the position along the 
-            z axis of each edge. 
-            
-            This is: [Edge_A, Edge_B] relative to CSO. Conventional current flows 
+            also be a list with floats, that will be assumed to be the position along the
+            z axis of each edge.
+
+            This is: [Edge_A, Edge_B] relative to CSO. Conventional current flows
             from Edge_A to Edge_B.
 
-        Returns:
-        ------------
+        Returns
+        -------
         [edge_a, edge_b]: list with the 3D component of each edge in the correct order
-        '''
-        if isinstance(position_edges, (list, tuple)): 
+        """
+        if isinstance(position_edges, (list, tuple)):
             if len(position_edges) == 2:
                 if all(isinstance(val, (int, float)) for val in position_edges):
                     edge_a = Vector([0, 0, float(position_edges[0])])
                     edge_b = Vector([0, 0, float(position_edges[1])])
-                    return  [edge_a, edge_b]
+                    return [edge_a, edge_b]
 
-                elif all(isinstance(item, (list, tuple, Vector)) for item in position_edges):
+                elif all(
+                    isinstance(item, (list, tuple, Vector)) for item in position_edges
+                ):
+                    if any(len(item) != 3 for item in position_edges):
+                        raise ValueError(
+                            "The length of the coordinates of the edges must be 3"
+                        )
 
-                    if any(len(item) != 3 for item in position_edges ):
-                        raise ValueError('The length of the coordinates of the edges must be 3')
-                    
-                    edge_a = (position_edges[0] if isinstance(position_edges[0], Vector) else Vector(position_edges[0]))
-                    edge_b = (position_edges[1] if isinstance(position_edges[1], Vector) else Vector(position_edges[1]))
+                    edge_a = (
+                        position_edges[0]
+                        if isinstance(position_edges[0], Vector)
+                        else Vector(position_edges[0])
+                    )
+                    edge_b = (
+                        position_edges[1]
+                        if isinstance(position_edges[1], Vector)
+                        else Vector(position_edges[1])
+                    )
 
                     return [edge_a, edge_b]
-                else: 
-                    raise ValueError('The input position can only be a nested list, or a list with float or integers.')
+                else:
+                    raise ValueError(
+                        "The input position can only be a nested list, or a list with float or integers."
+                    )
             else:
-                raise ValueError('Position_edges must contain exactly 2 edge positions.')
+                raise ValueError(
+                    "Position_edges must contain exactly 2 edge positions."
+                )
         else:
-            raise ValueError('Position_edges must be a list of two numbers (z-coordinates) or two 3D position vectors ([x, y, z]).')
-        
+            raise ValueError(
+                "Position_edges must be a list of two numbers (z-coordinates) or two 3D position vectors ([x, y, z])."
+            )
 
     def add_plate(
-        self, 
+        self,
         plate: Plate,
-        position: str | None = None,
+        position: float | int | None = None,
         height: float | int | None = None,
     ) -> None:
-        '''
+        """
         Adds a Plate object to the rocket.
 
         Parameters
         ----------
         plate : Plate
             The Plate instance to be attached to the rocket.
-        position : str, optional
-            Lateral position ('left', 'right', 'front', 'back'). 
-            Required if plate shape is 'circular' or 'squared'.
+        position: float, int, optional
+            Position of the plate, when the shape is 'squared' or 'circular'
+            It is the angle between the y axis of the user defined coordinate system
+            and the geometric center of the plate in degrees. The positive direction is defined 
+            as the direciton in which the right hand rule coincides with the z direction
+            based on the coordinate system orientation. 
         height : float or int, optional
-            Z-axis height relative to CSO. 
+            Z-axis height relative to CSO.
             Required if plate shape is 'circular' or 'squared'.
-          
-        '''
-        if not isinstance(plate, Plate):
-            raise ValueError('The plate parameter must be a Plate object')
-        
-        if plate.shape == 'circular' or plate.shape == 'squared':
-            if position == None:
-                raise ValueError('The position when the shape is circular or squared must be defined')
-            elif not isinstance(position, str):
-                raise ValueError('The height must be a float or int, when the shape is circular or squared')
-            else:
-                if not (position == 'left' or position == 'right' or position == 'back' or position == 'front'):
-                    raise ValueError('The position can only be left, right, back or front')
-                
-            if height == None:
-                raise ValueError('The height when the shape is circular or squared must be defined')
-            
-            elif not isinstance(height, (float, int)):
-                raise ValueError('The height must be a float or int, when the shape is circular or squared')
-            
 
-        
+        """
+        if not isinstance(plate, Plate):
+            raise ValueError("The plate parameter must be a Plate object")
+
+        if plate.shape == "circular" or plate.shape == "squared":
+            if position == None:
+                raise ValueError(
+                    "The position when the shape is circular or squared must be defined"
+                )
+            elif not isinstance(position, (float, int)):
+                raise ValueError('The position can only be a float or int')
+
+            if height == None:
+                raise ValueError(
+                    "The height when the shape is circular or squared must be defined"
+                )
+
+            elif not isinstance(height, (float, int)):
+                raise ValueError(
+                    "The height must be a float or int, when the shape is circular or squared"
+                )
+
         plate.define_plate_position(self, position, height)
         plate._rocket_belonging(self)
         self.plates.append(plate)
-        
 
     def add_air_brakes(
         self,
@@ -2383,90 +2412,91 @@ class Rocket:
         """
         self.plots.draw(vis_args, plane, filename=filename)
 
-
     def general_radius(self, z: float) -> float:
-        '''
+        """
         Function return the radius of the rocket, including the
-        nose cone and the radius variations in the body, as a function of 
-        the distance along the z axis from the coordiante system
-        origin
+        nose cone and the radius variations in the body, as a function of
+        the distance along the z axis from the body axes coordinate system
 
-        Input:
-        ----------------
+        Parameters
+        ----------
         z: float, int
-            Position along the z axis relative to the cso
-            in which we want to calculate the radius
-        
-        Returns:
-        r: float
-            Radius for the z value in the whole rocket
+            Position along the z axis relative to the bacs
+            in which we want to calculate the radius.
 
-        '''
+        Returns
+        -------
+        r: float
+            Radius for the z value in the whole rocket.
+
+        """
         if isinstance(z, (float, int)):
-            if  not isinstance(self.nose_cone, NoseCone):
-                raise ValueError('Define a nose cone first')
-            
-            distance_from_nose = abs(z - self._nose_tip_from_cso)
+            if not isinstance(self.nose_cone, NoseCone):
+                raise ValueError("Define a nose cone first")
+
+            distance_from_nose = abs(z - self._nose_tip_from_cdm)
 
             if distance_from_nose <= self.nose_cone.length:
                 r = self.nose_cone.radius(distance_from_nose)
             else:
                 r = self._calculate_radius_z_intermediate(z)
-        else: 
-            raise ValueError('The z component must be a float or int')
+        else:
+            raise ValueError("The z component must be a float or int")
         return r
 
     def z_bounds_check(self, z: float) -> tuple[bool, tuple[float, float]]:
-        '''
-        This funciton is used to check if a given z 
-        relative to the cso is inside or outside the defined rocket
+        """
+        This funciton is used to check if a given z
+        relative to the user defined coordinate system
+        is inside or outside the defined rocket.
 
-        Parameters: 
-        ---------
+        Parameters
+        ----------
         z: float, int
+            Position along the z axis for which it will be checked
+            whether it is inside or outisde the rocket.
 
-        Returns:
-        ---------
+        Returns
+        -------
         is_inside: bool
             False if it is outside, True if it is inside
         bounds:
             Tuple formed by the range of the z relative to the cso:
-        '''
+        """
         if isinstance(z, (float, int)):
-            if  not isinstance(self.nose_cone, NoseCone):
-                raise ValueError('Define a nose cone first')
+            if not isinstance(self.nose_cone, NoseCone):
+                raise ValueError("Define a nose cone first")
             if not isinstance(self.motor, Motor):
-                raise ValueError('Define a nose cone first')
+                raise ValueError("Define a nose cone first")
 
-            z_min = min(self._nose_tip_from_cso, self.motor_position)
-            z_max = max(self._nose_tip_from_cso, self.motor_position)
-            
+            z_min = min(self._nose_tip_from_cdm, self.motor_position)
+            z_max = max(self._nose_tip_from_cdm, self.motor_position)
+
             is_inside = z_min <= z <= z_max
             return is_inside, (z_min, z_max)
-            
-        else: 
-            raise ValueError('The z component must be a float or int')
+
+        else:
+            raise ValueError("The z component must be a float or int")
 
     def _calculate_radius_z_intermediate(self, z: float) -> float:
-        '''
-        This is an auxiliary funciton that calcualtes the radius of the 
-        rocket in the body, thus z must be bellow the nose cone
+        """
+        This is an auxiliary funciton that calcualtes the radius of the
+        rocket in the body, thus z must be bellow the nose cone.
 
-        Input:
-        ----------------
+        Parameters
+        ----------
         z: float, int
             Position along the z axis relative to the cso
-            in which we want to calculate the radius
-        
-        Returns:
+            in which we want to calculate the radius.
+
+        Returns
+        -------
         r: float, int
             Radius for the z value
-        '''
-
+        """
         r = self.radius
-        
-        return r 
-        
+
+        return r
 
     def info(self):
         """Prints out a summary of the data and graphs available about
@@ -2659,10 +2689,9 @@ class Rocket:
 
         for wire, position_edges in data["wires"]:
             rocket.add_wire(wire, position_edges)
-        
-        for plate, shape, dimensions, position, height in data["plate"]:
-            rocket.add_plate(plate, shape, dimensions, position, height)
 
+        for plate, position, height in data["plate"]:
+            rocket.add_plate(plate, position, height)
 
         return rocket
 
