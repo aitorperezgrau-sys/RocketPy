@@ -283,14 +283,14 @@ class Wire:
         self, rocket, _wire_edges_from_user_coordinate_system: list | tuple | Vector[Vector, Vector]
     ) -> None:
         """
-        Save as an attribute the position of the wire edges from the coordiante system
-        origin, chosen by the user.
+        Save as an attribute the position of the wire edges in the body axis 
+        coordinate system. 
 
         Parameters
         ----------
         _wire_edges_from_user_coordinate_system: list[Vector, Vector]
-            Containing the edges position relative to the the coordiante system
-            origin as a Vector instances.
+            Containing the edges position relative to the the user defined 
+            coordinate system as a Vector instances.
         rocket : Rocket
             Rocket instance to which it belongs. 
 
@@ -305,7 +305,7 @@ class Wire:
                 edge_position_bacs_frame = Vector([-edge_from_cdm_user_frame[0], edge_from_cdm_user_frame[1], -edge_from_cdm_user_frame[2]])
             elif rocket._csys == 1: #tail to nose
                 edge_position_bacs_frame = edge_from_cdm_user_frame
-            self._wire_edges_from_cdm.append(edge_position_bacs_frame - cdm_user_frame)
+            self._wire_edges_from_cdm.append(edge_position_bacs_frame)
 
     def _rocket_belonging(self, rocket) -> None:
         """

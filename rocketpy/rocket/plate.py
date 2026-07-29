@@ -320,14 +320,14 @@ class Plate:
             upper_z = height + self.dimensions
             lower_z = height - self.dimensions
             center_z = height 
-            geometric_center_angle = - position * (np.pi / 180)
+            geometric_center_angle = position * (np.pi / 180)
 
             for z in np.linspace(lower_z, upper_z, self.z_points):
-                flag, _ = rocket.z_bounds_check(z)
+                flag, _ = rocket.z_bounds_check(z, frame = 'ucs')
                 if not flag:
                     continue
 
-                r = rocket.general_radius(z)
+                r = rocket.general_radius(z, frame = 'ucs')
                 if r <= 1e-6:
                     continue
 
@@ -344,24 +344,26 @@ class Plate:
                 for theta in np.linspace(alpha, beta, self.angular_points):
                     x = r * np.sin(theta)
                     y = r * np.cos(theta)
-                    
+
+                    # change to body axis coordiante system 
+                    z_bacs = (z - rocket.center_of_dry_mass_position) * rocket._csys
                     if rocket._csys == -1: 
-                        self.points.append([x, y, -z])
+                        self.points.append([-x, y, z_bacs])
                     else:
-                        self.points.append([x, y, z])
+                        self.points.append([x, y, z_bacs])
                 
 
         elif self.shape == "squared":
             upper_z = height + self.dimensions / 2
             lower_z = height - self.dimensions / 2
-            geometric_center_angle = - position * (np.pi / 180)
+            geometric_center_angle = position * (np.pi / 180)
 
             for z in np.linspace(lower_z, upper_z, self.z_points):
-                flag, _ = rocket.z_bounds_check(z)
+                flag, _ = rocket.z_bounds_check(z, frame = 'ucs')
                 if not flag:
                     continue
 
-                r = rocket.general_radius(z)
+                r = rocket.general_radius(z, frame = 'ucs')
                 if r <= 1e-6:
                     continue
 
@@ -373,10 +375,12 @@ class Plate:
                     x = r * np.sin(theta)
                     y = r * np.cos(theta)
                     
+                    # change to body axis coordiante system 
+                    z_bacs = (z - rocket.center_of_dry_mass_position) * rocket._csys
                     if rocket._csys == -1: 
-                        self.points.append([x, y, -z])
+                        self.points.append([-x, y, z_bacs])
                     else:
-                        self.points.append([x, y, z])
+                        self.points.append([x, y, z_bacs])
 
         elif self.shape == "personalized":
             self.generate_personalized_internal_plate(
@@ -391,7 +395,7 @@ class Plate:
     ) -> None:
         """
         Generates a 3D grid of points bounded by an arbitrary set of vertices,
-        forced flat, and filtered to remain inside the rocket hull.
+        forced flat, and filtered to remain inside the rocket.
 
         Parameters
         ----------
@@ -400,6 +404,8 @@ class Plate:
         z_checking_function:
             A callable function that takes z and returns True if it is inside
             the rocket, False, otherwise.
+        rocket: Rocket
+            Rocket to which the plate belongs. 
 
         Returns
         -------
@@ -407,9 +413,11 @@ class Plate:
         """
         # processing of points
         vertices = []
-        for point in self.dimensions:
+        for point in self.dimensions:            
+            
+            # check height bounds and radial bounds in ucs
             # height boundds
-            flag, range_z = z_checking_function(point[2])
+            flag, range_z = z_checking_function(point[2], frame = 'ucs')
             if not flag:
                 raise ValueError(
                     f"The z component: {point[2]} of {point} is outside the rocket range {range_z}"
@@ -417,25 +425,25 @@ class Plate:
 
             # radial bounds
             r_point = m.sqrt(point[0]**2 + point[1]**2)
-            r = radius_func(point[2])
+            r = radius_func(point[2], frame = 'ucs')
             if r_point > r:
                 raise ValueError(
                     f"The point with coordinates {point} is outside the rocket since the radius {r_point} is bigger than the radius of the rocket at that z: {point[2]}, which is: {r}"
                 )
             
-                # transforming from user defined coordinate system to body axis coordinate system
+            # transforming from user defined coordinate system to body axis coordinate system
             cdm_user_frame = Vector([0, 0, rocket.center_of_dry_mass_position])
             sensor_from_cdm_user_frame = Vector(point) - cdm_user_frame
 
             if rocket._csys == -1: # nose to tail
-                position_bacs_frame = Vector([-sensor_from_cdm_user_frame[0], sensor_from_cdm_user_frame[1], -sensor_from_cdm_user_frame[2]])
+                point_bacs_frame = Vector([-sensor_from_cdm_user_frame[0], sensor_from_cdm_user_frame[1], -sensor_from_cdm_user_frame[2]])
             elif rocket._csys == 1: #tail to nose
-                position_bacs_frame = sensor_from_cdm_user_frame
+                point_bacs_frame = sensor_from_cdm_user_frame
 
-            point_from_cdm = position_bacs_frame - cdm_user_frame
-            x = point_from_cdm[0]
-            y = point_from_cdm[1]
-            z = point_from_cdm[2]
+
+            x = point_bacs_frame[0]
+            y = point_bacs_frame[1]
+            z = point_bacs_frame[2]
             vertices.append([x,y,z])
 
         total_x, total_y, total_z = 0.0, 0.0, 0.0
@@ -514,7 +522,7 @@ class Plate:
 
                     # Final geometry check: point must lie within internal radius at the corresponding height
                     r_point = m.sqrt(p3d_x**2 + p3d_y**2)
-                    r_allowed = radius_func(p3d_z)
+                    r_allowed = radius_func(p3d_z, frame = 'bacs')
 
                     if r_point < r_allowed:
                         final_3d_points.append([p3d_x, p3d_y, p3d_z])
@@ -522,7 +530,7 @@ class Plate:
                 curr_v += self.grid_spacing
             curr_u += self.grid_spacing
 
-        self.points = final_3d_points
+        self.points = final_3d_points 
 
     def calculate_soft_iron_distortion_matrix(self, position_vector: Vector) -> None:
         """
@@ -582,7 +590,6 @@ class Plate:
                 self._magnetic_distortion_matrixes[tuple(position_vector)] = (
                     induced_matrix
                 )
-                print(f'distortion matrix: {self.name}: {self._magnetic_distortion_matrixes[tuple(position_vector)]}')
             else:
                 raise ValueError(
                     "To calculate the soft iron distortion matrix, first the plate must be added to the rocket, points list cannot be empty"

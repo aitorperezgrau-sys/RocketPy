@@ -86,7 +86,7 @@ class _PlatePlots:
         ax = fig.add_subplot(111, projection="3d")
 
         # plot individual points
-        ax.scatter(x, y, z, color=color, marker=marker, s = 20, label=self.plate.name)
+        ax.scatter(x, y, z, color=color, marker=marker, label=self.plate.name)
         ax.view_init(elev=elev, azim=azim)
 
         # Labels & formatting
@@ -94,6 +94,7 @@ class _PlatePlots:
         ax.set_ylabel("Y (m)")
         ax.set_zlabel("Z (m)")
         ax.legend()
+
 
         print(f"\n{self.plate.name} representation: ")
         show_or_save_plot(filename)
@@ -200,9 +201,9 @@ class _PlatePlots:
         x, y, z = zip(*self.plate.points) # in the bacs frame z tail to nose
 
         # change nose to tail with nose origin
-        _nose_tip_from_cdm = self.rocket._nose_tip_from_cdm
-        z = _nose_tip_from_cdm - np.array(z)
-        x = - np.array(x)
+        nose_to_cdm_dist = self.rocket.center_of_dry_mass_position - self.rocket._nose_tip_from_ucs
+        z = nose_to_cdm_dist - np.array(z)
+        x = -np.array(x)
 
         if plane == "xz":
             r = x

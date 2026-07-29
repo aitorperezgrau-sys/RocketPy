@@ -161,14 +161,15 @@ class _WirePlots:
         -------
         None
         """
-        _nose_tip_from_cdm = self.rocket._nose_tip_from_cdm
         # change nose to tail with nose origin
         edge_a_x = - self.wire._wire_edges_from_cdm[0][0]
         edge_b_x = - self.wire._wire_edges_from_cdm[1][0]
         edge_a_y = self.wire._wire_edges_from_cdm[0][1]
         edge_b_y = self.wire._wire_edges_from_cdm[1][1]
-        edge_a_z = _nose_tip_from_cdm - self.wire._wire_edges_from_cdm[0][2]
-        edge_b_z = _nose_tip_from_cdm - self.wire._wire_edges_from_cdm[1][2]
+
+        nose_to_cdm_dist = self.rocket.center_of_dry_mass_position - self.rocket._nose_tip_from_ucs
+        edge_a_z = nose_to_cdm_dist - self.wire._wire_edges_from_cdm[0][2]
+        edge_b_z = nose_to_cdm_dist - self.wire._wire_edges_from_cdm[1][2]
 
 
         
