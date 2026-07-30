@@ -199,11 +199,11 @@ class _PlatePlots:
         """
         x, y, z = zip(*self.plate.points) # in the bacs frame z tail to nose
 
-        # change nose to tail with nose origin
-        nose_to_cdm_dist = self.rocket.center_of_dry_mass_position - self.rocket._nose_tip_from_ucs
-        z = nose_to_cdm_dist - np.array(z)
-        x = -np.array(x)
-
+        self.rocket.center_of_dry_mass_position
+        x = self.rocket._csys * np.array(x)
+        z = self.rocket.center_of_dry_mass_position + (self.rocket._csys * np.array(z))
+        y = np.array(y)
+        
         if plane == "xz":
             r = x
         elif plane == "yz":
@@ -211,7 +211,6 @@ class _PlatePlots:
         else:
             raise ValueError("Plane value can only be xz or yz")
 
-        # Connect points with a solid line
         if isinstance(self.plate.dimensions, float) and self.plate.dimensions > 0.1:
             ax.plot(z, r, color=color, linewidth=3, linestyle="-", label=self.plate.name, zorder=1)
         else:

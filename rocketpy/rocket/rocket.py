@@ -2417,6 +2417,12 @@ class Rocket:
         the distance along the z axis from the body axes coordinate system
         or the user defined coordinate system. 
 
+        It assumes that the bottom radius of the nose cone is constant until 
+        some tail, if defined, is present. Then, the radius of the body will be 
+        the top radius of the following tail, or if it is the last tail, the
+        radius will be the radius of the bottom of the tail. 
+        
+
         Parameters
         ----------
         z : float, int
@@ -2458,6 +2464,65 @@ class Rocket:
             return r
         else:
             raise ValueError("The z component must be a float or int")
+        
+    def _calculate_radius_z_intermediate(self, z: float) -> float:
+        """
+        This is an auxiliary function returning the radius of the rocket, 
+        below the nose cone as a function of the distance along the z
+        axis from the body axes coordinate system. 
+
+        Parameters
+        ----------
+        z: float, int
+            Position along the z axis in the body axis coordinate
+            system for which the radius will be returned. 
+
+        Returns
+        -------
+        r: float, int
+            Radius for the z value
+        """
+        tails_bacs = []
+        for tail, tail_from_ucs in self.aerodynamic_surfaces.get_position_by_type(Tail):
+            tail_bacs = (tail_from_ucs[2] - self.center_of_dry_mass_position) * self._csys
+            distance_from_tail_tip = (z - tail_bacs) * self._csys
+            tails_bacs.append((tail, tail_bacs))
+            
+            if 0 <= distance_from_tail_tip <= tail.length:
+                r = tail.radius(distance_from_tail_tip) 
+                return r
+                
+        r = self._calculate_radius_z_tubes(z, tails_bacs)
+        return r
+
+    def _calculate_radius_z_tubes(self, z: float, tails_bacs: list):
+        """
+        This is an auxiliary function returning the radius of the rocket, 
+        when it is not in the nose cone or tails as a function of the
+        distance along the z axis from the body axes coordinate system. 
+    
+        Parameters
+        ----------
+        z: float, int
+            Position along the z axis in the body axis coordinate
+            system for which the radius will be returned. 
+        tails_bacs: list
+            List composed of tuples with the tails of the rocket,
+            and the position in the bacs frame
+            
+        Returns
+        -------
+        r: float, int
+            Radius for the z value in the body tubes. 
+        """
+        o_tails_bacs = sorted(tails_bacs, key=lambda x: x[1], reverse=True)
+        for tail, tail_bacs_position in o_tails_bacs:
+            if z > tail_bacs_position:
+                return tail.top_radius
+        
+        last_tail = o_tails_bacs[-1][0]
+        r = last_tail.bottom_radius
+        return r
 
     def z_bounds_check(self, z: float, frame: str = "bacs") -> tuple[bool, tuple[float, float]]:
         """
@@ -2489,7 +2554,7 @@ class Rocket:
                 raise ValueError("Define a motor first")
 
             # bounds in the ucs frame
-            nose_tip_ucs = self._nose_tip_from_ucs 
+            nose_tip_ucs = self._nose_tip_from_ucs
             motor_ucs = self.motor_position
             if isinstance(frame, str):
                 if frame.lower() == "ucs":
@@ -2514,53 +2579,6 @@ class Rocket:
         else:
             raise ValueError("The z component must be a float or int")
 
-    def _calculate_radius_z_intermediate(self, z: float) -> float:
-        """
-        This is an auxiliary function returning the radius of the rocket, 
-        below the nose cone as a function of the distance along the z
-        axis from the body axes coordinate system. 
-
-        Parameters
-        ----------
-        z: float, int
-            Position along the z axis in the body axis coordinate
-            system for which the radius will be returned. 
-
-        Returns
-        -------
-        r: float, int
-            Radius for the z value
-        """
-        for tail, tail_from_ucs in self.aerodynamic_surfaces.get_position_by_type(Tail):
-            tail_bacs = (tail_from_ucs[2] - self.center_of_dry_mass_position) * self._csys
-            distance_from_tail_tip = (z - tail_bacs) * self._csys
-            
-            if 0 <= distance_from_tail_tip <= tail.length:
-                r = tail.radius(distance_from_tail_tip) 
-                return r
-                
-        r = self._calculate_radius_z_tubes(z)
-        return r
-
-    def _calculate_radius_z_tubes(self, z):
-        """
-        This is an auxiliary funciton return the radius of the rocket, 
-        when it is not in the nose cone or tails as a function of the+
-        distance along the z axis from the body axes coordinate system. 
-    
-        Parameters
-        ----------
-        z: float, int
-            Position along the z axis in the body axis coordinate
-            system for which the radius will be returned. 
-
-        Returns
-        -------
-        r: float, int
-            Radius for the z value
-        """
-        r = self.radius
-        return r
 
     def info(self):
         """Prints out a summary of the data and graphs available about
