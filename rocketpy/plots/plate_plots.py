@@ -1,10 +1,9 @@
 import matplotlib.pyplot as plt
+import numpy as np
 
 from rocketpy.plots.plot_helpers import show_or_save_plot
 
-import numpy as np
 
- 
 class _PlatePlots:
     """
     Class that holds plot methods for the Plate class.
@@ -29,7 +28,7 @@ class _PlatePlots:
         self.plate = plate
         self.rocket = rocket
 
-    def draw_3D(
+    def draw_3d(
         self,
         color: str = "teal",
         marker: str = "h",
@@ -39,7 +38,7 @@ class _PlatePlots:
     ) -> None:
         """
         Plots the scatter plot of the plate formed by the points
-        used to model the magnetic distortion in 3D.
+        used to model the magnetic distortion in 3d.
 
         Parameters
         ----------
@@ -94,7 +93,6 @@ class _PlatePlots:
         ax.set_ylabel("Y (m)")
         ax.set_zlabel("Z (m)")
         ax.legend()
-
 
         print(f"\n{self.plate.name} representation: ")
         show_or_save_plot(filename)
@@ -197,13 +195,13 @@ class _PlatePlots:
         -------
         None
         """
-        x, y, z = zip(*self.plate.points) # in the bacs frame z tail to nose
+        x, y, z = zip(*self.plate.points)  # in the bacs frame z tail to nose
 
         self.rocket.center_of_dry_mass_position
         x = self.rocket._csys * np.array(x)
         z = self.rocket.center_of_dry_mass_position + (self.rocket._csys * np.array(z))
         y = np.array(y)
-        
+
         if plane == "xz":
             r = x
         elif plane == "yz":
@@ -212,9 +210,25 @@ class _PlatePlots:
             raise ValueError("Plane value can only be xz or yz")
 
         if isinstance(self.plate.dimensions, float) and self.plate.dimensions > 0.1:
-            ax.plot(z, r, color=color, linewidth=3, linestyle="-", label=self.plate.name, zorder=1)
+            ax.plot(
+                z,
+                r,
+                color=color,
+                linewidth=3,
+                linestyle="-",
+                label=self.plate.name,
+                zorder=1,
+            )
         else:
-            ax.plot(z, r, color=color, linewidth=2, linestyle="-", label=self.plate.name, zorder=1)
+            ax.plot(
+                z,
+                r,
+                color=color,
+                linewidth=2,
+                linestyle="-",
+                label=self.plate.name,
+                zorder=1,
+            )
 
     def all(self) -> None:
         """
@@ -226,5 +240,5 @@ class _PlatePlots:
         -------
         None
         """
-        self.draw_3D()
+        self.draw_3d()
         self.draw()

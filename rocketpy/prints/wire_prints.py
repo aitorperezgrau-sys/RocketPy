@@ -27,9 +27,9 @@ class _WirePrints:
 
     def wire_type(self):
         if self.wire.wire_type == "communications":
-            print(f"Wire type: communications type")
+            print("Wire type: communications type")
         elif self.wire.wire_type == "ignition":
-            print(f"Wire type: ignition type")
+            print("Wire type: ignition type")
             print(f"Ignition wire function: {self.wire.ignition_wire_function}")
 
     def magnetic_field_vector(self):

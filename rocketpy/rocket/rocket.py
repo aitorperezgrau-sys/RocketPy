@@ -1932,7 +1932,7 @@ class Rocket:
             x, y, z = edge[0], edge[1], edge[2]
 
             # height boundds
-            flag, range_z = self.z_bounds_check(z, frame = 'ucs')
+            flag, range_z = self.z_bounds_check(z, frame="ucs")
             if not flag:
                 raise ValueError(
                     f"The z component: {z} of {name} is outside the rocket range {range_z}"
@@ -1940,13 +1940,13 @@ class Rocket:
 
             # radial bounds
             r_edge = m.sqrt(x**2 + y**2)
-            r = self.general_radius(z, frame = 'ucs')
+            r = self.general_radius(z, frame="ucs")
             if r_edge > r:
                 raise ValueError(
                     f"{name} with coordinates {edge} is outside the rocket since the radius {r_edge} is bigger than the radius of the rocket at that z: {z}, which is: {r}"
                 )
 
-        wire._set_wire_edges_from_bacs(self,[edge_a, edge_b])
+        wire._set_wire_edges_from_bacs(self, [edge_a, edge_b])
         wire._rocket_belonging(self)
 
         if wire.wire_type == "communications":
@@ -2032,9 +2032,9 @@ class Rocket:
         position: float, int, optional
             Position of the plate, when the shape is 'squared' or 'circular'
             It is the angle between the y axis of the user defined coordinate system
-            and the geometric center of the plate in degrees. The positive direction is defined 
+            and the geometric center of the plate in degrees. The positive direction is defined
             as the direciton in which the right hand rule coincides with the z direction
-            based on the coordinate system orientation. 
+            based on the coordinate system orientation.
         height : float or int, optional
             Z-axis height relative to user defined coordinate sytem.
             Required if plate shape is 'circular' or 'squared'.
@@ -2049,7 +2049,7 @@ class Rocket:
                     "The position when the shape is circular or squared must be defined"
                 )
             elif not isinstance(position, (float, int)):
-                raise ValueError('The position can only be a float or int')
+                raise ValueError("The position can only be a float or int")
 
             if height == None:
                 raise ValueError(
@@ -2410,18 +2410,18 @@ class Rocket:
         """
         self.plots.draw(vis_args, plane, filename=filename)
 
-    def general_radius(self, z: float, frame: str = 'bacs') -> float:
+    def general_radius(self, z: float, frame: str = "bacs") -> float:
         """
         Function return the radius of the rocket, including the
         nose cone and the radius variations in the body, as a function of
         the distance along the z axis from the body axes coordinate system
-        or the user defined coordinate system. 
+        or the user defined coordinate system.
 
-        It assumes that the bottom radius of the nose cone is constant until 
-        some tail, if defined, is present. Then, the radius of the body will be 
+        It assumes that the bottom radius of the nose cone is constant until
+        some tail, if defined, is present. Then, the radius of the body will be
         the top radius of the following tail, or if it is the last tail, the
-        radius will be the radius of the bottom of the tail. 
-        
+        radius will be the radius of the bottom of the tail.
+
 
         Parameters
         ----------
@@ -2429,9 +2429,9 @@ class Rocket:
             Position along the z axis relative to the bacs
             in which we want to calculate the radius.
         frame : str, optional
-            Frame in which the z component is given. It can either be 'bacs' 
+            Frame in which the z component is given. It can either be 'bacs'
             (body axis coordinate sytem) or 'ucs' (user defined coordiante
-            system). 
+            system).
         Returns
         -------
         r: float
@@ -2444,38 +2444,40 @@ class Rocket:
 
             if isinstance(frame, str):
                 if frame.lower() == "ucs":
-                    distance_from_nose = z - self._nose_tip_from_ucs # nose cone frame
+                    distance_from_nose = z - self._nose_tip_from_ucs  # nose cone frame
                     z_bacs = (z - self.center_of_dry_mass_position) * self._csys
-                elif frame.lower() == 'bacs':
-                    nose_tip_bacs = (self._nose_tip_from_ucs - self.center_of_dry_mass_position) * self._csys
-                    distance_from_nose = z - nose_tip_bacs # nose cone frame
-                    
+                elif frame.lower() == "bacs":
+                    nose_tip_bacs = (
+                        self._nose_tip_from_ucs - self.center_of_dry_mass_position
+                    ) * self._csys
+                    distance_from_nose = z - nose_tip_bacs  # nose cone frame
+
                     z_bacs = z
                 else:
-                    raise ValueError('Accepted strings for frame are ucs and bacs')
-            else: 
-                raise ValueError('Frame parameter must be a string')
-            
+                    raise ValueError("Accepted strings for frame are ucs and bacs")
+            else:
+                raise ValueError("Frame parameter must be a string")
+
             if 0 <= distance_from_nose <= self.nose_cone.length:
                 r = self.nose_cone.radius(distance_from_nose)
             else:
                 r = self._calculate_radius_z_intermediate(z_bacs)
-                
+
             return r
         else:
             raise ValueError("The z component must be a float or int")
-        
+
     def _calculate_radius_z_intermediate(self, z: float) -> float:
         """
-        This is an auxiliary function returning the radius of the rocket, 
+        This is an auxiliary function returning the radius of the rocket,
         below the nose cone as a function of the distance along the z
-        axis from the body axes coordinate system. 
+        axis from the body axes coordinate system.
 
         Parameters
         ----------
         z: float, int
             Position along the z axis in the body axis coordinate
-            system for which the radius will be returned. 
+            system for which the radius will be returned.
 
         Returns
         -------
@@ -2484,49 +2486,53 @@ class Rocket:
         """
         tails_bacs = []
         for tail, tail_from_ucs in self.aerodynamic_surfaces.get_position_by_type(Tail):
-            tail_bacs = (tail_from_ucs[2] - self.center_of_dry_mass_position) * self._csys
+            tail_bacs = (
+                tail_from_ucs[2] - self.center_of_dry_mass_position
+            ) * self._csys
             distance_from_tail_tip = (z - tail_bacs) * self._csys
             tails_bacs.append((tail, tail_bacs))
-            
+
             if 0 <= distance_from_tail_tip <= tail.length:
-                r = tail.radius(distance_from_tail_tip) 
+                r = tail.radius(distance_from_tail_tip)
                 return r
-                
+
         r = self._calculate_radius_z_tubes(z, tails_bacs)
         return r
 
     def _calculate_radius_z_tubes(self, z: float, tails_bacs: list):
         """
-        This is an auxiliary function returning the radius of the rocket, 
+        This is an auxiliary function returning the radius of the rocket,
         when it is not in the nose cone or tails as a function of the
-        distance along the z axis from the body axes coordinate system. 
-    
+        distance along the z axis from the body axes coordinate system.
+
         Parameters
         ----------
         z: float, int
             Position along the z axis in the body axis coordinate
-            system for which the radius will be returned. 
+            system for which the radius will be returned.
         tails_bacs: list
             List composed of tuples with the tails of the rocket,
             and the position in the bacs frame
-            
+
         Returns
         -------
         r: float, int
-            Radius for the z value in the body tubes. 
+            Radius for the z value in the body tubes.
         """
         o_tails_bacs = sorted(tails_bacs, key=lambda x: x[1], reverse=True)
         for tail, tail_bacs_position in o_tails_bacs:
             if z > tail_bacs_position:
                 return tail.top_radius
-        
+
         last_tail = o_tails_bacs[-1][0]
         r = last_tail.bottom_radius
         return r
 
-    def z_bounds_check(self, z: float, frame: str = "bacs") -> tuple[bool, tuple[float, float]]:
+    def z_bounds_check(
+        self, z: float, frame: str = "bacs"
+    ) -> tuple[bool, tuple[float, float]]:
         """
-        This function is used to check if a given z is inside or outside 
+        This function is used to check if a given z is inside or outside
         the defined rocket.
 
         Parameters
@@ -2542,12 +2548,11 @@ class Rocket:
         Returns
         -------
         is_inside: bool
-            False if it is outside, True if it is inside. 
+            False if it is outside, True if it is inside.
         bounds:
             Tuple formed by the range of the z relative to the specified frame.
         """
         if isinstance(z, (float, int)):
-
             if not isinstance(self.nose_cone, NoseCone):
                 raise ValueError("Define a nose cone first")
             if not isinstance(self.motor, Motor):
@@ -2560,25 +2565,28 @@ class Rocket:
                 if frame.lower() == "ucs":
                     z_min = min(nose_tip_ucs, motor_ucs)
                     z_max = max(nose_tip_ucs, motor_ucs)
-                    
-                elif frame.lower() == 'bacs':
+
+                elif frame.lower() == "bacs":
                     # change from ucs to bacs
-                    nose_tip_bacs = (nose_tip_ucs - self.center_of_dry_mass_position) * self._csys
-                    motor_bacs = (motor_ucs - self.center_of_dry_mass_position) * self._csys
-                    
+                    nose_tip_bacs = (
+                        nose_tip_ucs - self.center_of_dry_mass_position
+                    ) * self._csys
+                    motor_bacs = (
+                        motor_ucs - self.center_of_dry_mass_position
+                    ) * self._csys
+
                     z_min = min(nose_tip_bacs, motor_bacs)
                     z_max = max(nose_tip_bacs, motor_bacs)
                 else:
-                    raise ValueError('Accepted strings for frame are ucs and bacs')
-            else: 
-                raise ValueError('Frame parameter must be a string')
+                    raise ValueError("Accepted strings for frame are ucs and bacs")
+            else:
+                raise ValueError("Frame parameter must be a string")
 
             is_inside = z_min <= z <= z_max
             return is_inside, (z_min, z_max)
 
         else:
             raise ValueError("The z component must be a float or int")
-
 
     def info(self):
         """Prints out a summary of the data and graphs available about

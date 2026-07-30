@@ -126,6 +126,12 @@ class Sensor(ABC):
         --------
         TODO link to documentation on noise model
         """
+        warnings.warn(
+            "The Sensor class (and all its subclasses) is still under "
+            "experimental development. Some features may be changed in future "
+            "versions, although we will try to keep the changes to a minimum.",
+            UserWarning,
+        )
 
         self.sampling_rate = sampling_rate
         self.resolution = resolution
@@ -374,7 +380,7 @@ class InertialSensor(Sensor):
         temperature drift.
     """
 
-    def __init__(  # pylint: disable=too-many-arguments
+    def __init__( 
         self,
         sampling_rate,
         orientation=(0, 0, 0),

@@ -9,7 +9,7 @@ from pywmm.date_utils import decimal_year
 
 from rocketpy.mathutils.vector_matrix import Matrix, Vector
 from rocketpy.rocket import Rocket
-from rocketpy.sensors.sensor import InertialSensor, ScalarSensor, Sensor
+from rocketpy.sensors.sensor import InertialSensor
 from rocketpy.tools import inverted_haversine
 
 
@@ -84,7 +84,7 @@ class Magnetometer(InertialSensor):
         More details on the pywmm librayon its github repository:
           https://github.com/dougc95/pywmm/tree/main
     year : float
-        Current decimal year. 
+        Current decimal year.
     rotation_sensor_to_body : Matrix
         The rotation matrix of the sensor from the sensor frame to the rocket
         frame of reference.
@@ -92,7 +92,7 @@ class Magnetometer(InertialSensor):
         The normal vector of the sensor in the rocket frame of reference.
     """
 
-    def __init__(
+    def __init__( # pylint: disable=too-many-arguments
         self,
         sampling_rate,
         orientation=(0, 0, 0),
@@ -470,7 +470,7 @@ class Magnetometer(InertialSensor):
                 Derivative of the state vector of the rocket.
 
             - relative_position: Vector
-                Position of the sensor relative to the rocket center of dry mass in m. 
+                Position of the sensor relative to the rocket center of dry mass in m.
 
             - parachute_events : list only required if the ignition_wire_function
                 is 'parachute_ignition'
@@ -488,7 +488,9 @@ class Magnetometer(InertialSensor):
         # initialization of parameters
         u = kwargs["u"]  # state vector
         parachute_events = kwargs.get("parachute_events", None)
-        sensor_from_bacs = kwargs["relative_position"] # sensor position from body axis coordinate system
+        sensor_from_bacs = kwargs[
+            "relative_position"
+        ]  # sensor position from body axis coordinate system
         current_time = time
         lat0, lon0, launch_site_elevation = (
             kwargs["environment"].latitude,
@@ -509,7 +511,7 @@ class Magnetometer(InertialSensor):
         sensor_from_inertial = rotation_bacs_to_inertial @ sensor_from_bacs
 
         # obtain the sensor coordinates in the inertial frame, by adding the offset to the positon vector
-        cdm_from_inertial = Vector(u[0:3]) 
+        cdm_from_inertial = Vector(u[0:3])
         x_inertial, y_inertial, z_inertial = sensor_from_inertial + cdm_from_inertial
 
         # z is calculated in meters above the sea level, we must change to WGS84 in km
@@ -535,37 +537,34 @@ class Magnetometer(InertialSensor):
         b_down = self.wmm.bz / 1e9  # T
 
         # --- Transform to Rocketpy's inertial frame ---
-        b_inertial_x = b_east  # T
-        b_inertial_y = b_north  # T
-        b_inertial_z = -b_down  # T
-        B_inertial = Vector([b_inertial_x, b_inertial_y, b_inertial_z])  # T
+        b_field_inertial = Vector([b_east, b_north, -b_down])  # T
 
         # --- from Rocketpy's inertial frame to bacs frame ---
         rotation_inertial_to_bacs = rotation_bacs_to_inertial.transpose
-        B_bacs = rotation_inertial_to_bacs @ B_inertial  # T
+        b_field_bacs = rotation_inertial_to_bacs @ b_field_inertial  # T
 
         # --- Apply magnetic interference ---
-        B_bacs = self.apply_magnetic_interference(
-            B_bacs, rocket, current_time, parachute_events
+        b_field_bacs = self.apply_magnetic_interference(
+            b_field_bacs, rocket, current_time, parachute_events
         )  # T
 
         # Transform body frame (bacs) to sensor frame
         rotation_bacs_to_sensor = (
             self._total_rotation_sensor_to_body.transpose
         )  # includes the cross-axis sensitivity adjustment
-        B_sensor = rotation_bacs_to_sensor @ B_bacs  # T
+        b_field_sensor = rotation_bacs_to_sensor @ b_field_bacs  # T
 
         # --- apply noise and quantize ---
-        B_sensor = self.apply_temperature_drift(B_sensor)  # T
-        B_sensor = self.apply_noise(B_sensor)  # T
-        B_sensor = self.quantize(B_sensor)  # T
+        b_field_sensor = self.apply_temperature_drift(b_field_sensor)  # T
+        b_field_sensor = self.apply_noise(b_field_sensor)  # T
+        b_field_sensor = self.quantize(b_field_sensor)  # T
 
-        self.measurement = (B_sensor.x, B_sensor.y, B_sensor.z)  # T
-        self._save_data((time, *B_sensor))
+        self.measurement = (b_field_sensor.x, b_field_sensor.y, b_field_sensor.z)  # T
+        self._save_data((time, *b_field_sensor))
 
     def apply_magnetic_interference(
         self,
-        B: Vector,
+        b_field: Vector,
         rocket: Rocket,
         current_time: float | int,
         parachute_events: list | None = None,
@@ -576,7 +575,7 @@ class Magnetometer(InertialSensor):
 
         Parameters
         ----------
-        B : Vector
+        b_field : Vector
             Magnetic field Vector.
         rocket : Rocket
             Rocketpy Rocket class.
@@ -591,17 +590,17 @@ class Magnetometer(InertialSensor):
 
         Returns
         -------
-        B : Vector
+        b_field : Vector
             Magnetic field after adjustment of the hard iron,
             and power interference.
 
         """
         self.magnetic_interference = [0, 0, 0]
 
-        B = self.apply_soft_iron(B, rocket)  # T
-        B = self.apply_hard_iron(B)  # T
-        B = self.apply_power_interference(
-            B, rocket, current_time, parachute_events
+        b_field = self.apply_soft_iron(b_field, rocket)  # T
+        b_field = self.apply_hard_iron(b_field)  # T
+        b_field = self.apply_power_interference(
+            b_field, rocket, current_time, parachute_events
         )  # T
 
         self.magnetic_interference = [
@@ -615,9 +614,9 @@ class Magnetometer(InertialSensor):
             + self.hard_iron_distortion[2]
             + self.soft_iron_distortion_difference[2],
         ]
-        return B
+        return b_field
 
-    def apply_soft_iron(self, B: Vector, rocket: Rocket) -> Vector:
+    def apply_soft_iron(self, b_field: Vector, rocket: Rocket) -> Vector:
         """
         Applies the soft iron distortion which is the distoriton
         of the magnetic field due to the higher magnetic permeability of
@@ -627,14 +626,14 @@ class Magnetometer(InertialSensor):
 
         Parameters
         ----------
-        B : Vector
+        b_field : Vector
             Vector reading of the magnetic field of the earth.
         rocket : Rocket
             Rocketpy Rocket class.
 
         Returns
         -------
-        B_distorted : Vector
+        b_field_distorted : Vector
             Magnetic field vector after the soft iron distortion.
         """
         if self.initial_soft_iron_distortion_matrix == "plates":
@@ -656,15 +655,15 @@ class Magnetometer(InertialSensor):
 
                 self.total_soft_iron_distortion_matrix_computed = True
 
-            B_distorted = self._soft_iron_distortion_matrix @ B
+            b_field_distorted = self._soft_iron_distortion_matrix @ b_field
         elif self.initial_soft_iron_distortion_matrix == "number":
-            B_distorted = self._soft_iron_distortion_matrix @ B
+            b_field_distorted = self._soft_iron_distortion_matrix @ b_field
 
-        self.soft_iron_distortion_difference = list(B_distorted - B)
+        self.soft_iron_distortion_difference = list(b_field_distorted - b_field)
 
-        return B_distorted
+        return b_field_distorted
 
-    def apply_hard_iron(self, B: Vector) -> Vector:
+    def apply_hard_iron(self, b_field: Vector) -> Vector:
         """
         Applies the hard iron distortion. This magnetic distortion is
         caused by permanent magnets or magnetized materials on the
@@ -674,20 +673,20 @@ class Magnetometer(InertialSensor):
 
         Parameters
         ----------
-        B : Vector
+        b_field : Vector
             Magnetic field Vector.
 
         Returns
         -------
-        B : Vector
+        b_field : Vector
             Magnetic field after hard_iron_distortion.
         """
-        B = B + self._hard_iron_distortion
-        return B
+        b_field = b_field + self._hard_iron_distortion
+        return b_field
 
     def apply_power_interference(
         self,
-        B: Vector,
+        b_field: Vector,
         rocket: Rocket,
         current_time: float,
         parachute_events: list | None = None,
@@ -701,7 +700,7 @@ class Magnetometer(InertialSensor):
 
         Parameters
         ----------
-        B : Vector
+        b_field : Vector
             Magnetic field Vector.
         rocket : Rocket
             Rocketpy Rocket class.
@@ -716,7 +715,7 @@ class Magnetometer(InertialSensor):
 
         Returns
         -------
-        B : Vector
+        b_field : Vector
             Magnetic field after adjustment of both the activation signal
             interference and communications interference.
 
@@ -726,9 +725,9 @@ class Magnetometer(InertialSensor):
             or self.initial_power_interference == "personalized"
         ):
             self.power_interference = [0, 0, 0]
-            B = self.apply_communications_interference(B, rocket)
-            B = self.apply_activation_signal_interference(
-                B, rocket, current_time, parachute_events
+            b_field = self.apply_communications_interference(b_field, rocket)
+            b_field = self.apply_activation_signal_interference(
+                b_field, rocket, current_time, parachute_events
             )
             self.power_interference = [
                 self.activation_signal_interference[0]
@@ -740,25 +739,25 @@ class Magnetometer(InertialSensor):
             ]
             self._power_interference = Vector(self.power_interference)
         elif self.initial_power_interference == "number":
-            B = B + self._power_interference
+            b_field = b_field + self._power_interference
 
-        return B
+        return b_field
 
-    def apply_communications_interference(self, B: Vector, rocket: Rocket) -> Vector:
+    def apply_communications_interference(self, b_field: Vector, rocket: Rocket) -> Vector:
         """
         Applies the interference caused due to the current flowing
         through the communication wires.
 
         Parameters
         ----------
-        B : Vector
+        b_field : Vector
             Magnetic field Vector.
         rocket : Rocket
             Rocketpy Rocket class.
 
         Returns
         -------
-        B : Vector
+        b_field : Vector
             Magnetic field after adjustment of communications magnetic
             interference.
         """
@@ -785,22 +784,22 @@ class Magnetometer(InertialSensor):
                     self._communications_interference = Vector(
                         self.communications_interference
                     )
-                    B = B + self._communications_interference
+                    b_field = b_field + self._communications_interference
                     self.communications_computed = True
                 else:
-                    B = B + self._communications_interference
+                    b_field = b_field + self._communications_interference
             else:
                 raise ValueError(
                     "You must define first some communication wires, to be able to consider the magnetic distrubance created by them"
                 )
         elif self.initial_communications_interference == "number":
-            B = B + self._communications_interference
+            b_field = b_field + self._communications_interference
 
-        return B
+        return b_field
 
     def apply_activation_signal_interference(
         self,
-        B: Vector,
+        b_field: Vector,
         rocket: Rocket,
         current_time: float,
         parachute_events: list | None = None,
@@ -811,7 +810,7 @@ class Magnetometer(InertialSensor):
 
         Parameters
         ----------
-        B : Vector
+        b_field : Vector
             Magnetic field Vector.
         rocket : Rocket
             Rocketpy Rocket class.
@@ -826,7 +825,7 @@ class Magnetometer(InertialSensor):
 
         Returns
         -------
-        B : Vector
+        b_field : Vector
             Magnetic field after adjustment activation signal interference
             interference.
         """
@@ -836,7 +835,7 @@ class Magnetometer(InertialSensor):
                 self.activation_signal_interference = [0, 0, 0]
                 for ignition_wire in rocket.ignition_wires:
                     if ignition_wire.ignition_wire_function == "parachute_ignition":
-                        if not parachute_events == None:
+                        if not parachute_events is None:
                             for parachute_event in parachute_events:
                                 ejection_time = parachute_event[0]
                                 parachute = parachute_event[1]
@@ -873,8 +872,8 @@ class Magnetometer(InertialSensor):
                                         ][2],
                                     ]
 
-                                    B = (
-                                        B
+                                    b_field = (
+                                        b_field
                                         + ignition_wire._magnetic_field[
                                             self.sensor_from_cso_t
                                         ]
@@ -914,8 +913,8 @@ class Magnetometer(InertialSensor):
                                     2
                                 ],
                             ]
-                            B = (
-                                B
+                            b_field = (
+                                b_field
                                 + ignition_wire._magnetic_field[self.sensor_from_cso_t]
                             )
                     else:
@@ -927,9 +926,9 @@ class Magnetometer(InertialSensor):
                     "You must define some ignition wire to be able to consider its magnetic disturbance."
                 )
         elif self.initial_activation_signal_interference == "number":
-            B = B + self._activation_signal_interference
+            b_field = b_field + self._activation_signal_interference
 
-        return B
+        return b_field
 
     def export_measured_data(self, filename, file_format):
         """

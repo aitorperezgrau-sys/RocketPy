@@ -160,15 +160,19 @@ class _WirePlots:
         -------
         None
         """
-        # change nose to tail with nose origin
+        # change nose to tail with nose origin
         edge_a_x = self.wire._wire_edges_from_cdm[0][0] * self.rocket._csys
         edge_b_x = self.wire._wire_edges_from_cdm[1][0] * self.rocket._csys
 
         edge_a_y = self.wire._wire_edges_from_cdm[0][1]
         edge_b_y = self.wire._wire_edges_from_cdm[1][1]
 
-        edge_a_z = self.rocket.center_of_dry_mass_position + (self.wire._wire_edges_from_cdm[0][2] * self.rocket._csys)
-        edge_b_z = self.rocket.center_of_dry_mass_position + (self.wire._wire_edges_from_cdm[1][2] * self.rocket._csys)
+        edge_a_z = self.rocket.center_of_dry_mass_position + (
+            self.wire._wire_edges_from_cdm[0][2] * self.rocket._csys
+        )
+        edge_b_z = self.rocket.center_of_dry_mass_position + (
+            self.wire._wire_edges_from_cdm[1][2] * self.rocket._csys
+        )
         if plane == "xz":
             r_a = edge_a_x
             r_b = edge_b_x
@@ -186,7 +190,7 @@ class _WirePlots:
         if edges_names == True:
             ax.scatter(z, r, marker=marker, color=color, zorder=5, label="Wire edges")
 
-            # Add text labels 
+            # Add text labels
             ax.annotate(
                 "Edge A",
                 (edge_a_z, r_a),

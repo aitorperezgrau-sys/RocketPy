@@ -836,7 +836,7 @@ class _RocketPlots:
         plt.ylabel("Radius (m)")
         leg = ax.legend()
         for line in leg.get_lines():
-            line.set_linewidth(2.0) 
+            line.set_linewidth(2.0)
         plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
         plt.tight_layout()
         show_or_save_plot(filename)
@@ -927,7 +927,7 @@ class _RocketPlots:
         plt.ylabel("Radius (m)")
         leg = ax.legend()
         for line in leg.get_lines():
-            line.set_linewidth(2.0) 
+            line.set_linewidth(2.0)
         plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
         plt.tight_layout()
         show_or_save_plot(filename)

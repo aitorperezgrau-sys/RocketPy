@@ -54,9 +54,9 @@ class Plate:
         system.
     Plate.grid_spacing: float or int
         Space between points when it is 'personalized'
-    Plate.z_points: int 
+    Plate.z_points: int
         Number of points when it is 'circular' or 'squared'
-        along the z axis. 
+        along the z axis.
     Plate.angular_points: int
         Number of angles when it is 'circular' or 'squared'
     Plate.name: str
@@ -109,7 +109,7 @@ class Plate:
             - If shape is 'personalized', dimensions must be a list
             with lists as the vertixes that form the shape. They must be
             in sequential order (clockwise or counter-clockwise) and at
-            least 3 non-collinear vertices must be defined in the user 
+            least 3 non-collinear vertices must be defined in the user
             defined coordinate system.
         material: str
             Material from which the plate is composed Allowed strings
@@ -127,10 +127,10 @@ class Plate:
             by the vertices. Default is 0.001.
         z_points: int, optional
             Number of points that will be taken in the z axis to create the
-            plate  when it is 'circular' or 'squared'. Default is 40. 
+            plate  when it is 'circular' or 'squared'. Default is 40.
         angular_points: int, optional
-            Number of angles that will be taken to create the plate when it 
-            is 'circular' or 'squared'. Default is 70. 
+            Number of angles that will be taken to create the plate when it
+            is 'circular' or 'squared'. Default is 70.
         name: str, optional
             Name of the plate. Default value is 'Plate'
 
@@ -150,7 +150,7 @@ class Plate:
             elif material == "personalized":
                 self.material = "personalized"
 
-                if absolute_magnetic_permeability == None:
+                if absolute_magnetic_permeability is None:
                     raise ValueError(
                         "The magnetic permeability is compulsory when personalized is chosen"
                     )
@@ -168,7 +168,7 @@ class Plate:
             raise ValueError("material argument can only be a string")
 
         if isinstance(shape, str):
-            if shape == "circular" or shape == "squared":
+            if shape in ("circular", "squared"):
                 self.shape = shape
                 if not isinstance(dimensions, (float, int)):
                     raise ValueError(
@@ -179,15 +179,19 @@ class Plate:
                 if isinstance(z_points, int):
                     self.z_points = z_points
                 else:
-                    raise ValueError('The number points along the z axis must be an int')
-                
+                    raise ValueError(
+                        "The number points along the z axis must be an int"
+                    )
+
                 if isinstance(angular_points, int):
                     self.angular_points = angular_points
                 else:
-                    raise ValueError('The number angles that will be evaluated to get the plate must be an int')
-                
+                    raise ValueError(
+                        "The number angles that will be evaluated to get the plate must be an int"
+                    )
+
                 self.grid_spacing = None
-                
+
             elif shape == "personalized":
                 self.shape = shape
                 if not isinstance(dimensions, (tuple, list)):
@@ -220,7 +224,7 @@ class Plate:
                     raise ValueError("Grid spacing must be a float or int")
                 self.z_points = None
                 self.angular_points = None
-            else:   
+            else:
                 raise ValueError(
                     "The accepted shapes are circular, squared and personalized"
                 )
@@ -257,9 +261,9 @@ class Plate:
         position: float, int, optional
             Position of the plate, when the shape is 'squared' or 'circular'
             It is the angle between the y axis of the user defined coordinate system
-            and the geometric center of the plate in degrees. The positive direction is defined 
+            and the geometric center of the plate in degrees. The positive direction is defined
             as the direciton in which the right hand rule coincides with the z direction
-            based on the coordinate system orientation. 
+            based on the coordinate system orientation.
         height: float, int, optional
             Position of the geometric center of plate when the shape is not
             'personalized' along the z axis relative to the user defined coordiante
@@ -301,12 +305,12 @@ class Plate:
         position: float, int, optional
             Position of the plate, when the shape is 'squared' or 'circular'
             It is the angle between the y axis of the user defined coordinate system
-            and the geometric center of the plate in degrees. The positive direction is defined 
+            and the geometric center of the plate in degrees. The positive direction is defined
             as the direciton in which the right hand rule coincides with the z direction
-            based on the coordinate system orientation. 
+            based on the coordinate system orientation.
         height: float, int, optional
             Position of the geometric center of plate when the shape is 'circular'
-            or 'squared' along the z axis relative to the user defined 
+            or 'squared' along the z axis relative to the user defined
             coordiante system.
 
         Returns
@@ -319,22 +323,20 @@ class Plate:
         if self.shape == "circular":
             upper_z = height + self.dimensions
             lower_z = height - self.dimensions
-            center_z = height 
+            center_z = height
             geometric_center_angle = position * (np.pi / 180)
 
             for z in np.linspace(lower_z, upper_z, self.z_points):
-                flag, _ = rocket.z_bounds_check(z, frame = 'ucs')
+                flag, _ = rocket.z_bounds_check(z, frame="ucs")
                 if not flag:
                     continue
 
-                r = rocket.general_radius(z, frame = 'ucs')
+                r = rocket.general_radius(z, frame="ucs")
                 if r <= 1e-6:
                     continue
 
                 dz = z - center_z
-                inside_sqrt = self.dimensions**2 - dz**2
-                if inside_sqrt < 0:
-                    inside_sqrt = 0
+                inside_sqrt = max(self.dimensions**2 - dz**2, 0)
 
                 arc_length = m.sqrt(inside_sqrt)
                 extension_angle = arc_length / r
@@ -345,13 +347,12 @@ class Plate:
                     x = r * np.sin(theta)
                     y = r * np.cos(theta)
 
-                    # change to body axis coordiante system 
+                    # change to body axis coordiante system
                     z_bacs = (z - rocket.center_of_dry_mass_position) * rocket._csys
-                    if rocket._csys == -1: 
+                    if rocket._csys == -1:
                         self.points.append([-x, y, z_bacs])
                     else:
                         self.points.append([x, y, z_bacs])
-                
 
         elif self.shape == "squared":
             upper_z = height + self.dimensions / 2
@@ -359,11 +360,11 @@ class Plate:
             geometric_center_angle = position * (np.pi / 180)
 
             for z in np.linspace(lower_z, upper_z, self.z_points):
-                flag, _ = rocket.z_bounds_check(z, frame = 'ucs')
+                flag, _ = rocket.z_bounds_check(z, frame="ucs")
                 if not flag:
                     continue
 
-                r = rocket.general_radius(z, frame = 'ucs')
+                r = rocket.general_radius(z, frame="ucs")
                 if r <= 1e-6:
                     continue
 
@@ -374,10 +375,10 @@ class Plate:
                 for theta in np.linspace(alpha, beta, self.angular_points):
                     x = r * np.sin(theta)
                     y = r * np.cos(theta)
-                    
-                    # change to body axis coordiante system 
+
+                    # change to body axis coordiante system
                     z_bacs = (z - rocket.center_of_dry_mass_position) * rocket._csys
-                    if rocket._csys == -1: 
+                    if rocket._csys == -1:
                         self.points.append([-x, y, z_bacs])
                     else:
                         self.points.append([x, y, z_bacs])
@@ -391,7 +392,7 @@ class Plate:
         self,
         radius_func: Function,
         z_checking_function: Function,
-        rocket, 
+        rocket,
     ) -> None:
         """
         Generates a 3D grid of points bounded by an arbitrary set of vertices,
@@ -405,7 +406,7 @@ class Plate:
             A callable function that takes z and returns True if it is inside
             the rocket, False, otherwise.
         rocket: Rocket
-            Rocket to which the plate belongs. 
+            Rocket to which the plate belongs.
 
         Returns
         -------
@@ -413,38 +414,42 @@ class Plate:
         """
         # processing of points
         vertices = []
-        for point in self.dimensions:            
-            
-            # check height bounds and radial bounds in ucs
+        for point in self.dimensions:
+            # check height bounds and radial bounds in ucs
             # height boundds
-            flag, range_z = z_checking_function(point[2], frame = 'ucs')
+            flag, range_z = z_checking_function(point[2], frame="ucs")
             if not flag:
                 raise ValueError(
                     f"The z component: {point[2]} of {point} is outside the rocket range {range_z}"
                 )
 
             # radial bounds
-            r_point = m.sqrt(point[0]**2 + point[1]**2)
-            r = radius_func(point[2], frame = 'ucs')
+            r_point = m.sqrt(point[0] ** 2 + point[1] ** 2)
+            r = radius_func(point[2], frame="ucs")
             if r_point > r:
                 raise ValueError(
                     f"The point with coordinates {point} is outside the rocket since the radius {r_point} is bigger than the radius of the rocket at that z: {point[2]}, which is: {r}"
                 )
-            
+
             # transforming from user defined coordinate system to body axis coordinate system
             cdm_user_frame = Vector([0, 0, rocket.center_of_dry_mass_position])
             sensor_from_cdm_user_frame = Vector(point) - cdm_user_frame
 
-            if rocket._csys == -1: # nose to tail
-                point_bacs_frame = Vector([-sensor_from_cdm_user_frame[0], sensor_from_cdm_user_frame[1], -sensor_from_cdm_user_frame[2]])
-            elif rocket._csys == 1: #tail to nose
+            if rocket._csys == -1:  # nose to tail
+                point_bacs_frame = Vector(
+                    [
+                        -sensor_from_cdm_user_frame[0],
+                        sensor_from_cdm_user_frame[1],
+                        -sensor_from_cdm_user_frame[2],
+                    ]
+                )
+            elif rocket._csys == 1:  # tail to nose
                 point_bacs_frame = sensor_from_cdm_user_frame
-
 
             x = point_bacs_frame[0]
             y = point_bacs_frame[1]
             z = point_bacs_frame[2]
-            vertices.append([x,y,z])
+            vertices.append([x, y, z])
 
         total_x, total_y, total_z = 0.0, 0.0, 0.0
         num_pts = len(self.dimensions)
@@ -522,7 +527,7 @@ class Plate:
 
                     # Final geometry check: point must lie within internal radius at the corresponding height
                     r_point = m.sqrt(p3d_x**2 + p3d_y**2)
-                    r_allowed = radius_func(p3d_z, frame = 'bacs')
+                    r_allowed = radius_func(p3d_z, frame="bacs")
 
                     if r_point < r_allowed:
                         final_3d_points.append([p3d_x, p3d_y, p3d_z])
@@ -530,12 +535,12 @@ class Plate:
                 curr_v += self.grid_spacing
             curr_u += self.grid_spacing
 
-        self.points = final_3d_points 
+        self.points = final_3d_points
 
     def calculate_soft_iron_distortion_matrix(self, position_vector: Vector) -> None:
         """
-        Calculates the soft iron distortion matrix from the position of the points 
-        relative to the body axis coordinate system of the plate and the parameters 
+        Calculates the soft iron distortion matrix from the position of the points
+        relative to the body axis coordinate system of the plate and the parameters
         defined for the surface.
 
         Parameters
@@ -608,12 +613,12 @@ class Plate:
             Color of the points.
             A full list of color names can be found at:
             https://matplotlib.org//gallery/color/named_colors
-            Default is 
+            Default is
         marker: str
             shape of the points from which the plate is formed.
             A full list of markers can be found at:
             https://matplotlib.org/stable/api/markers_api.html
-            Default is 'h', hexagon. 
+            Default is 'h', hexagon.
         filename : str, optional
             The path the plot should be saved to. By default None, in which case
             the plot will be shown instead of saved. Supported file endings are:
