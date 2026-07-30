@@ -171,8 +171,7 @@ class _PlatePlots:
         plt.ylim([-self.rocket.radius * 4, self.rocket.radius * 6])
         plt.xlabel("Position (m)")
         plt.ylabel("Radius (m)")
-        ax.legend()
-
+        plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
         plt.tight_layout()
         show_or_save_plot(filename)
 
@@ -216,7 +215,7 @@ class _PlatePlots:
         if isinstance(self.plate.dimensions, float) and self.plate.dimensions > 0.1:
             ax.plot(z, r, color=color, linewidth=3, linestyle="-", label=self.plate.name, zorder=1)
         else:
-            ax.plot(z, r, color=color, linewidth=1, linestyle="-", label=self.plate.name, zorder=1)
+            ax.plot(z, r, color=color, linewidth=2, linestyle="-", label=self.plate.name, zorder=1)
 
     def all(self) -> None:
         """

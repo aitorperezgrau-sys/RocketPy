@@ -1913,12 +1913,11 @@ class Rocket:
             Wire object to be added to the rocket.
         position_edges: list[list], list[tuple], tuple[list], tuple[tuple], list[int/float]
             list or tuple of lists or tuple with 3 components, x,y,z for the edges
-            of the wire A and B relative to the coordiante system origin chosen. It can
+            of the wire A and B relative to the user based coordiante system. It can
             also be a list with floats, that will be assumed to be the position along the
             z axis of each edge.
 
-            This is: [Edge_A, Edge_B] relative to CSO. Conventional current flows
-            from Edge_A to Edge_B.
+            This is: [Edge_A, Edge_B]. Conventional current flows from Edge_A to Edge_B.
 
         Returns
         -------
@@ -1933,7 +1932,7 @@ class Rocket:
             x, y, z = edge[0], edge[1], edge[2]
 
             # height boundds
-            flag, range_z = self.z_bounds_check(z)
+            flag, range_z = self.z_bounds_check(z, frame = 'ucs')
             if not flag:
                 raise ValueError(
                     f"The z component: {z} of {name} is outside the rocket range {range_z}"
@@ -1941,7 +1940,7 @@ class Rocket:
 
             # radial bounds
             r_edge = m.sqrt(x**2 + y**2)
-            r = self.general_radius(z)
+            r = self.general_radius(z, frame = 'ucs')
             if r_edge > r:
                 raise ValueError(
                     f"{name} with coordinates {edge} is outside the rocket since the radius {r_edge} is bigger than the radius of the rocket at that z: {z}, which is: {r}"
@@ -1967,12 +1966,11 @@ class Rocket:
         ----------
         position_edges: list[list], list[tuple], tuple[list], tuple[tuple], list[int/float]
             list or tuple of lists or tuple with 3 components, x,y,z for the edges
-            of the wire A and B relative to the coordiante system origin chosen. It can
+            of the wire A and B relative to the user defiend coordiante system. It can
             also be a list with floats, that will be assumed to be the position along the
             z axis of each edge.
 
-            This is: [Edge_A, Edge_B] relative to CSO. Conventional current flows
-            from Edge_A to Edge_B.
+            This is: [Edge_A, Edge_B]. Conventional current flows from Edge_A to Edge_B.
 
         Returns
         -------
@@ -2440,19 +2438,19 @@ class Rocket:
 
             if isinstance(frame, str):
                 if frame.lower() == "ucs":
-                    distance_from_nose = abs(z - self._nose_tip_from_ucs)
+                    distance_from_nose = z - self._nose_tip_from_ucs # nose cone frame
                     z_bacs = (z - self.center_of_dry_mass_position) * self._csys
                 elif frame.lower() == 'bacs':
                     nose_tip_bacs = (self._nose_tip_from_ucs - self.center_of_dry_mass_position) * self._csys
-                    distance_from_nose = abs(z - nose_tip_bacs)
+                    distance_from_nose = z - nose_tip_bacs # nose cone frame
                     
                     z_bacs = z
                 else:
                     raise ValueError('Accepted strings for frame are ucs and bacs')
             else: 
                 raise ValueError('Frame parameter must be a string')
-
-            if distance_from_nose <= self.nose_cone.length:
+            
+            if 0 <= distance_from_nose <= self.nose_cone.length:
                 r = self.nose_cone.radius(distance_from_nose)
             else:
                 r = self._calculate_radius_z_intermediate(z_bacs)
@@ -2484,6 +2482,7 @@ class Rocket:
             Tuple formed by the range of the z relative to the specified frame.
         """
         if isinstance(z, (float, int)):
+
             if not isinstance(self.nose_cone, NoseCone):
                 raise ValueError("Define a nose cone first")
             if not isinstance(self.motor, Motor):
@@ -2517,15 +2516,43 @@ class Rocket:
 
     def _calculate_radius_z_intermediate(self, z: float) -> float:
         """
-        This is an auxiliary funciton that calcualtes the radius of the
-        rocket in the body, thus z must be bellow the nose cone and
-        in the bacs frame. 
+        This is an auxiliary function returning the radius of the rocket, 
+        below the nose cone as a function of the distance along the z
+        axis from the body axes coordinate system. 
 
         Parameters
         ----------
         z: float, int
-            Position along the z axis relative to the cso
-            in which we want to calculate the radius.
+            Position along the z axis in the body axis coordinate
+            system for which the radius will be returned. 
+
+        Returns
+        -------
+        r: float, int
+            Radius for the z value
+        """
+        for tail, tail_from_ucs in self.aerodynamic_surfaces.get_position_by_type(Tail):
+            tail_bacs = (tail_from_ucs[2] - self.center_of_dry_mass_position) * self._csys
+            distance_from_tail_tip = (z - tail_bacs) * self._csys
+            
+            if 0 <= distance_from_tail_tip <= tail.length:
+                r = tail.radius(distance_from_tail_tip) 
+                return r
+                
+        r = self._calculate_radius_z_tubes(z)
+        return r
+
+    def _calculate_radius_z_tubes(self, z):
+        """
+        This is an auxiliary funciton return the radius of the rocket, 
+        when it is not in the nose cone or tails as a function of the+
+        distance along the z axis from the body axes coordinate system. 
+    
+        Parameters
+        ----------
+        z: float, int
+            Position along the z axis in the body axis coordinate
+            system for which the radius will be returned. 
 
         Returns
         -------
@@ -2533,7 +2560,6 @@ class Rocket:
             Radius for the z value
         """
         r = self.radius
-
         return r
 
     def info(self):

@@ -116,8 +116,7 @@ class _WirePlots:
         plt.ylim([-self.rocket.radius * 4, self.rocket.radius * 6])
         plt.xlabel("Position (m)")
         plt.ylabel("Radius (m)")
-        ax.legend()
-
+        plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
         plt.tight_layout()
         show_or_save_plot(filename)
 
@@ -167,32 +166,27 @@ class _WirePlots:
         edge_a_y = self.wire._wire_edges_from_cdm[0][1]
         edge_b_y = self.wire._wire_edges_from_cdm[1][1]
 
-        nose_to_cdm_dist = self.rocket.center_of_dry_mass_position - self.rocket._nose_tip_from_ucs
-        edge_a_z = nose_to_cdm_dist - self.wire._wire_edges_from_cdm[0][2]
-        edge_b_z = nose_to_cdm_dist - self.wire._wire_edges_from_cdm[1][2]
-
-
-        
-
+        cdm_from_nose = self.rocket.center_of_dry_mass_position - self.rocket._nose_tip_from_ucs
+        edge_a_z = cdm_from_nose + (self.wire._wire_edges_from_cdm[0][2] *  self.rocket._csys)
+        edge_b_z = cdm_from_nose + (self.wire._wire_edges_from_cdm[1][2] *  self.rocket._csys)
         if plane == "xz":
-            r_a = edge_a_y
-            r_b = edge_b_y
-
-        elif plane == "yz":
             r_a = edge_a_x
             r_b = edge_b_x
+
+        elif plane == "yz":
+            r_a = edge_a_y
+            r_b = edge_b_y
 
         z = [edge_a_z, edge_b_z]
         r = [r_a, r_b]
 
-        # Plot the line connecting the two edges
+        # plot lines connecting edges
         ax.plot(z, r, color=color, linestyle=linestyle, label=self.wire.name)
 
         if edges_names == True:
-            # Optionally plot the edges
             ax.scatter(z, r, marker=marker, color=color, zorder=5, label="Wire edges")
 
-            # Add text labels next to Edge A and Edge B (offset by 5 points up and right)
+            # Add text labels 
             ax.annotate(
                 "Edge A",
                 (edge_a_z, r_a),

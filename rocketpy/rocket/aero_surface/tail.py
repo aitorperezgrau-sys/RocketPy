@@ -30,6 +30,9 @@ class Tail(AeroSurface):
     Tail.rocket_radius: int, float
         The reference rocket radius used for lift coefficient normalization in
         meters.
+    Tail.radius : Function
+        Function that returns the radius of the tail at a certain z relative to the
+        local coordinate system. 
     Tail.name : str
         Name of the tail. Default is 'Tail'.
     Tail.cpx : int, float
@@ -82,6 +85,7 @@ class Tail(AeroSurface):
         self._bottom_radius = bottom_radius
         self._length = length
         self._rocket_radius = rocket_radius
+        self._radius_function = None
 
         self.evaluate_geometrical_parameters()
         self.evaluate_lift_coefficient()
@@ -112,6 +116,16 @@ class Tail(AeroSurface):
         self.evaluate_lift_coefficient()
         self.evaluate_center_of_pressure()
 
+    @property
+    def radius(self):
+        #print('inside property')
+        #print(self._radius_function)
+        if self._radius_function == None:
+            #print('was none')
+            self._radius_function = self._compute_radius_function()
+
+        return self._radius_function
+    
     @property
     def length(self):
         return self._length
@@ -152,6 +166,32 @@ class Tail(AeroSurface):
             np.array([0, self.length]),
             np.array([self.top_radius, self.bottom_radius]),
         ]
+        print(f'self.top_radius: {self.top_radius}, bottom radius {self.bottom_radius}')
+
+    def _compute_radius_function(self):
+        """
+        Calculates and returns the radius of the tail 
+        at a certain height z, based on the local
+        coordinate system.
+
+        Local coordinate system:
+            - Z axis along the longitudinal axis of symmetry, positive downwards (top -> bottom).
+            - Origin located at top of the tail (generally the portion closest to the rocket's nose).
+        """
+        #print('has entered')
+        z = np.linspace(self.shape_vec[0][0], self.shape_vec[0][1], 100)
+        #print(f'init z in local tail: {self.shape_vec[0][0]}')
+        #print(f'init z in local tail: {self.shape_vec[0][1]}')
+        
+        r = np.linspace(self.shape_vec[1][0], self.shape_vec[1][1], 100)
+        #print(f'top radius {self.shape_vec[1][0]}')
+        #print(f'bottom radius: {self.shape_vec[1][1]}')
+        
+        data = np.column_stack((z, r))
+
+        return Function(data, inputs="z", outputs="tail_radius")
+    
+    
 
     def evaluate_lift_coefficient(self):
         """Calculates and returns tail's lift coefficient.

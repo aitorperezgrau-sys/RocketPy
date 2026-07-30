@@ -280,11 +280,12 @@ class Wire:
             raise ValueError("The position_vector must be a list, tuple or Vector")
 
     def _set_wire_edges_from_bacs(
-        self, rocket, _wire_edges_from_user_coordinate_system: list | tuple | Vector[Vector, Vector]
+        self, rocket, _wire_edges_from_user_coordinate_system: list[Vector, Vector]
     ) -> None:
         """
         Save as an attribute the position of the wire edges in the body axis 
-        coordinate system. 
+        coordinate system from the edges given as a vector in the user 
+        defined coordinate system
 
         Parameters
         ----------
@@ -298,6 +299,7 @@ class Wire:
         -------
         None
         """
+        self._wire_edges_from_cdm = []
         cdm_user_frame = Vector([0, 0, rocket.center_of_dry_mass_position])
         for edge_from_user in _wire_edges_from_user_coordinate_system:
             edge_from_cdm_user_frame = edge_from_user - cdm_user_frame
