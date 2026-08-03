@@ -1,5 +1,4 @@
 import logging
-import math as m
 import warnings
 
 import numpy as np

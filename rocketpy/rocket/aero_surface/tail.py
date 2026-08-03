@@ -120,7 +120,7 @@ class Tail(AeroSurface):
     def radius(self):
         # print('inside property')
         # print(self._radius_function)
-        if self._radius_function == None:
+        if self._radius_function is None:
             # print('was none')
             self._radius_function = self._compute_radius_function()
 

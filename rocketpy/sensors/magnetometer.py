@@ -1,4 +1,3 @@
-import csv
 import math
 from datetime import datetime
 
@@ -92,7 +91,7 @@ class Magnetometer(InertialSensor):
         The normal vector of the sensor in the rocket frame of reference.
     """
 
-    def __init__( # pylint: disable=too-many-arguments
+    def __init__(  # pylint: disable=too-many-arguments
         self,
         sampling_rate,
         orientation=(0, 0, 0),
@@ -274,154 +273,25 @@ class Magnetometer(InertialSensor):
         """
         self.magnetic_interference = [0, 0, 0]
 
-        if isinstance(power_interference, (int, float)):
-            self.power_interference = [
-                power_interference,
-                power_interference,
-                power_interference,
-            ]
-            self._power_interference = Vector(self.power_interference)
-            self.initial_power_interference = "number"
-        elif isinstance(power_interference, (list, tuple)):
-            if len(power_interference) == 3:
-                self.power_interference = list(power_interference)
-                self._power_interference = Vector(self.power_interference)
-                self.initial_power_interference = "number"
-            else:
-                raise ValueError("The length of the list must be 3: x,y,z")
-        elif isinstance(power_interference, str):
+        if isinstance(power_interference, str):
             if power_interference.lower() == "wires":
-                self.power_interference = [0, 0, 0]
-                self.communications_interference = [0, 0, 0]
-                self.communications_computed = False
-                self.activation_signal_interference = [0, 0, 0]
-
                 self.initial_power_interference = "wires"
-                self.initial_communications_interference = "wires"
-                self.initial_activation_signal_interference = "wires"
+                self.validate_power_wires_parameters()
             elif power_interference.lower() == "personalized":
                 self.initial_power_interference = "personalized"
-
-                if (
-                    activation_signal_interference is None
-                    or communications_interference is None
-                ):
-                    raise ValueError(
-                        "For 'personalized' interference, you must provide values for both "
-                        "activation_signal_interference and communications_interference."
-                    )
-
-                if isinstance(activation_signal_interference, (int, float)):
-                    self.activation_signal_interference = [
-                        activation_signal_interference,
-                        activation_signal_interference,
-                        activation_signal_interference,
-                    ]
-                    self._activation_signal_interference = Vector(
-                        self.activation_signal_interference
-                    )
-                    self.initial_activation_signal_interference = "number"
-                elif isinstance(activation_signal_interference, (list, tuple)):
-                    if len(activation_signal_interference) == 3:
-                        self.activation_signal_interference = list(
-                            activation_signal_interference
-                        )
-                        self._activation_signal_interference = Vector(
-                            self.activation_signal_interference
-                        )
-                        self.initial_activation_signal_interference = "number"
-                    else:
-                        raise ValueError("The length of the list must be 3: x,y,z")
-                elif isinstance(activation_signal_interference, str):
-                    if activation_signal_interference.lower() == "wires":
-                        self.activation_signal_interference = [0, 0, 0]
-                        self.initial_activation_signal_interference = "wires"
-                    else:
-                        raise ValueError("The accepted string is wires")
-                else:
-                    raise ValueError(
-                        "The accepted values are list, tuple, str, int or float"
-                    )
-
-                if isinstance(communications_interference, (int, float)):
-                    self.communications_interference = [
-                        communications_interference,
-                        communications_interference,
-                        communications_interference,
-                    ]
-                    self._communications_interference = Vector(
-                        self.communications_interference
-                    )
-                    self.initial_communications_interference = "number"
-                elif isinstance(communications_interference, (list, tuple)):
-                    if len(communications_interference) == 3:
-                        self.communications_interference = list(
-                            communications_interference
-                        )
-                        self._communications_interference = Vector(
-                            self.communications_interference
-                        )
-                        self.initial_communications_interference = "number"
-                    else:
-                        raise ValueError("The length of the list must be 3: x,y,z")
-                elif isinstance(communications_interference, str):
-                    if communications_interference.lower() == "wires":
-                        self.communications_interference = [0, 0, 0]
-                        self.initial_communications_interference = "wires"
-                        self.communications_computed = False
-                    else:
-                        raise ValueError("The accepted string is wires")
-                else:
-                    raise ValueError(
-                        "The accepted values are list, tuple, str, int or float"
-                    )
-            else:
-                raise ValueError("The accepted strings are wires or personalized")
-        else:
-            raise ValueError("The accepted values are list, tuple, str, int or float")
-
-        # initialize hard_iron_distortion attribute
-        if isinstance(hard_iron_distortion, (float, int)):
-            self.hard_iron_distortion = [
-                hard_iron_distortion,
-                hard_iron_distortion,
-                hard_iron_distortion,
-            ]
-        elif isinstance(hard_iron_distortion, (list, tuple)):
-            if len(hard_iron_distortion) == 3:
-                self.hard_iron_distortion = list(hard_iron_distortion)
-            else:
-                raise Exception(
-                    "If a list is passed, it must have a value for each axis. Therefore, it must have length 3"
+                self.validate_power_personalized_parameters(
+                    activation_signal_interference, communications_interference
                 )
-        else:
-            raise ValueError("Hard iron must be a float, int or a list with 3 elements")
-
-        self._hard_iron_distortion = Vector(self.hard_iron_distortion)
-
-        # initialize soft_iron_distortion attribute
-        if isinstance(soft_iron_distortion, Matrix):
-            for element in soft_iron_distortion:
-                if not isinstance(element, (float, int)):
-                    raise ValueError(
-                        "The elements inside the matrix must be float or int"
-                    )
-
-            self._soft_iron_distortion_matrix = soft_iron_distortion
-            self.initial_soft_iron_distortion_matrix = "number"
-            self.soft_iron_distortion_difference = []
-        elif isinstance(soft_iron_distortion, str):
-            if soft_iron_distortion == "plates":
-                self._soft_iron_distortion_matrix = Matrix.identity()
-                self.initial_soft_iron_distortion_matrix = "plates"
-                self.total_soft_iron_distortion_matrix_computed = False
-                self.soft_iron_distortion_difference = []
             else:
-                raise ValueError("The accepted string must be plates")
+                raise ValueError("The accepted strings are 'wires' or 'personalized'")
         else:
-            raise ValueError(
-                "The soft iron distortion can only be a Matrix or a string"
-            )
+            if isinstance(power_interference, (int, float)):
+                power_interference = [power_interference] * 3
+            self.power_interference = list(power_interference)
+            self._power_interference = Vector(self.power_interference)
+
+        self.validate_soft_iron(soft_iron_distortion)
+        self.validate_hard_iron(hard_iron_distortion)
 
         # Get current decimal year
         current_date = datetime.now().strftime("%Y-%m-%d")
@@ -447,6 +317,98 @@ class Magnetometer(InertialSensor):
             cross_axis_sensitivity=cross_axis_sensitivity,
             name=name,
         )
+
+    def validate_soft_iron(self, soft_iron_distortion):
+        """
+        Checks and defines the soft_iron_distortion parameter.
+        """
+        # initialize soft_iron_distortion attribute
+        if isinstance(soft_iron_distortion, Matrix):
+            self._soft_iron_distortion_matrix = soft_iron_distortion
+            self.soft_iron_distortion_difference = []
+        elif isinstance(soft_iron_distortion, str):
+            if soft_iron_distortion == "plates":
+                self._soft_iron_distortion_matrix = Matrix.identity()
+                self.initial_soft_iron_distortion_matrix = "plates"
+                self.total_soft_iron_distortion_matrix_computed = False
+                self.soft_iron_distortion_difference = []
+            else:
+                raise ValueError("The accepted string must be plates")
+
+    def validate_hard_iron(self, hard_iron_distortion):
+        """
+        Checks and defines the soft_iron_distortion parameter.
+        """
+        if isinstance(hard_iron_distortion, (float, int)):
+            hard_iron_distortion = [hard_iron_distortion] * 3
+
+        self.hard_iron_distortion = list(hard_iron_distortion)
+        self._hard_iron_distortion = Vector(self.hard_iron_distortion)
+
+    def validate_power_personalized_parameters(
+        self, activation_signal_interference, communications_interference
+    ) -> None:
+
+        if (
+            activation_signal_interference is None
+            or communications_interference is None
+        ):
+            raise ValueError(
+                "For 'personalized' interference, you must provide values for both "
+                "activation_signal_interference and communications_interference."
+            )
+
+        self.validate_activation_signal_interference(activation_signal_interference)
+        self.validate_communications_interferemce(communications_interference)
+
+    def validate_activation_signal_interference(self, activation_signal_interference):
+        """
+        Checks activation signal interference and defines the related attributes
+        """
+
+        if isinstance(activation_signal_interference, str):
+            if activation_signal_interference.lower() == "wires":
+                self.activation_signal_interference = [0, 0, 0]
+                self.initial_activation_signal_interference = "wires"
+            else:
+                raise ValueError("The accepted string is wires")
+        else:
+            if isinstance(activation_signal_interference, (int, float)):
+                activation_signal_interference = [activation_signal_interference] * 3
+            self.initial_activation_signal_interference = "number"
+            self.activation_signal_interference = list(activation_signal_interference)
+        self._activation_signal_interference = Vector(
+            self.activation_signal_interference
+        )
+
+    def validate_communications_interferemce(self, communications_interference):
+        """
+        Checks communications interference and defines the related attributes.
+        """
+
+        if isinstance(communications_interference, str):
+            if communications_interference.lower() == "wires":
+                self.communications_interference = [0, 0, 0]
+                self.initial_communications_interference = "wires"
+                self.communications_computed = False
+            else:
+                raise ValueError("The accepted string is wires")
+        else:
+            if isinstance(communications_interference, (int, float)):
+                communications_interference = [communications_interference] * 3
+            self.initial_communications_interference = "number"
+            self.communications_interference = list(communications_interference)
+
+        self._communications_interference = Vector(self.communications_interference)
+
+    def validate_power_wires_parameters(self):
+        self.power_interference = [0, 0, 0]
+        self.communications_interference = [0, 0, 0]
+        self.communications_computed = False
+        self.activation_signal_interference = [0, 0, 0]
+
+        self.initial_communications_interference = "wires"
+        self.initial_activation_signal_interference = "wires"
 
     def measure(self, time: float, **kwargs) -> None:
         """
@@ -500,23 +462,70 @@ class Magnetometer(InertialSensor):
         earth_radius = kwargs["environment"].earth_radius
         rocket = kwargs["rocket"]
 
-        quaternion = u[
-            6:10
-        ]  # Quaternion represents the com orientation with respect to the inertial frame.
+        # u[6:10]: Quaternion represents the com orientation with respect to the inertial frame.
         rotation_bacs_to_inertial = Matrix.transformation(
-            quaternion
+            u[6:10]
         )  # rotation matrix from com to inertial frame
 
         # --- obtain the current longitude, latitude and elevation ---
-        sensor_from_inertial = rotation_bacs_to_inertial @ sensor_from_bacs
-
         # obtain the sensor coordinates in the inertial frame, by adding the offset to the positon vector
-        cdm_from_inertial = Vector(u[0:3])
-        x_inertial, y_inertial, z_inertial = sensor_from_inertial + cdm_from_inertial
+        x_inertial, y_inertial, z_inertial = (
+            rotation_bacs_to_inertial @ sensor_from_bacs
+            + Vector(
+                u[0:3]
+            )  # Vector(u[0:3]) is the coordinates center of dry mass in the inertial frame
+        )
+        b_north, b_east, b_down = self.obtain_magnetic_field(
+            x_inertial,
+            y_inertial,
+            z_inertial,
+            launch_site_elevation,
+            earth_radius,
+            lat0,
+            lon0,
+        )
 
+        # --- Transform from NED to Rocketpy's inertial frame ---
+        b_field_inertial = Vector([b_east, b_north, -b_down])  # T
+
+        # --- from Rocketpy's inertial frame to bacs frame ---
+        b_field_bacs = rotation_bacs_to_inertial.transpose @ b_field_inertial  # T
+
+        # --- Apply magnetic interference ---
+        b_field_bacs = self.apply_magnetic_interference(
+            b_field_bacs, rocket, current_time, parachute_events
+        )  # T
+
+        # Transform body frame (bacs) to sensor frame, includes the cross-axis sensitivity adjustment
+        b_field_sensor = (
+            self._total_rotation_sensor_to_body.transpose @ b_field_bacs
+        )  # T
+
+        # --- apply noise and quantize ---
+        b_field_sensor = self.apply_temperature_drift(b_field_sensor)  # T
+        b_field_sensor = self.apply_noise(b_field_sensor)  # T
+        b_field_sensor = self.quantize(b_field_sensor)  # T
+
+        self.measurement = (b_field_sensor.x, b_field_sensor.y, b_field_sensor.z)  # T
+        self._save_data((time, *b_field_sensor))
+
+    def obtain_magnetic_field(
+        self,
+        x_inertial,
+        y_inertial,
+        z_inertial,
+        launch_site_elevation,
+        earth_radius,
+        lat0,
+        lon0,
+    ):
+        """
+        Returns from the magnetic model the magnetic field components in the NED
+        frame based on the coordinates in the intertial frame, the launch site elevation
+        and the earth radius and initial longitude and latitude of the launch site.
+        """
         # z is calculated in meters above the sea level, we must change to WGS84 in km
-        altitude_wgs84_m = z_inertial + launch_site_elevation
-        altitude_wgs84_km = altitude_wgs84_m / 1000.0
+        altitude_wgs84_km = (z_inertial + launch_site_elevation) / 1000.0
 
         # Convert x and y to current latitude and longitude
         drift = math.hypot(x_inertial, y_inertial)
@@ -536,31 +545,7 @@ class Magnetometer(InertialSensor):
         b_east = self.wmm.by / 1e9  # T
         b_down = self.wmm.bz / 1e9  # T
 
-        # --- Transform to Rocketpy's inertial frame ---
-        b_field_inertial = Vector([b_east, b_north, -b_down])  # T
-
-        # --- from Rocketpy's inertial frame to bacs frame ---
-        rotation_inertial_to_bacs = rotation_bacs_to_inertial.transpose
-        b_field_bacs = rotation_inertial_to_bacs @ b_field_inertial  # T
-
-        # --- Apply magnetic interference ---
-        b_field_bacs = self.apply_magnetic_interference(
-            b_field_bacs, rocket, current_time, parachute_events
-        )  # T
-
-        # Transform body frame (bacs) to sensor frame
-        rotation_bacs_to_sensor = (
-            self._total_rotation_sensor_to_body.transpose
-        )  # includes the cross-axis sensitivity adjustment
-        b_field_sensor = rotation_bacs_to_sensor @ b_field_bacs  # T
-
-        # --- apply noise and quantize ---
-        b_field_sensor = self.apply_temperature_drift(b_field_sensor)  # T
-        b_field_sensor = self.apply_noise(b_field_sensor)  # T
-        b_field_sensor = self.quantize(b_field_sensor)  # T
-
-        self.measurement = (b_field_sensor.x, b_field_sensor.y, b_field_sensor.z)  # T
-        self._save_data((time, *b_field_sensor))
+        return b_north, b_east, b_down
 
     def apply_magnetic_interference(
         self,
@@ -656,7 +641,7 @@ class Magnetometer(InertialSensor):
                 self.total_soft_iron_distortion_matrix_computed = True
 
             b_field_distorted = self._soft_iron_distortion_matrix @ b_field
-        elif self.initial_soft_iron_distortion_matrix == "number":
+        else:
             b_field_distorted = self._soft_iron_distortion_matrix @ b_field
 
         self.soft_iron_distortion_difference = list(b_field_distorted - b_field)
@@ -720,10 +705,7 @@ class Magnetometer(InertialSensor):
             interference and communications interference.
 
         """
-        if (
-            self.initial_power_interference == "wires"
-            or self.initial_power_interference == "personalized"
-        ):
+        if self.initial_power_interference in ("wires" or "personalized"):
             self.power_interference = [0, 0, 0]
             b_field = self.apply_communications_interference(b_field, rocket)
             b_field = self.apply_activation_signal_interference(
@@ -738,12 +720,14 @@ class Magnetometer(InertialSensor):
                 + self.communications_interference[2],
             ]
             self._power_interference = Vector(self.power_interference)
-        elif self.initial_power_interference == "number":
+        else:
             b_field = b_field + self._power_interference
 
         return b_field
 
-    def apply_communications_interference(self, b_field: Vector, rocket: Rocket) -> Vector:
+    def apply_communications_interference(
+        self, b_field: Vector, rocket: Rocket
+    ) -> Vector:
         """
         Applies the interference caused due to the current flowing
         through the communication wires.
@@ -792,7 +776,7 @@ class Magnetometer(InertialSensor):
                 raise ValueError(
                     "You must define first some communication wires, to be able to consider the magnetic distrubance created by them"
                 )
-        elif self.initial_communications_interference == "number":
+        else:
             b_field = b_field + self._communications_interference
 
         return b_field
@@ -835,88 +819,16 @@ class Magnetometer(InertialSensor):
                 self.activation_signal_interference = [0, 0, 0]
                 for ignition_wire in rocket.ignition_wires:
                     if ignition_wire.ignition_wire_function == "parachute_ignition":
-                        if not parachute_events is None:
-                            for parachute_event in parachute_events:
-                                ejection_time = parachute_event[0]
-                                parachute = parachute_event[1]
-                                initial_time = (
-                                    ejection_time - ignition_wire.lead_ignition_time
-                                )
-                                final_time = (
-                                    ejection_time + ignition_wire.extra_ignition_time
-                                )
-                                if (
-                                    parachute.name == ignition_wire.parachute_name
-                                    and ejection_time != 0
-                                    and initial_time <= current_time <= final_time
-                                ):
-                                    if (
-                                        not self.sensor_from_cso_t
-                                        in ignition_wire._magnetic_field
-                                    ):
-                                        ignition_wire.measure_magnetic_field(
-                                            self._sensor_from_cso
-                                        )
-                                    self.activation_signal_interference = [
-                                        self.activation_signal_interference[0]
-                                        + ignition_wire.magnetic_field[
-                                            self.sensor_from_cso_t
-                                        ][0],
-                                        self.activation_signal_interference[1]
-                                        + ignition_wire.magnetic_field[
-                                            self.sensor_from_cso_t
-                                        ][1],
-                                        self.activation_signal_interference[2]
-                                        + ignition_wire.magnetic_field[
-                                            self.sensor_from_cso_t
-                                        ][2],
-                                    ]
+                        b_field = (
+                            self.calculate_activation_signal_interference_parachute(
+                                b_field, current_time, parachute_events, ignition_wire
+                            )
+                        )
 
-                                    b_field = (
-                                        b_field
-                                        + ignition_wire._magnetic_field[
-                                            self.sensor_from_cso_t
-                                        ]
-                                    )
-                        else:
-                            raise ValueError(
-                                "The parachute events should be passed if a wire has ignition_wire_function == parachute_ignition"
-                            )
                     elif ignition_wire.ignition_wire_function == "motor_ignition":
-                        initial_time = (
-                            rocket.motor.burn_start_time
-                            - ignition_wire.lead_ignition_time
+                        b_field = self.calculate_activation_signal_interference_motor(
+                            b_field, rocket, current_time, ignition_wire
                         )
-                        final_time = (
-                            rocket.motor.burn_start_time
-                            + ignition_wire.extra_ignition_time
-                        )
-                        if initial_time <= current_time <= final_time:
-                            if (
-                                not self.sensor_from_cso_t
-                                in ignition_wire._magnetic_field
-                            ):
-                                ignition_wire.measure_magnetic_field(
-                                    self._sensor_from_cso
-                                )
-                            self.activation_signal_interference = [
-                                self.activation_signal_interference[0]
-                                + ignition_wire.magnetic_field[self.sensor_from_cso_t][
-                                    0
-                                ],
-                                self.activation_signal_interference[1]
-                                + ignition_wire.magnetic_field[self.sensor_from_cso_t][
-                                    1
-                                ],
-                                self.activation_signal_interference[2]
-                                + ignition_wire.magnetic_field[self.sensor_from_cso_t][
-                                    2
-                                ],
-                            ]
-                            b_field = (
-                                b_field
-                                + ignition_wire._magnetic_field[self.sensor_from_cso_t]
-                            )
                     else:
                         raise ValueError(
                             "The accepted strings for the ignition_wire_function are motor_ignition and parachute_ignition"
@@ -925,12 +837,112 @@ class Magnetometer(InertialSensor):
                 raise ValueError(
                     "You must define some ignition wire to be able to consider its magnetic disturbance."
                 )
-        elif self.initial_activation_signal_interference == "number":
+        else:
             b_field = b_field + self._activation_signal_interference
 
         return b_field
 
-    def export_measured_data(self, filename, file_format):
+    def calculate_activation_signal_interference_parachute(
+        self, b_field, current_time, parachute_events, ignition_wire
+    ):
+        """
+        Applies the activation signal interference due to the parachute.
+
+        Parameters
+        ----------
+        b_field : Vector
+            Magnetic field Vector.
+        current_time : float, only required if the ignition_wire_function
+            is 'motor_ignition'
+            Current time of the simulation.
+        parachute_events : list only required if the ignition_wire_function
+            is 'parachute_ignition'
+            List that stores parachute events triggered during flight.
+            it is a list formed by lists which contain the trigger time
+            as the first element and the parachute object as the second.
+        igntion_wire : wire
+            Wire with wire type ignition and parachute_ignition as a function.
+
+        Returns
+        -------
+        b_field : Vector
+            Vector containing the magnetic field after the
+            checking and calculation of the parachute ignition
+            conditions.
+        """
+        if not parachute_events is None:
+            for parachute_event in parachute_events:
+                ejection_time = parachute_event[0]
+                parachute = parachute_event[1]
+                if (
+                    parachute.name == ignition_wire.parachute_name
+                    and ejection_time != 0
+                    and ejection_time - ignition_wire.lead_ignition_time
+                    <= current_time
+                    <= ejection_time + ignition_wire.extra_ignition_time
+                ):
+                    if not self.sensor_from_cso_t in ignition_wire._magnetic_field:
+                        ignition_wire.measure_magnetic_field(self._sensor_from_cso)
+                    self.activation_signal_interference = [
+                        self.activation_signal_interference[0]
+                        + ignition_wire.magnetic_field[self.sensor_from_cso_t][0],
+                        self.activation_signal_interference[1]
+                        + ignition_wire.magnetic_field[self.sensor_from_cso_t][1],
+                        self.activation_signal_interference[2]
+                        + ignition_wire.magnetic_field[self.sensor_from_cso_t][2],
+                    ]
+
+                    b_field = (
+                        b_field + ignition_wire._magnetic_field[self.sensor_from_cso_t]
+                    )
+        else:
+            raise ValueError(
+                "The parachute events should be passed if a wire has ignition_wire_function == parachute_ignition"
+            )
+
+        return b_field
+
+    def calculate_activation_signal_interference_motor(
+        self, b_field, rocket, current_time, ignition_wire
+    ):
+        """
+        Parameters
+        ----------
+        b_field : Vector
+            Magnetic field Vector.
+        rocket : Rocket
+            Rocketpy Rocket class.
+        current_time : float, only required if the ignition_wire_function
+            is 'motor_ignition'
+            Current time of the simulation.
+        igntion_wire : wire
+            Wire with wire type ignition and motor_ignition as a function.
+
+        Returns
+        -------
+        b_field : Vector
+            Magnetic field after adjustment activation signal interference
+            interference.
+        """
+        if (
+            rocket.motor.burn_start_time - ignition_wire.lead_ignition_time
+            <= current_time
+            <= rocket.motor.burn_start_time + ignition_wire.extra_ignition_time
+        ):
+            if not self.sensor_from_cso_t in ignition_wire._magnetic_field:
+                ignition_wire.measure_magnetic_field(self._sensor_from_cso)
+            self.activation_signal_interference = [
+                self.activation_signal_interference[0]
+                + ignition_wire.magnetic_field[self.sensor_from_cso_t][0],
+                self.activation_signal_interference[1]
+                + ignition_wire.magnetic_field[self.sensor_from_cso_t][1],
+                self.activation_signal_interference[2]
+                + ignition_wire.magnetic_field[self.sensor_from_cso_t][2],
+            ]
+            b_field = b_field + ignition_wire._magnetic_field[self.sensor_from_cso_t]
+        return b_field
+
+    def export_measured_data(self, filename, file_format="csv"):
         """
         Exports the measured values to a file
 

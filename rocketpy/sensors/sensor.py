@@ -380,7 +380,7 @@ class InertialSensor(Sensor):
         temperature drift.
     """
 
-    def __init__( 
+    def __init__(
         self,
         sampling_rate,
         orientation=(0, 0, 0),

@@ -7,7 +7,6 @@ from rocketpy.mathutils import Matrix, Vector
 from rocketpy.mathutils.function import Function
 from rocketpy.plots.plate_plots import _PlatePlots
 from rocketpy.prints.plate_prints import _PlatePrints
-from rocketpy.rocket.aero_surface import NoseCone
 
 
 class Plate:
@@ -139,111 +138,15 @@ class Plate:
         self.points = []
         self.plots = None
         self.prints = _PlatePrints(self)
-
-        if isinstance(material, str):
-            if material == "iron":
-                self.material = "iron"
-                self.absolute_magnetic_permeability = 1.25e-3
-            elif material == "carbon_steel":
-                self.material = "carbon_steel"
-                self.absolute_magnetic_permeability = 1.2e-4
-            elif material == "personalized":
-                self.material = "personalized"
-
-                if absolute_magnetic_permeability is None:
-                    raise ValueError(
-                        "The magnetic permeability is compulsory when personalized is chosen"
-                    )
-                elif not isinstance(absolute_magnetic_permeability, (int, float)):
-                    raise ValueError(
-                        "The magnetic permeability must be an int or float"
-                    )
-                else:
-                    self.absolute_magnetic_permeability = absolute_magnetic_permeability
-            else:
-                raise ValueError(
-                    "Material argument can only be iron, carbon_steel or personalized"
-                )
-        else:
-            raise ValueError("material argument can only be a string")
-
-        if isinstance(shape, str):
-            if shape in ("circular", "squared"):
-                self.shape = shape
-                if not isinstance(dimensions, (float, int)):
-                    raise ValueError(
-                        "The dimensions must be a float or int, when the shape is circular or squared"
-                    )
-                else:
-                    self.dimensions = dimensions
-                if isinstance(z_points, int):
-                    self.z_points = z_points
-                else:
-                    raise ValueError(
-                        "The number points along the z axis must be an int"
-                    )
-
-                if isinstance(angular_points, int):
-                    self.angular_points = angular_points
-                else:
-                    raise ValueError(
-                        "The number angles that will be evaluated to get the plate must be an int"
-                    )
-
-                self.grid_spacing = None
-
-            elif shape == "personalized":
-                self.shape = shape
-                if not isinstance(dimensions, (tuple, list)):
-                    raise ValueError(
-                        "The dimensions must be a list or tuple, when the shape is personalized"
-                    )
-                elif len(dimensions) < 3:
-                    raise ValueError(
-                        "At least 3 points must be defined to create a surface"
-                    )
-                else:
-                    for num_vertex in range(len(dimensions)):
-                        if len(dimensions[num_vertex]) == 3:
-                            if not isinstance(dimensions[num_vertex], (list, tuple)):
-                                raise ValueError(
-                                    "When the shape is personalized the dimensions must be a list of vertex whose components must be defined in a list or tupe"
-                                )
-                        else:
-                            raise ValueError(
-                                "The vertex must be defiened with 3 components"
-                            )
-                self.dimensions = dimensions
-
-                if isinstance(grid_spacing, (float, int)):
-                    if grid_spacing <= 0:
-                        raise ValueError("Grid spacing must be greater than 0")
-                    else:
-                        self.grid_spacing = grid_spacing
-                else:
-                    raise ValueError("Grid spacing must be a float or int")
-                self.z_points = None
-                self.angular_points = None
-            else:
-                raise ValueError(
-                    "The accepted shapes are circular, squared and personalized"
-                )
-        else:
-            raise ValueError("The shape must be defined as a string")
+        self._validate_material(material, absolute_magnetic_permeability)
+        self._validate_shape(shape, dimensions, z_points, angular_points, grid_spacing)
 
         self.relative_magnetic_permeability = self.absolute_magnetic_permeability / (
             4 * np.pi * 1e-7
         )
 
-        if not isinstance(thickness, (float, int)):
-            raise ValueError("Thickness must be a float or int")
-        else:
-            self.thickness = thickness
-
-        if isinstance(name, str):
-            self.name = name
-        else:
-            raise ValueError("The name must be a str")
+        self.thickness = thickness
+        self.name = name
 
     def define_plate_position(
         self,
@@ -283,10 +186,64 @@ class Plate:
             self.generate_points(rocket, position, height)
             self.area = np.pi * (self.dimensions**2)
             self.volume = self.area * self.thickness
-        elif self.shape == "personalized":
+        else:  # personalized
             self.generate_points(rocket, position, height)
             self.area = len(self.points) * (self.grid_spacing**2)
             self.volume = self.area * self.thickness
+
+    def _validate_material(self, material, absolute_magnetic_permeability):
+        """
+        Validates and defines the input parameters related to the material
+        and magnetic permeability.
+        """
+        if isinstance(material, str):
+            if material == "iron":
+                self.material = "iron"
+                self.absolute_magnetic_permeability = 1.25e-3
+            elif material == "carbon_steel":
+                self.material = "carbon_steel"
+                self.absolute_magnetic_permeability = 1.2e-4
+            elif material == "personalized":
+                self.material = "personalized"
+
+                if absolute_magnetic_permeability is None:
+                    raise ValueError(
+                        "The magnetic permeability is compulsory when personalized is chosen"
+                    )
+                self.absolute_magnetic_permeability = absolute_magnetic_permeability
+            else:
+                raise ValueError(
+                    "Material argument can only be iron, carbon_steel or personalized"
+                )
+        else:
+            raise ValueError("material argument can only be a string")
+
+    def _validate_shape(
+        self, shape, dimensions, z_points, angular_points, grid_spacing
+    ):
+        """
+        Validates and defines the input parameters related to the shape.
+        """
+        if isinstance(shape, str):
+            if shape in ("circular", "squared"):
+                self.shape = shape
+                self.dimensions = dimensions
+                self.z_points = z_points
+                self.angular_points = angular_points
+                self.grid_spacing = None
+
+            elif shape == "personalized":
+                self.shape = shape
+                self.dimensions = dimensions
+                self.grid_spacing = grid_spacing
+                self.z_points = None
+                self.angular_points = None
+            else:
+                raise ValueError(
+                    "The accepted strings are 'circular', 'squared' or 'personalized'"
+                )
+        else:
+            raise ValueError("The shape must be defined as a string")
 
     def generate_points(
         self,
@@ -320,73 +277,56 @@ class Plate:
         """
         self.points = []
 
-        if self.shape == "circular":
-            upper_z = height + self.dimensions
-            lower_z = height - self.dimensions
-            center_z = height
-            geometric_center_angle = position * (np.pi / 180)
-
-            for z in np.linspace(lower_z, upper_z, self.z_points):
-                flag, _ = rocket.z_bounds_check(z, frame="ucs")
-                if not flag:
-                    continue
-
-                r = rocket.general_radius(z, frame="ucs")
-                if r <= 1e-6:
-                    continue
-
-                dz = z - center_z
-                inside_sqrt = max(self.dimensions**2 - dz**2, 0)
-
-                arc_length = m.sqrt(inside_sqrt)
-                extension_angle = arc_length / r
-                alpha = geometric_center_angle - extension_angle / 2
-                beta = geometric_center_angle + extension_angle / 2
-
-                for theta in np.linspace(alpha, beta, self.angular_points):
-                    x = r * np.sin(theta)
-                    y = r * np.cos(theta)
-
-                    # change to body axis coordiante system
-                    z_bacs = (z - rocket.center_of_dry_mass_position) * rocket._csys
-                    if rocket._csys == -1:
-                        self.points.append([-x, y, z_bacs])
-                    else:
-                        self.points.append([x, y, z_bacs])
-
-        elif self.shape == "squared":
-            upper_z = height + self.dimensions / 2
-            lower_z = height - self.dimensions / 2
-            geometric_center_angle = position * (np.pi / 180)
-
-            for z in np.linspace(lower_z, upper_z, self.z_points):
-                flag, _ = rocket.z_bounds_check(z, frame="ucs")
-                if not flag:
-                    continue
-
-                r = rocket.general_radius(z, frame="ucs")
-                if r <= 1e-6:
-                    continue
-
-                extension_angle = self.dimensions / r
-                alpha = geometric_center_angle - extension_angle / 2
-                beta = geometric_center_angle + extension_angle / 2
-
-                for theta in np.linspace(alpha, beta, self.angular_points):
-                    x = r * np.sin(theta)
-                    y = r * np.cos(theta)
-
-                    # change to body axis coordiante system
-                    z_bacs = (z - rocket.center_of_dry_mass_position) * rocket._csys
-                    if rocket._csys == -1:
-                        self.points.append([-x, y, z_bacs])
-                    else:
-                        self.points.append([x, y, z_bacs])
-
-        elif self.shape == "personalized":
+        if self.shape == "personalized":
             self.generate_personalized_internal_plate(
                 rocket.general_radius, rocket.z_bounds_check, rocket
             )
+        else:
+            upper_z = height + self.dimensions / 2
+            lower_z = height - self.dimensions / 2
+            geometric_center_angle = position * (np.pi / 180)
+            for z in np.linspace(lower_z, upper_z, self.z_points):
+                if not rocket.z_bounds_check(z, frame="ucs")[0]:
+                    continue
+
+                r = rocket.general_radius(z, frame="ucs")
+                if r <= 1e-6:
+                    continue
+
+                if self.shape == "circular":
+                    center_z = height
+                    alpha, beta = self._circular_angle_calculation(
+                        z, center_z, geometric_center_angle, r
+                    )
+                else:  # squared
+                    alpha, beta = self._squared_angle_calculation(
+                        geometric_center_angle, r
+                    )
+
+                for theta in np.linspace(alpha, beta, self.angular_points):
+                    x = r * np.sin(theta)
+                    y = r * np.cos(theta)
+
+                    # change to body axis coordiante system
+                    z_bacs = (z - rocket.center_of_dry_mass_position) * rocket._csys
+                    if rocket._csys == -1:
+                        self.points.append([-x, y, z_bacs])
+                    else:
+                        self.points.append([x, y, z_bacs])
+
+    def _circular_angle_calculation(self, z, center_z, geometric_center_angle, r):
+        dz = z - center_z
+        inside_sqrt = max(self.dimensions**2 - dz**2, 0)
+        extension_angle = m.sqrt(inside_sqrt) / r
+        alpha = geometric_center_angle - extension_angle / 2
+        beta = geometric_center_angle + extension_angle / 2
+        return alpha, beta
+
+    def _squared_angle_calculation(self, geometric_center_angle, r):
+        extension_angle = self.dimensions / r
+        alpha = geometric_center_angle - extension_angle / 2
+        beta = geometric_center_angle + extension_angle / 2
+        return alpha, beta
 
     def generate_personalized_internal_plate(
         self,
@@ -412,130 +352,94 @@ class Plate:
         -------
         None
         """
-        # processing of points
-        vertices = []
-        for point in self.dimensions:
-            # check height bounds and radial bounds in ucs
-            # height boundds
-            flag, range_z = z_checking_function(point[2], frame="ucs")
-            if not flag:
-                raise ValueError(
-                    f"The z component: {point[2]} of {point} is outside the rocket range {range_z}"
-                )
+        # Processing of points
+        vertices = self.vertices_definition(z_checking_function, radius_func, rocket)
 
-            # radial bounds
-            r_point = m.sqrt(point[0] ** 2 + point[1] ** 2)
-            r = radius_func(point[2], frame="ucs")
-            if r_point > r:
-                raise ValueError(
-                    f"The point with coordinates {point} is outside the rocket since the radius {r_point} is bigger than the radius of the rocket at that z: {point[2]}, which is: {r}"
-                )
+        centroid = [sum(col) / len(vertices) for col in zip(*vertices)]
+        cx, cy, cz = centroid[0], centroid[1], centroid[2]
 
-            # transforming from user defined coordinate system to body axis coordinate system
-            cdm_user_frame = Vector([0, 0, rocket.center_of_dry_mass_position])
-            sensor_from_cdm_user_frame = Vector(point) - cdm_user_frame
+        ux, uy, uz, vx, vy, vz = self._calculate_uv_frame(vertices)
 
-            if rocket._csys == -1:  # nose to tail
-                point_bacs_frame = Vector(
-                    [
-                        -sensor_from_cdm_user_frame[0],
-                        sensor_from_cdm_user_frame[1],
-                        -sensor_from_cdm_user_frame[2],
-                    ]
-                )
-            elif rocket._csys == 1:  # tail to nose
-                point_bacs_frame = sensor_from_cdm_user_frame
+        uv_vertices = [
+            (
+                (pt[0] - cx) * ux + (pt[1] - cy) * uy + (pt[2] - cz) * uz,
+                (pt[0] - cx) * vx + (pt[1] - cy) * vy + (pt[2] - cz) * vz,
+            )
+            for pt in vertices
+        ]
 
-            x = point_bacs_frame[0]
-            y = point_bacs_frame[1]
-            z = point_bacs_frame[2]
-            vertices.append([x, y, z])
-
-        total_x, total_y, total_z = 0.0, 0.0, 0.0
-        num_pts = len(self.dimensions)
-
-        for pt in vertices:
-            total_x += pt[0]
-            total_y += pt[1]
-            total_z += pt[2]
-
-        centroid_x = total_x / num_pts
-        centroid_y = total_y / num_pts
-        centroid_z = total_z / num_pts
-
-        v0 = vertices[0]
-        v1 = vertices[1]
-        v2 = vertices[2]
-
-        a_x, a_y, a_z = v1[0] - v0[0], v1[1] - v0[1], v1[2] - v0[2]
-        b_x, b_y, b_z = v2[0] - v0[0], v2[1] - v0[1], v2[2] - v0[2]
-
-        nx = a_y * b_z - a_z * b_y
-        ny = a_z * b_x - a_x * b_z
-        nz = a_x * b_y - a_y * b_x
-
-        norm_val = m.sqrt(nx**2 + ny**2 + nz**2)
-        nx, ny, nz = nx / norm_val, ny / norm_val, nz / norm_val
-
-        # Define 2D Local Coordinate System (u_vec, v_vec)
-        if abs(nx) > 0.5 or abs(ny) > 0.5:
-            arb_x, arb_y, arb_z = 0.0, 0.0, 1.0
-        else:
-            arb_x, arb_y, arb_z = 1.0, 0.0, 0.0
-
-        ux = ny * arb_z - nz * arb_y
-        uy = nz * arb_x - nx * arb_z
-        uz = nx * arb_y - ny * arb_x
-        u_norm = m.sqrt(ux**2 + uy**2 + uz**2)
-        ux, uy, uz = ux / u_norm, uy / u_norm, uz / u_norm
-
-        vx = ny * uz - nz * uy
-        vy = nz * ux - nx * uz
-        vz = nx * uy - ny * ux
-
-        uv_vertices = []
-        u_coords = []
-        v_coords = []
-
-        for pt in vertices:
-            cx = pt[0] - centroid_x
-            cy = pt[1] - centroid_y
-            cz = pt[2] - centroid_z
-
-            u_val = cx * ux + cy * uy + cz * uz
-            v_val = cx * vx + cy * vy + cz * vz
-
-            u_coords.append(u_val)
-            v_coords.append(v_val)
-            uv_vertices.append((u_val, v_val))
-
-        # Generate 2D bounding grid
-        u_min, u_max = min(u_coords), max(u_coords)
-        v_min, v_max = min(v_coords), max(v_coords)
-
+        u_coords, v_coords = zip(*uv_vertices)
         plate_path = Path(uv_vertices)
         final_3d_points = []
 
-        curr_u = u_min
-        while curr_u <= u_max:
-            curr_v = v_min
-            while curr_v <= v_max:
+        curr_u = min(u_coords)
+        while curr_u <= max(u_coords):
+            curr_v = min(v_coords)
+            while curr_v <= max(v_coords):
                 if plate_path.contains_point((curr_u, curr_v)):
-                    p3d_x = centroid_x + (curr_u * ux) + (curr_v * vx)
-                    p3d_y = centroid_y + (curr_u * uy) + (curr_v * vy)
-                    p3d_z = centroid_z + (curr_u * uz) + (curr_v * vz)
+                    p3d_x = cx + (curr_u * ux) + (curr_v * vx)
+                    p3d_y = cy + (curr_u * uy) + (curr_v * vy)
+                    p3d_z = cz + (curr_u * uz) + (curr_v * vz)
 
-                    # Final geometry check: point must lie within internal radius at the corresponding height
-                    r_point = m.sqrt(p3d_x**2 + p3d_y**2)
-                    r_allowed = radius_func(p3d_z, frame="bacs")
-
-                    if r_point < r_allowed:
+                    if m.hypot(p3d_x, p3d_y) < radius_func(p3d_z, frame="bacs"):
                         final_3d_points.append([p3d_x, p3d_y, p3d_z])
 
                 curr_v += self.grid_spacing
             curr_u += self.grid_spacing
 
         self.points = final_3d_points
+
+    def vertices_definition(self, z_checking_function, radius_func, rocket):
+        vertices = []
+        cdm_user_frame = Vector([0, 0, rocket.center_of_dry_mass_position])
+        for pt in self.dimensions:
+            self.check_entry_dimensions(pt, z_checking_function, radius_func)
+
+            # Transform to BACS
+            sensor_vec = Vector(pt) - cdm_user_frame
+            if rocket._csys == -1:
+                vertices.append([-sensor_vec[0], sensor_vec[1], -sensor_vec[2]])
+            else:
+                vertices.append([sensor_vec[0], sensor_vec[1], sensor_vec[2]])
+        return vertices
+
+    def check_entry_dimensions(self, pt, z_checking_function, radius_func):
+        """
+        Check whether the points passed when shape is personalized are inside the rocket
+        and in the case it is wrong prints why.
+        """
+        # Bounds checking
+        if not z_checking_function(pt[2], frame="ucs")[0]:
+            raise ValueError(
+                f"The z component: {pt[2]} of {pt} is outside the rocket range."
+            )
+
+        if m.hypot(pt[0], pt[1]) > radius_func(pt[2], frame="ucs"):
+            raise ValueError(f"Point {pt} is outside the rocket radius at z={pt[2]}.")
+
+    def _calculate_uv_frame(self, vertices):
+        """Helper method to calculate the 2D local coordinate system vectors."""
+        v0, v1, v2 = vertices[:3]
+        nx = (v1[1] - v0[1]) * (v2[2] - v0[2]) - (v1[2] - v0[2]) * (v2[1] - v0[1])
+        ny = (v1[2] - v0[2]) * (v2[0] - v0[0]) - (v1[0] - v0[0]) * (v2[2] - v0[2])
+        nz = (v1[0] - v0[0]) * (v2[1] - v0[1]) - (v1[1] - v0[1]) * (v2[0] - v0[0])
+
+        n_norm = m.hypot(nx, ny, nz)
+        nx, ny, nz = nx / n_norm, ny / n_norm, nz / n_norm
+
+        arb_x, arb_y, arb_z = (
+            (0.0, 0.0, 1.0) if (abs(nx) > 0.5 or abs(ny) > 0.5) else (1.0, 0.0, 0.0)
+        )
+
+        ux = ny * arb_z - nz * arb_y
+        uy = nz * arb_x - nx * arb_z
+        uz = nx * arb_y - ny * arb_x
+        u_norm = m.hypot(ux, uy, uz)
+        ux, uy, uz = ux / u_norm, uy / u_norm, uz / u_norm
+
+        vx, vy, vz = ny * uz - nz * uy, nz * ux - nx * uz, nx * uy - ny * ux
+
+        return ux, uy, uz, vx, vy, vz
 
     def calculate_soft_iron_distortion_matrix(self, position_vector: Vector) -> None:
         """
@@ -555,26 +459,24 @@ class Plate:
         None
         """
         if isinstance(self.points, list):
-            if self.points != []:
+            if self.points:
                 induced_matrix = Matrix.zeros()
                 diff_magnetic = self.relative_magnetic_permeability - 1.0
                 num_points = len(self.points)
-                dV = self.volume / num_points
-                dipole_scalar = (diff_magnetic * dV) / (4.0 * np.pi)
+                dv = self.volume / num_points
+                dipole_scalar = (diff_magnetic * dv) / (4.0 * np.pi)
 
                 if isinstance(position_vector, (list, tuple)):
                     position_vector = Vector(position_vector)
-                elif isinstance(position_vector, Vector):
-                    position_vector = position_vector
-                else:
+                elif not isinstance(position_vector, Vector):
                     raise ValueError(
                         "Position Vector can only be a tuple, list or Vector"
                     )
 
                 for point in self.points:
-                    r_V = position_vector - Vector(point)
-                    r = abs(r_V)
-                    r_unit = r_V / r
+                    r_v = position_vector - Vector(point)
+                    r = abs(r_v)
+                    r_unit = r_v / r
 
                     rx, ry, rz = r_unit[0], r_unit[1], r_unit[2]
 
@@ -599,11 +501,10 @@ class Plate:
                 raise ValueError(
                     "To calculate the soft iron distortion matrix, first the plate must be added to the rocket, points list cannot be empty"
                 )
-
         else:
             raise ValueError("The points defining the plate must be a list")
 
-    def draw_3D(self, color: str = "teal", marker: str = "h", filename=None) -> None:
+    def draw_3d(self, color: str = "teal", marker: str = "h", filename=None) -> None:
         """
         Draws the plate in a matplotlib figure
 
@@ -629,7 +530,7 @@ class Plate:
         -------
         None
         """
-        self.plots.draw_3D(color, marker, filename)
+        self.plots.draw_3d(color, marker, filename)
 
     def _rocket_belonging(self, rocket) -> None:
         """

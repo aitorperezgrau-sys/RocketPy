@@ -820,16 +820,15 @@ class _RocketPlots:
                 raise ValueError(
                     "The length of the list of colors must be the same as the number of wires"
                 )
-
         else:
             raise ValueError("The accepted entries for color are str or list or tuple")
 
-        for wire, color in zip(wires_list, color_list):
+        for wire, color_wire in zip(wires_list, color_list):
             wire.plots._draw_wires(
-                ax, plane, color, marker, linestyle, edges_names=False
+                ax, plane, color_wire, marker, linestyle, edges_names=False
             )
 
-        plt.title(f"Wires representation")
+        plt.title("Wires representation")
         plt.xlim()
         plt.ylim([-self.rocket.radius * 4, self.rocket.radius * 6])
         plt.xlabel("Position (m)")
@@ -916,11 +915,13 @@ class _RocketPlots:
                 raise ValueError(
                     "The length of the list of colors must be the same as the number of plates"
                 )
+        else:
+            raise ValueError("The accepted entries for color are str or list or tuple")
 
-        for plate, color in zip(plates_list, color_list):
-            plate.plots._plot_plate_rocket(ax, plane, color)
+        for plate, color_plate in zip(plates_list, color_list):
+            plate.plots._plot_plate_rocket(ax, plane, color_plate)
 
-        plt.title(f"Plates representation")
+        plt.title("Plates representation")
         plt.xlim()
         plt.ylim([-self.rocket.radius * 4, self.rocket.radius * 6])
         plt.xlabel("Position (m)")

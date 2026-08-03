@@ -1,8 +1,4 @@
-import math
-
-import numpy as np
-
-from rocketpy.mathutils.vector_matrix import Matrix, Vector
+from rocketpy.mathutils.vector_matrix import Vector
 from rocketpy.plots.wire_plots import _WirePlots
 from rocketpy.prints.wire_prints import _WirePrints
 
@@ -92,67 +88,10 @@ class Wire:
             Name of the wire. Default is 'wire'
 
         """
-        # define current of the wire
-        if not isinstance(current, (float, int)):
-            raise ValueError("The current through the wire must be a float or int")
-        else:
-            self.current = current
-
-        # define the lead and extra time
-        if isinstance(extra_ignition_time, (float, int)):
-            if extra_ignition_time < 0:
-                raise ValueError("The extra ignition time must be greater than 0")
-            else:
-                self.extra_ignition_time = extra_ignition_time
-        else:
-            raise ValueError("The extra ignition time must be a float")
-
-        # define the lead and extra time
-        if isinstance(lead_ignition_time, (float, int)):
-            if lead_ignition_time < 0:
-                raise ValueError("The lead ignition time must be greater than 0")
-            else:
-                self.lead_ignition_time = lead_ignition_time
-        else:
-            raise ValueError("The lead ignition time must be a float")
-
-        # definition of the type of wire
-        if isinstance(wire_type, str):
-            if wire_type == "communications":
-                self.wire_type = "communications"
-                self.ignition_wire_function = None
-            elif wire_type == "ignition":
-                self.wire_type = "ignition"
-                if ignition_wire_function == None:
-                    raise ValueError(
-                        "The ignition type is compulsory when it is an ignition wire"
-                    )
-                elif isinstance(ignition_wire_function, str):
-                    if ignition_wire_function.lower() == "parachute_ignition":
-                        self.ignition_wire_function = "parachute_ignition"
-                        if parachute_name == None:
-                            raise ValueError(
-                                "The name of the parachute is compulsory if the ignition_wire_function is parachute"
-                            )
-                        elif not isinstance(parachute_name, str):
-                            raise ValueError(
-                                "The name of the parachute must be a string"
-                            )
-                        else:
-                            self.parachute_name = parachute_name
-                    else:
-                        self.ignition_wire_function = ignition_wire_function
-                else:
-                    raise ValueError("The type of ignition wire must be a str")
-            else:
-                raise ValueError("The type must be an ignition or communication")
-        else:
-            raise ValueError("The type must be a string")
-
-        if isinstance(name, str):
-            self.name = name
-        else:
-            raise ValueError("The name must be a str")
+        self.current = current
+        self.extra_ignition_time = extra_ignition_time
+        self.lead_ignition_time = lead_ignition_time
+        self.name = name
 
         self._magnetic_field = {}
         self.magnetic_field = {}
@@ -162,6 +101,35 @@ class Wire:
         # prints and plots
         self.prints = _WirePrints(self)
         self.plots = None
+
+        # definition of the type of wire
+        self.validate_wire_type(wire_type, ignition_wire_function, parachute_name)
+
+    def validate_wire_type(self, wire_type, ignition_wire_function, parachute_name):
+        """
+        Check and defines the attributes related to the type of wire
+        """
+        if isinstance(wire_type, str):
+            if wire_type == "communications":
+                self.wire_type = "communications"
+                self.ignition_wire_function = None
+            elif wire_type == "ignition":
+                self.wire_type = "ignition"
+                if ignition_wire_function is None:
+                    raise ValueError(
+                        "The ignition type is compulsory when it is an ignition wire"
+                    )
+                elif isinstance(ignition_wire_function, str):
+                    if ignition_wire_function.lower() == "parachute_ignition":
+                        self.ignition_wire_function = "parachute_ignition"
+                        if parachute_name is None:
+                            raise ValueError(
+                                "The name of the parachute is compulsory if the ignition_wire_function is parachute"
+                            )
+                        else:
+                            self.parachute_name = parachute_name
+                    else:
+                        self.ignition_wire_function = ignition_wire_function
 
     def measure_magnetic_field(self, position_vector: list | tuple | Vector) -> None:
         """
@@ -185,42 +153,31 @@ class Wire:
         r1 = self._wire_edges_from_cdm[0]  # m
         r2 = self._wire_edges_from_cdm[1]  # m
 
-        if len(position_vector) == 3:
-            if isinstance(position_vector, (list, tuple)):
-                r_V = Vector(position_vector)  # m
-                r_t = tuple(position_vector)  # m
-            elif isinstance(position_vector, Vector):
-                r_V = position_vector  # m
-                r_t = tuple(position_vector)  # m
-            else:
-                raise ValueError(
-                    "The only accepted parameters are list, tuple or Vector"
-                )
-        else:
-            raise ValueError("The length of the position vector must be 3, x,y,z")
+        r_v = Vector(position_vector)  # m
+        r_t = tuple(position_vector)  # m
 
         l = r2 - r1  # m
         self.wire_length = abs(l)  # m
 
-        r1_V = r_V - r1  # m
-        r2_V = r_V - r2  # m
+        r1_v = r_v - r1  # m
+        r1_v = r_v - r2  # m
 
-        cross_r1_r2 = r1_V ^ r2_V
+        cross_r1_r2 = r1_v ^ r1_v
         cross_norm_r1_r2 = abs(cross_r1_r2)
 
-        dot_term = l @ (r1_V.unit_vector - r2_V.unit_vector)
+        dot_term = l @ (r1_v.unit_vector - r1_v.unit_vector)
 
         if (
             cross_norm_r1_r2 < 1e-12
         ):  # along the same line, cross product is zero -> magnetic field is 0
-            b_V = Vector([0, 0, 0])
+            b_v = Vector([0, 0, 0])
         else:
-            b_V = (
+            b_v = (
                 (1e-7 * self.current) * (cross_r1_r2 / (cross_norm_r1_r2**2)) * dot_term
             )  # T
 
-        self.magnetic_field[r_t] = list(b_V)
-        self._magnetic_field[r_t] = b_V
+        self.magnetic_field[r_t] = list(b_v)
+        self._magnetic_field[r_t] = b_v
 
     def define_magnetic_field(
         self,
@@ -242,42 +199,18 @@ class Wire:
             - If a float, it assumes that the wire genertes the same magnetic field
               on each axis, with the given value.
 
-            - If a tuple or list, it assumes that the wire genertes the given magnetic
+            - If a tuple, list or Vector, it assumes that the wire genertes the given magnetic
               field.
 
         Returns
         -------
         None
         """
-        if isinstance(position_vector, (tuple, list, Vector)):
-            if len(position_vector) == 3:
-                position_vector_t = tuple(position_vector)
-                if isinstance(magnetic_field, (float, int)):
-                    m_field = [magnetic_field, magnetic_field, magnetic_field]
-                    self._magnetic_field[position_vector_t] = Vector(m_field)
-                    self.magnetic_field[position_vector_t] = m_field
-                elif isinstance(magnetic_field, (list, tuple, Vector)):
-                    if len(magnetic_field) == 3:
-                        if isinstance(magnetic_field, (list, tuple)):
-                            self._magnetic_field[position_vector_t] = Vector(
-                                magnetic_field
-                            )
-                            self.magnetic_field[position_vector_t] = magnetic_field
-                        elif isinstance(magnetic_field, Vector):
-                            self._magnetic_field[position_vector_t] = magnetic_field
-                            self.magnetic_field[position_vector_t] = list(
-                                magnetic_field
-                            )
-                    else:
-                        raise ValueError(
-                            "If a list, tuple or Vector is passed, it must have one value for each axis. Therefore, it must have length 3"
-                        )
-            else:
-                raise ValueError(
-                    "The position_vector must be a list, tuple or Vector with 3 elements"
-                )
-        else:
-            raise ValueError("The position_vector must be a list, tuple or Vector")
+        position_vector_t = tuple(position_vector)
+        if isinstance(magnetic_field, (float, int)):
+            magnetic_field = [magnetic_field, magnetic_field, magnetic_field]
+        self._magnetic_field[position_vector_t] = Vector(magnetic_field)
+        self.magnetic_field[position_vector_t] = magnetic_field
 
     def _set_wire_edges_from_bacs(
         self, rocket, _wire_edges_from_user_coordinate_system: list[Vector, Vector]
@@ -311,7 +244,7 @@ class Wire:
                         -edge_from_cdm_user_frame[2],
                     ]
                 )
-            elif rocket._csys == 1:  # tail to nose
+            else:  # tail to nose
                 edge_position_bacs_frame = edge_from_cdm_user_frame
             self._wire_edges_from_cdm.append(edge_position_bacs_frame)
 

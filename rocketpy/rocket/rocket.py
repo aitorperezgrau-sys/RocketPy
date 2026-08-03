@@ -2,7 +2,6 @@ import csv
 import inspect
 import logging
 import math
-import math as m
 import numbers
 import warnings
 from typing import Iterable
@@ -1926,7 +1925,7 @@ class Rocket:
         if not isinstance(wire, Wire):
             raise ValueError("The wire must be a wire instance")
 
-        edge_a, edge_b = self._define_3D_edges(position_edges)
+        edge_a, edge_b = self._define_3d_edges(position_edges)
 
         for edge, name in [(edge_a, "Edge_a"), (edge_b, "Edge_b")]:
             x, y, z = edge[0], edge[1], edge[2]
@@ -1939,7 +1938,7 @@ class Rocket:
                 )
 
             # radial bounds
-            r_edge = m.sqrt(x**2 + y**2)
+            r_edge = math.sqrt(x**2 + y**2)
             r = self.general_radius(z, frame="ucs")
             if r_edge > r:
                 raise ValueError(
@@ -1954,9 +1953,9 @@ class Rocket:
         elif wire.wire_type == "ignition":
             self.ignition_wires.append(wire)
 
-    def _define_3D_edges(
+    def _define_3d_edges(
         self, position_edges: list | tuple[tuple | list | float | int]
-    ) -> list[Vector[float], Vector[float]]:
+    ) -> list[Vector, Vector]:
         """
         This function creates the 3D position vector of the
         edges from the input values
@@ -2043,15 +2042,15 @@ class Rocket:
         if not isinstance(plate, Plate):
             raise ValueError("The plate parameter must be a Plate object")
 
-        if plate.shape == "circular" or plate.shape == "squared":
-            if position == None:
+        if plate.shape in ("circular" or "squared"):
+            if position is None:
                 raise ValueError(
                     "The position when the shape is circular or squared must be defined"
                 )
             elif not isinstance(position, (float, int)):
                 raise ValueError("The position can only be a float or int")
 
-            if height == None:
+            if height is None:
                 raise ValueError(
                     "The height when the shape is circular or squared must be defined"
                 )
@@ -2519,13 +2518,16 @@ class Rocket:
         r: float, int
             Radius for the z value in the body tubes.
         """
-        o_tails_bacs = sorted(tails_bacs, key=lambda x: x[1], reverse=True)
-        for tail, tail_bacs_position in o_tails_bacs:
-            if z > tail_bacs_position:
-                return tail.top_radius
+        if tails_bacs != []:
+            o_tails_bacs = sorted(tails_bacs, key=lambda x: x[1], reverse=True)
+            for tail, tail_bacs_position in o_tails_bacs:
+                if z > tail_bacs_position:
+                    return tail.top_radius
 
-        last_tail = o_tails_bacs[-1][0]
-        r = last_tail.bottom_radius
+            last_tail = o_tails_bacs[-1][0]
+            r = last_tail.bottom_radius
+        else:
+            r = self.radius
         return r
 
     def z_bounds_check(

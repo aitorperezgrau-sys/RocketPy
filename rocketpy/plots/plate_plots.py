@@ -164,7 +164,7 @@ class _PlatePlots:
         ax, _, _ = self.rocket.plots._rocket_shape_plot(vis_args, plane)
         self._plot_plate_rocket(ax, plane, marker, color)
 
-        plt.title(f"Plate representation")
+        plt.title("Plate representation")
         plt.xlim()
         plt.ylim([-self.rocket.radius * 4, self.rocket.radius * 6])
         plt.xlabel("Position (m)")
@@ -197,7 +197,6 @@ class _PlatePlots:
         """
         x, y, z = zip(*self.plate.points)  # in the bacs frame z tail to nose
 
-        self.rocket.center_of_dry_mass_position
         x = self.rocket._csys * np.array(x)
         z = self.rocket.center_of_dry_mass_position + (self.rocket._csys * np.array(z))
         y = np.array(y)

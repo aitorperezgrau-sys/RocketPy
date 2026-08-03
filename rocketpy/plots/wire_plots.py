@@ -1,5 +1,3 @@
-import math as m
-
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import Axes
 
@@ -180,6 +178,8 @@ class _WirePlots:
         elif plane == "yz":
             r_a = edge_a_y
             r_b = edge_b_y
+        else:
+            raise ValueError("The plane must be 'xz' or 'yz'.")
 
         z = [edge_a_z, edge_b_z]
         r = [r_a, r_b]
@@ -187,7 +187,7 @@ class _WirePlots:
         # plot lines connecting edges
         ax.plot(z, r, color=color, linestyle=linestyle, label=self.wire.name)
 
-        if edges_names == True:
+        if edges_names is True:
             ax.scatter(z, r, marker=marker, color=color, zorder=5, label="Wire edges")
 
             # Add text labels
@@ -205,7 +205,7 @@ class _WirePlots:
                 xytext=(5, 5),
                 fontsize=9,
             )
-        elif edges_names == False:
+        elif not edges_names:
             ax.scatter(z, r, marker=marker, color=color, zorder=5)
 
     def all(self) -> None:
