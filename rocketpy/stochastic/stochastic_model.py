@@ -4,6 +4,7 @@ Stochastic classes.
 """
 
 from random import choice
+from zlib import crc32
 
 import numpy as np
 
@@ -11,6 +12,20 @@ from rocketpy.mathutils.function import Function
 from rocketpy.stochastic.custom_sampler import CustomSampler
 
 from ..tools import get_distribution
+
+
+def _sampler_seed(seed, input_name):
+    """Derive one sampler's seed from the model's, so it gets its own stream.
+
+    Keyed by the input's name rather than its position, so declaring another
+    parameter does not move the stream of the ones already there. ``crc32``
+    because it is stable across processes, which ``hash`` is not.
+    """
+    root = np.random.SeedSequence(
+        entropy=seed, spawn_key=(crc32(input_name.encode("utf-8")),)
+    )
+    return int(root.generate_state(1, dtype=np.uint64)[0])
+
 
 # TODO: Stop using assert in production code. Use exceptions instead.
 # TODO: Each validation method should have a test case.
@@ -467,7 +482,7 @@ class StochasticModel:
             If the input is not in a valid format.
         """
         try:
-            sampler.reset_seed(seed)
+            sampler.reset_seed(_sampler_seed(seed, input_name))
         except RuntimeError as e:
             raise RuntimeError(
                 f"An error occurred in the 'reset_seed' method of {input_name} CustomSampler"
