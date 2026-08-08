@@ -39,6 +39,8 @@ Attention: The newest changes should be on top -->
 
 ### Changed
 
+- MNT: declare dependency floors the package can actually run on [#1108](https://github.com/RocketPy-Team/RocketPy/pull/1108)
+- CI: build the docs for pull requests into develop as well [#1104](https://github.com/RocketPy-Team/RocketPy/pull/1104)
 - CI: make changelog automation LLM-based (Gemini) and race-safe [#1082](https://github.com/RocketPy-Team/RocketPy/pull/1082)
 - ENH: Resolve pressure_ISA discretization bounds TODO [#1056](https://github.com/RocketPy-Team/RocketPy/pull/1056)
 
