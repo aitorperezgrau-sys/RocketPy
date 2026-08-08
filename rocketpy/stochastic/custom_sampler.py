@@ -18,6 +18,14 @@ class CustomSampler(ABC):
         is seeded once as a unit rather than one of them silently overwriting
         the other's seed.
 
+        Return the same object on every call. Building the answer each time,
+        which a property invites, gives each member a different identity and
+        puts it back in a group of its own.
+
+        A group belongs to one model. Declaring the same generator on two
+        models has them both seed it, and whichever is seeded last decides the
+        stream, which is the overwrite this is here to avoid.
+
         Returns
         -------
         object
