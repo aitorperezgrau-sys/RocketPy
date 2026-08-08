@@ -300,6 +300,16 @@ sample list.
         def __init__(self, bivariate_gaussian_generator):
             self.generator = bivariate_gaussian_generator
 
+        @property
+        def seed_group(self):
+            """The generator this shares with the other wrapper.
+
+            Both return the same object, so the pair is seeded once between
+            them. Without this each would be seeded separately and one would
+            silently overwrite the other.
+            """
+            return self.generator
+
         def sample(self, n_samples=1):
             samples_list = self.generator.get_samples(n_samples, "x")
             return samples_list
@@ -312,6 +322,16 @@ sample list.
 
         def __init__(self, bivariate_gaussian_generator):
             self.generator = bivariate_gaussian_generator
+
+        @property
+        def seed_group(self):
+            """The generator this shares with the other wrapper.
+
+            Both return the same object, so the pair is seeded once between
+            them. Without this each would be seeded separately and one would
+            silently overwrite the other.
+            """
+            return self.generator
 
         def sample(self, n_samples=1):
             samples_list = self.generator.get_samples(n_samples, "y")

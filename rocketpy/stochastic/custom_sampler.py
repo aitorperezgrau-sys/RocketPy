@@ -8,6 +8,24 @@ from abc import ABC, abstractmethod
 class CustomSampler(ABC):
     """Abstract subclass for user defined samplers"""
 
+    @property
+    def seed_group(self):
+        """The generator state this sampler shares, if it shares one.
+
+        Samplers are independent by default and each is seeded on its own. Two
+        wrappers over one generator, as the correlated wind pair in the
+        documentation are, should both return that generator here, so the pair
+        is seeded once as a unit rather than one of them silently overwriting
+        the other's seed.
+
+        Returns
+        -------
+        object
+            Identity is what counts, not equality. ``self`` by default, which
+            makes every sampler its own group.
+        """
+        return self
+
     @abstractmethod
     def sample(self, n_samples=1):
         """Generates samples from the custom distribution

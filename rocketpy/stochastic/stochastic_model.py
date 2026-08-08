@@ -13,15 +13,17 @@ from rocketpy.stochastic.custom_sampler import CustomSampler
 from ..tools import get_distribution
 
 
-def _name_as_spawn_key(input_name):
-    """Encode a name into spawn-key words with no two names sharing an encoding.
+def _names_as_spawn_key(input_names):
+    """Encode names into spawn-key words that no other set of names produces.
 
     A hash would be shorter, but a collision puts two samplers back on one
     stream, which is the bug this keying exists to prevent. The length prefix
-    is what makes it injective.
+    before each name is what makes it injective.
     """
-    encoded = input_name.encode("utf-8")
-    payload = len(encoded).to_bytes(4, "little") + encoded
+    payload = b""
+    for name in input_names:
+        encoded = name.encode("utf-8")
+        payload += len(encoded).to_bytes(4, "little") + encoded
     payload += b"\0" * (-len(payload) % 4)
     return tuple(
         int.from_bytes(payload[at : at + 4], "little")
@@ -29,14 +31,18 @@ def _name_as_spawn_key(input_name):
     )
 
 
-def _sampler_seed(seed, input_name):
-    """Derive one sampler's seed from the model's, so it gets its own stream.
+def _sampler_seed(seed, input_names):
+    """Derive a seed for one sampler, or for one group that shares a generator.
 
-    Keyed by the input's name rather than its position, so declaring another
-    parameter does not move the stream of the ones already there.
+    Keyed by the names rather than by position, so declaring another parameter
+    does not move the stream of the ones already there. A group is keyed by all
+    of its members, so its stream does not depend on which of them happens to
+    be reset last.
     """
+    if isinstance(input_names, str):
+        input_names = (input_names,)
     root = np.random.SeedSequence(
-        entropy=seed, spawn_key=_name_as_spawn_key(input_name)
+        entropy=seed, spawn_key=_names_as_spawn_key(tuple(input_names))
     )
     words = root.generate_state(4, dtype=np.uint32)
     return sum(int(word) << (32 * position) for position, word in enumerate(words))
@@ -479,24 +485,35 @@ class StochasticModel:
             ), f"`{input_name}` must be a list of positive integers"
 
     def _reset_custom_samplers(self, seed):
-        """Give every sampler its own stream, in an order that does not move.
+        """Give each sampler its own stream, and each shared group one between
+        them.
 
-        Sorted rather than declaration order, because two samplers can share
-        one generator on purpose, as the documented wind pair does, and then
-        whichever is reset last decides the stream. Its own pass rather than
-        the loop below, whose order sets ``__dict__`` and so the order every
-        other input is drawn in.
+        Samplers that share a generator, as the documented wind pair do, are
+        seeded once as a unit. Resetting each member in turn would leave every
+        seed but the last discarded and the group's stream decided by whichever
+        member happened to go last.
+
+        Its own pass rather than the validation loop below, whose order sets
+        ``__dict__`` and so the order every other input is drawn in.
         """
+        groups = {}
         for input_name in sorted(self.__stochastic_dict):
             sampler = self.__stochastic_dict[input_name]
-            if not isinstance(sampler, CustomSampler):
-                continue
+            if isinstance(sampler, CustomSampler):
+                # Held in the value as well as keyed on, because `id` is
+                # unique only among live objects. Defensive: a `seed_group`
+                # that builds its answer did not merge in practice here.
+                group = sampler.seed_group
+                shared = groups.setdefault(id(group), ([], sampler, group))
+                shared[0].append(input_name)
+
+        for names, sampler, _group in groups.values():
             try:
-                sampler.reset_seed(_sampler_seed(seed, input_name))
+                sampler.reset_seed(_sampler_seed(seed, names))
             except RuntimeError as error:
                 raise RuntimeError(
                     f"An error occurred in the 'reset_seed' method of "
-                    f"{input_name} CustomSampler"
+                    f"{names[0]} CustomSampler"
                 ) from error
 
     def _validate_custom_sampler(self, input_name, sampler):

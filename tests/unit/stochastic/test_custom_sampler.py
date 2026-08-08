@@ -197,3 +197,45 @@ def test_declaring_a_sampler_does_not_reorder_the_other_inputs(calisto_robust):
     # `radius` is declared either way, so it is in both. Only its kind changed.
     assert list(after) == list(before)
     assert after["mass"] == before["mass"]
+
+
+class _GroupedWrapper(_SharedWrapper):
+    """A wrapper that says which generator it shares, as the docs now do."""
+
+    @property
+    def seed_group(self):
+        return self.shared
+
+
+def _grouped_model(extra_independent=False):
+    shared = _SharedPair()
+    inputs = {"wind_x": _GroupedWrapper(shared), "wind_y": _GroupedWrapper(shared)}
+    if extra_independent:
+        inputs["mass"] = _Gaussian(14.426, 0.5)
+    obj = SimpleNamespace(**{name: 0.0 for name in inputs})
+    model = StochasticModel(obj, **inputs)
+    shared.reset_count = 0  # the constructor has already seeded once
+    model._set_stochastic(4242)
+    return next(model.dict_generator()), shared
+
+
+def test_a_shared_group_is_seeded_once_between_its_members():
+    """Resetting each member in turn threw away every seed but the last, and
+    left the group's stream decided by whichever member went last. It is one
+    generator, so it gets one seed."""
+    _, shared = _grouped_model()
+
+    assert shared.reset_count == 1
+
+
+def test_an_independent_sampler_does_not_move_a_shared_group():
+    """Keying by name protects independent samplers from each other. The group
+    has to be protected the same way, and keying it by the member that sorts
+    last would not have been."""
+    alone, _ = _grouped_model()
+    alongside, _ = _grouped_model(extra_independent=True)
+
+    assert (alone["wind_x"], alone["wind_y"]) == (
+        alongside["wind_x"],
+        alongside["wind_y"],
+    )
