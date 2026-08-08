@@ -510,10 +510,13 @@ class StochasticModel:
         for names, sampler, _group in groups.values():
             try:
                 sampler.reset_seed(_sampler_seed(seed, names))
-            except RuntimeError as error:
+            except Exception as error:
+                # Not just RuntimeError. The seed handed over is now 128 bits,
+                # which the legacy RandomState refuses with a ValueError, and a
+                # bare one of those does not say which sampler raised it.
                 raise RuntimeError(
-                    f"An error occurred in the 'reset_seed' method of "
-                    f"{names[0]} CustomSampler"
+                    f"An error occurred in the 'reset_seed' method of the "
+                    f"CustomSampler for {', '.join(names)}"
                 ) from error
 
     def _validate_custom_sampler(self, input_name, sampler):

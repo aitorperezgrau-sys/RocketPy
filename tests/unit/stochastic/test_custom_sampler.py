@@ -239,3 +239,53 @@ def test_an_independent_sampler_does_not_move_a_shared_group():
         alongside["wind_x"],
         alongside["wind_y"],
     )
+
+
+class _RefusesTheSeed(_Gaussian):
+    """A sampler whose generator will not take the seed it is given.
+
+    `numpy.random.RandomState` is the real case: it refuses anything above
+    2**32-1 with a ValueError, and the seeds handed out here are 128 bits.
+    """
+
+    def __init__(self, mean, sd, failure):
+        super().__init__(mean, sd)
+        self.failure = failure
+
+    def reset_seed(self, seed=None):
+        raise self.failure
+
+
+@pytest.mark.parametrize(
+    "failure",
+    [ValueError("out of range"), TypeError("wrong type"), RuntimeError("boom")],
+    ids=lambda f: type(f).__name__,
+)
+def test_a_sampler_that_refuses_its_seed_is_named_in_the_error(failure):
+    """Only RuntimeError used to be caught, so a legacy RandomState sampler
+    raised a bare ValueError with nothing to say which input it came from."""
+    with pytest.raises(RuntimeError, match="mass") as raised:
+        StochasticModel(
+            SimpleNamespace(mass=0.0), mass=_RefusesTheSeed(0.0, 1.0, failure)
+        )
+
+    assert raised.value.__cause__ is failure
+
+
+def test_a_legacy_random_state_sampler_is_named_rather_than_raising_bare():
+    """The concrete case, not a stand-in: RandomState really does refuse the
+    128-bit seed this hands out."""
+
+    class LegacySampler(CustomSampler):
+        """Built on RandomState rather than default_rng."""
+
+        def sample(self, n_samples=1):
+            return list(self.rng.normal(size=n_samples))
+
+        def reset_seed(self, seed=None):
+            self.rng = np.random.RandomState(seed)
+
+    with pytest.raises(RuntimeError, match="mass") as raised:
+        StochasticModel(SimpleNamespace(mass=0.0), mass=LegacySampler())
+
+    assert isinstance(raised.value.__cause__, ValueError)
