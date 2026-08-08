@@ -243,14 +243,16 @@ below implements an example of such a generator
             """Reseeds the generator and discards the samples drawn before it
 
             The cached samples came from the previous generator, so keeping them
-            would let the first 1000 draws after a reseed ignore the new seed.
+            would let the first draws after a reseed ignore the new seed. Nothing
+            is generated here: ``top_up`` fills the shortfall when samples are
+            first asked for, and a reseed happens once per simulation, so filling
+            eagerly would build a thousand pairs to use one.
             """
             self.rng = np.random.default_rng(seed)
             self.samples_list = []
             self.samples_generated = 0
             self.used_samples_x = 0
             self.used_samples_y = 0
-            self.generate_samples(1000)
 
         def top_up(self, used_samples, n_samples):
             """Generates enough samples to cover the request, if it is short"""
@@ -300,6 +302,16 @@ sample list.
         def __init__(self, bivariate_gaussian_generator):
             self.generator = bivariate_gaussian_generator
 
+        @property
+        def seed_group(self):
+            """The generator this shares with the other wrapper.
+
+            Both return the same object, so the pair is seeded once between
+            them. Without this each would be seeded separately and one would
+            silently overwrite the other.
+            """
+            return self.generator
+
         def sample(self, n_samples=1):
             samples_list = self.generator.get_samples(n_samples, "x")
             return samples_list
@@ -312,6 +324,16 @@ sample list.
 
         def __init__(self, bivariate_gaussian_generator):
             self.generator = bivariate_gaussian_generator
+
+        @property
+        def seed_group(self):
+            """The generator this shares with the other wrapper.
+
+            Both return the same object, so the pair is seeded once between
+            them. Without this each would be seeded separately and one would
+            silently overwrite the other.
+            """
+            return self.generator
 
         def sample(self, n_samples=1):
             samples_list = self.generator.get_samples(n_samples, "y")
