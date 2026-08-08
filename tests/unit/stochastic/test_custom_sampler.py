@@ -289,3 +289,60 @@ def test_a_legacy_random_state_sampler_is_named_rather_than_raising_bare():
         StochasticModel(SimpleNamespace(mass=0.0), mass=LegacySampler())
 
     assert isinstance(raised.value.__cause__, ValueError)
+
+
+class _CountingShared(_SharedPair):
+    """Records how it was reset, so the dispatch can be checked."""
+
+    def __init__(self):
+        super().__init__()
+        self.reset_seed_calls = 0
+
+    def reset_seed(self, seed=None):
+        self.reset_seed_calls += 1
+        self.reset(seed)
+
+
+class _WrapperOverGroup(CustomSampler):
+    """A wrapper whose own reset_seed would be the wrong thing to call."""
+
+    def __init__(self, shared):
+        self.shared = shared
+        self.own_resets = 0
+
+    @property
+    def seed_group(self):
+        return self.shared
+
+    def sample(self, n_samples=1):
+        return [self.shared.draw() for _ in range(n_samples)]
+
+    def reset_seed(self, seed=None):
+        self.own_resets += 1
+        self.shared.reset(seed)
+
+
+def test_a_group_that_can_reset_itself_is_reset_directly():
+    """Dispatching through one member assumes every member resets the same way
+    and holds no state of its own. The group owns the shared generator, so it
+    is the thing to reset when it knows how."""
+    shared = _CountingShared()
+    first, second = _WrapperOverGroup(shared), _WrapperOverGroup(shared)
+    model = StochasticModel(
+        SimpleNamespace(wind_x=0.0, wind_y=0.0), wind_x=first, wind_y=second
+    )
+    shared.reset_seed_calls = 0
+    first.own_resets = second.own_resets = 0
+
+    model._set_stochastic(4242)
+
+    assert shared.reset_seed_calls == 1
+    assert (first.own_resets, second.own_resets) == (0, 0)
+
+
+def test_a_group_key_does_not_depend_on_the_order_it_is_given():
+    """The caller sorts today. The helper sorts too, so a future call site
+    cannot hand one group two different seeds by listing it another way."""
+    assert _sampler_seed(4242, ("wind_x", "wind_y")) == _sampler_seed(
+        4242, ("wind_y", "wind_x")
+    )

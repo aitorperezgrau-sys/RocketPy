@@ -41,8 +41,10 @@ def _sampler_seed(seed, input_names):
     """
     if isinstance(input_names, str):
         input_names = (input_names,)
+    # Sorted here rather than trusting the caller, so a future call site cannot
+    # give one group two different seeds by listing its members another way.
     root = np.random.SeedSequence(
-        entropy=seed, spawn_key=_names_as_spawn_key(tuple(input_names))
+        entropy=seed, spawn_key=_names_as_spawn_key(tuple(sorted(input_names)))
     )
     words = root.generate_state(4, dtype=np.uint32)
     return sum(int(word) << (32 * position) for position, word in enumerate(words))
@@ -507,9 +509,13 @@ class StochasticModel:
                 shared = groups.setdefault(id(group), ([], sampler, group))
                 shared[0].append(input_name)
 
-        for names, sampler, _group in groups.values():
+        for names, sampler, group in groups.values():
+            # The group itself when it can be reset, since it is the thing that
+            # holds the shared state. Going through one member instead assumes
+            # every member resets the same way and keeps nothing of its own.
+            resetter = group if hasattr(group, "reset_seed") else sampler
             try:
-                sampler.reset_seed(_sampler_seed(seed, names))
+                resetter.reset_seed(_sampler_seed(seed, names))
             except Exception as error:
                 # Not just RuntimeError. The seed handed over is now 128 bits,
                 # which the legacy RandomState refuses with a ValueError, and a
