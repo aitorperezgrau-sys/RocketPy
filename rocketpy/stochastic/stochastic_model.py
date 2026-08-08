@@ -4,7 +4,6 @@ Stochastic classes.
 """
 
 from random import choice
-from zlib import crc32
 
 import numpy as np
 
@@ -14,17 +13,33 @@ from rocketpy.stochastic.custom_sampler import CustomSampler
 from ..tools import get_distribution
 
 
+def _name_as_spawn_key(input_name):
+    """Encode a name into spawn-key words with no two names sharing an encoding.
+
+    A hash would be shorter, but a collision puts two samplers back on one
+    stream, which is the bug this keying exists to prevent. The length prefix
+    is what makes it injective.
+    """
+    encoded = input_name.encode("utf-8")
+    payload = len(encoded).to_bytes(4, "little") + encoded
+    payload += b"\0" * (-len(payload) % 4)
+    return tuple(
+        int.from_bytes(payload[at : at + 4], "little")
+        for at in range(0, len(payload), 4)
+    )
+
+
 def _sampler_seed(seed, input_name):
     """Derive one sampler's seed from the model's, so it gets its own stream.
 
     Keyed by the input's name rather than its position, so declaring another
-    parameter does not move the stream of the ones already there. ``crc32``
-    because it is stable across processes, which ``hash`` is not.
+    parameter does not move the stream of the ones already there.
     """
     root = np.random.SeedSequence(
-        entropy=seed, spawn_key=(crc32(input_name.encode("utf-8")),)
+        entropy=seed, spawn_key=_name_as_spawn_key(input_name)
     )
-    return int(root.generate_state(1, dtype=np.uint64)[0])
+    words = root.generate_state(4, dtype=np.uint32)
+    return sum(int(word) << (32 * position) for position, word in enumerate(words))
 
 
 # TODO: Stop using assert in production code. Use exceptions instead.
@@ -97,6 +112,8 @@ class StochasticModel:
         self.__random_number_generator = np.random.default_rng(seed)
         self.last_rnd_dict = {}
 
+        self._reset_custom_samplers(seed)
+
         # TODO: This code block is too complex. Refactor it.
         # TODO: Resetting a instance should not require re-validation.
         for input_name, input_value in self.__stochastic_dict.items():
@@ -104,9 +121,7 @@ class StochasticModel:
                 attr_value = None
                 if input_value is not None:
                     if "factor" in input_name:
-                        attr_value = self._validate_factors(
-                            input_name, input_value, seed
-                        )
+                        attr_value = self._validate_factors(input_name, input_value)
                     elif input_name not in self.exception_list:
                         if isinstance(input_value, tuple):
                             attr_value = self._validate_tuple(input_name, input_value)
@@ -116,7 +131,7 @@ class StochasticModel:
                             attr_value = self._validate_scalar(input_name, input_value)
                         elif isinstance(input_value, CustomSampler):
                             attr_value = self._validate_custom_sampler(
-                                input_name, input_value, seed
+                                input_name, input_value
                             )
                         else:
                             raise AssertionError(
@@ -303,7 +318,7 @@ class StochasticModel:
             get_distribution("normal", self.__random_number_generator),
         )
 
-    def _validate_factors(self, input_name, input_value, seed):
+    def _validate_factors(self, input_name, input_value):
         """
         Validate factor arguments.
 
@@ -332,7 +347,7 @@ class StochasticModel:
         elif isinstance(input_value, list):
             return self._validate_list_factor(input_name, input_value)
         elif isinstance(input_value, CustomSampler):
-            return self._validate_custom_sampler(input_name, input_value, seed)
+            return self._validate_custom_sampler(input_name, input_value)
         else:
             raise AssertionError(
                 f"`{input_name}`: must be either a tuple or listor a custom sampler"
@@ -463,9 +478,34 @@ class StochasticModel:
                 isinstance(member, int) and member >= 0 for member in input_value
             ), f"`{input_name}` must be a list of positive integers"
 
-    def _validate_custom_sampler(self, input_name, sampler, seed=None):
+    def _reset_custom_samplers(self, seed):
+        """Give every sampler its own stream, in an order that does not move.
+
+        Sorted rather than declaration order, because two samplers can share
+        one generator on purpose, as the documented wind pair does, and then
+        whichever is reset last decides the stream. Its own pass rather than
+        the loop below, whose order sets ``__dict__`` and so the order every
+        other input is drawn in.
+        """
+        for input_name in sorted(self.__stochastic_dict):
+            sampler = self.__stochastic_dict[input_name]
+            if not isinstance(sampler, CustomSampler):
+                continue
+            try:
+                sampler.reset_seed(_sampler_seed(seed, input_name))
+            except RuntimeError as error:
+                raise RuntimeError(
+                    f"An error occurred in the 'reset_seed' method of "
+                    f"{input_name} CustomSampler"
+                ) from error
+
+    def _validate_custom_sampler(self, input_name, sampler):
         """
         Validate a custom sampler.
+
+        Seeding is not done here. It happens in ``_reset_custom_samplers``,
+        which runs in a fixed order because two samplers can share one
+        generator and whichever is reset last decides the stream.
 
         Parameters
         ----------
@@ -473,21 +513,15 @@ class StochasticModel:
             Name of the input argument.
         sampler : CustomSampler object
             Custom sampler provided by the user
-        seed : int, optional
-            Seed for the random number generator. The default is None
 
         Raises
         ------
         AssertionError
             If the input is not in a valid format.
         """
-        try:
-            sampler.reset_seed(_sampler_seed(seed, input_name))
-        except RuntimeError as e:
-            raise RuntimeError(
-                f"An error occurred in the 'reset_seed' method of {input_name} CustomSampler"
-            ) from e
-
+        assert isinstance(sampler, CustomSampler), (
+            f"`{input_name}` must be a CustomSampler, not {type(sampler).__name__}"
+        )
         return sampler
 
     def _validate_airfoil(self, airfoil):
