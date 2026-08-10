@@ -3,6 +3,30 @@ import pytest
 from rocketpy import Accelerometer, Gyroscope
 from rocketpy.sensors.barometer import Barometer
 from rocketpy.sensors.gnss_receiver import GnssReceiver
+from rocketpy.sensors.magnetometer import Magnetometer
+
+
+@pytest.fixture
+def noisy_rotated_magnetometer():
+    """Returns a magnetometer with all parameters set to non-default values,
+    i.e. with noise and rotation."""
+    return Magnetometer(
+        sampling_rate=100,
+        orientation=(60, 60, 60),
+        measurement_range=1300e-6,
+        resolution=1e-6 / 16,
+        hard_iron_distortion=60e-6,
+        soft_iron_distortion="plates",
+        power_interference="wires",
+        noise_density=0.3e-6,
+        random_walk_density=0.02e-6,
+        constant_bias=1e-6,
+        operating_temperature=298,
+        temperature_bias=0.005e-6,
+        temperature_scale_factor=0.001,
+        cross_axis_sensitivity=0.002,
+        name="Magnetometer",
+    )
 
 
 @pytest.fixture
@@ -79,6 +103,15 @@ def noisy_gnss():
 
 
 @pytest.fixture
+def quantized_magnetometer():
+    """Returns a magnetometer with all parameters set to non-default values,
+    i.e. with noise and rotation."""
+    return Magnetometer(
+        sampling_rate=100, measurement_range=1300e-6, resolution=1e-6 / 16
+    )
+
+
+@pytest.fixture
 def quantized_accelerometer():
     """Returns an accelerometer with all parameters set to non-default values,
     i.e. with noise and rotation."""
@@ -109,6 +142,11 @@ def quantized_barometer():
         measurement_range=7e4,
         resolution=0.16,
     )
+
+
+@pytest.fixture
+def ideal_magnetometer():
+    return Magnetometer(sampling_rate=100)
 
 
 @pytest.fixture

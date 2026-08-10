@@ -112,6 +112,7 @@ class Magnetometer(InertialSensor):
         temperature_scale_factor=0,
         cross_axis_sensitivity=0,
         name="Magnetometer",
+        seed=None,
     ):
         """
         Initializes the Magnetometer sensor:
@@ -269,7 +270,11 @@ class Magnetometer(InertialSensor):
             no cross-axis sensitivity is applied.
         name : str, optional
             The name of the sensor. Default is 'Magnetometer'.
-
+        seed : int, optional
+            Seed for the random number generator that draws the measurement
+            noise. If given, the noise becomes reproducible and independent of
+            the process-global NumPy RNG. Default is None, meaning the noise is
+            seeded from fresh entropy per instance.
         """
         self.magnetic_interference = [0, 0, 0]
 
@@ -316,6 +321,7 @@ class Magnetometer(InertialSensor):
             temperature_scale_factor=temperature_scale_factor,
             cross_axis_sensitivity=cross_axis_sensitivity,
             name=name,
+            seed=seed,
         )
 
     def validate_soft_iron(self, soft_iron_distortion):
@@ -434,14 +440,14 @@ class Magnetometer(InertialSensor):
             - relative_position: Vector
                 Position of the sensor relative to the rocket center of dry mass in m.
 
+            - environment : Environment
+                Environment object containing the atmospheric conditions.
+
             - parachute_events : list only required if the ignition_wire_function
-                is 'parachute_ignition'
+                is 'parachute_deployment'
                 List that stores parachute events triggered during flight.
                 it is a list formed by lists which contain the trigger time
                 as the first element and the parachute object as the second.
-
-            - environment : Environment
-                Environment object containing the atmospheric conditions.
 
         Returns
         -------
@@ -450,9 +456,10 @@ class Magnetometer(InertialSensor):
         # initialization of parameters
         u = kwargs["u"]  # state vector
         parachute_events = kwargs.get("parachute_events", None)
-        sensor_from_bacs = kwargs[
+        self._sensor_from_bacs = kwargs[
             "relative_position"
         ]  # sensor position from body axis coordinate system
+        self.sensor_from_bacs_t = tuple(self._sensor_from_bacs)
         current_time = time
         lat0, lon0, launch_site_elevation = (
             kwargs["environment"].latitude,
@@ -462,7 +469,7 @@ class Magnetometer(InertialSensor):
         earth_radius = kwargs["environment"].earth_radius
         rocket = kwargs["rocket"]
 
-        # u[6:10]: Quaternion represents the com orientation with respect to the inertial frame.
+        # u[6:10]: Quaternion represents the center of dry mass with respect to the inertial frame.
         rotation_bacs_to_inertial = Matrix.transformation(
             u[6:10]
         )  # rotation matrix from com to inertial frame
@@ -470,7 +477,7 @@ class Magnetometer(InertialSensor):
         # --- obtain the current longitude, latitude and elevation ---
         # obtain the sensor coordinates in the inertial frame, by adding the offset to the positon vector
         x_inertial, y_inertial, z_inertial = (
-            rotation_bacs_to_inertial @ sensor_from_bacs
+            rotation_bacs_to_inertial @ self._sensor_from_bacs
             + Vector(
                 u[0:3]
             )  # Vector(u[0:3]) is the coordinates center of dry mass in the inertial frame
@@ -568,7 +575,7 @@ class Magnetometer(InertialSensor):
             is 'motor_ignition'
             Current time of the simulation.
         parachute_events : list only required if the ignition_wire_function
-            is 'parachute_ignition'
+            is 'parachute_deployment'
             List that stores parachute events triggered during flight.
             it is a list formed by lists which contain the trigger time
             as the first element and the parachute object as the second.
@@ -625,16 +632,16 @@ class Magnetometer(InertialSensor):
             if not self.total_soft_iron_distortion_matrix_computed:
                 for plate in rocket.plates:
                     if (
-                        not self.sensor_from_cso_t
+                        not self.sensor_from_bacs_t
                         in plate._magnetic_distortion_matrixes
                     ):
                         plate.calculate_soft_iron_distortion_matrix(
-                            self._sensor_from_cso
+                            self._sensor_from_bacs
                         )
                         self._soft_iron_distortion_matrix = (
                             self._soft_iron_distortion_matrix
                             + plate._magnetic_distortion_matrixes[
-                                self.sensor_from_cso_t
+                                self.sensor_from_bacs_t
                             ]
                         )
 
@@ -693,7 +700,7 @@ class Magnetometer(InertialSensor):
             is 'motor_ignition'
             current time of the simulation.
         parachute_events : list only required if the ignition_wire_function
-            is 'parachute_ignition'
+            is 'parachute_deployment'
             List that stores parachute events triggered during flight.
             it is a list formed by lists which contain the trigger time
             as the first element and the parachute object as the second.
@@ -749,20 +756,22 @@ class Magnetometer(InertialSensor):
             if rocket.communication_wires:
                 if not self.communications_computed:
                     for communication_wire in rocket.communication_wires:
-                        communication_wire.measure_magnetic_field(self._sensor_from_cso)
+                        communication_wire.measure_magnetic_field(
+                            self._sensor_from_bacs
+                        )
                         self.communications_interference = [
                             self.communications_interference[0]
-                            + communication_wire.magnetic_field[self.sensor_from_cso_t][
-                                0
-                            ],
+                            + communication_wire.magnetic_field[
+                                self.sensor_from_bacs_t
+                            ][0],
                             self.communications_interference[1]
-                            + communication_wire.magnetic_field[self.sensor_from_cso_t][
-                                1
-                            ],
+                            + communication_wire.magnetic_field[
+                                self.sensor_from_bacs_t
+                            ][1],
                             self.communications_interference[2]
-                            + communication_wire.magnetic_field[self.sensor_from_cso_t][
-                                2
-                            ],
+                            + communication_wire.magnetic_field[
+                                self.sensor_from_bacs_t
+                            ][2],
                         ]
 
                     self._communications_interference = Vector(
@@ -802,7 +811,7 @@ class Magnetometer(InertialSensor):
             is 'motor_ignition'
             Current time of the simulation.
         parachute_events : list only required if the ignition_wire_function
-            is 'parachute_ignition'
+            is 'parachute_deployment'
             List that stores parachute events triggered during flight.
             it is a list formed by lists which contain the trigger time
             as the first element and the parachute object as the second.
@@ -818,7 +827,7 @@ class Magnetometer(InertialSensor):
             if rocket.ignition_wires:
                 self.activation_signal_interference = [0, 0, 0]
                 for ignition_wire in rocket.ignition_wires:
-                    if ignition_wire.ignition_wire_function == "parachute_ignition":
+                    if ignition_wire.ignition_wire_function == "parachute_deployment":
                         b_field = (
                             self.calculate_activation_signal_interference_parachute(
                                 b_field, current_time, parachute_events, ignition_wire
@@ -831,7 +840,7 @@ class Magnetometer(InertialSensor):
                         )
                     else:
                         raise ValueError(
-                            "The accepted strings for the ignition_wire_function are motor_ignition and parachute_ignition"
+                            "The accepted strings for the ignition_wire_function are motor_ignition and parachute_deployment"
                         )
             else:
                 raise ValueError(
@@ -856,12 +865,12 @@ class Magnetometer(InertialSensor):
             is 'motor_ignition'
             Current time of the simulation.
         parachute_events : list only required if the ignition_wire_function
-            is 'parachute_ignition'
+            is 'parachute_deployment'
             List that stores parachute events triggered during flight.
             it is a list formed by lists which contain the trigger time
             as the first element and the parachute object as the second.
         igntion_wire : wire
-            Wire with wire type ignition and parachute_ignition as a function.
+            Wire with wire type ignition and parachute_deployment as a function.
 
         Returns
         -------
@@ -877,27 +886,26 @@ class Magnetometer(InertialSensor):
                 if (
                     parachute.name == ignition_wire.parachute_name
                     and ejection_time != 0
-                    and ejection_time - ignition_wire.lead_ignition_time
-                    <= current_time
+                    and current_time
                     <= ejection_time + ignition_wire.extra_ignition_time
                 ):
-                    if not self.sensor_from_cso_t in ignition_wire._magnetic_field:
-                        ignition_wire.measure_magnetic_field(self._sensor_from_cso)
+                    if not self.sensor_from_bacs_t in ignition_wire._magnetic_field:
+                        ignition_wire.measure_magnetic_field(self._sensor_from_bacs)
                     self.activation_signal_interference = [
                         self.activation_signal_interference[0]
-                        + ignition_wire.magnetic_field[self.sensor_from_cso_t][0],
+                        + ignition_wire.magnetic_field[self.sensor_from_bacs_t][0],
                         self.activation_signal_interference[1]
-                        + ignition_wire.magnetic_field[self.sensor_from_cso_t][1],
+                        + ignition_wire.magnetic_field[self.sensor_from_bacs_t][1],
                         self.activation_signal_interference[2]
-                        + ignition_wire.magnetic_field[self.sensor_from_cso_t][2],
+                        + ignition_wire.magnetic_field[self.sensor_from_bacs_t][2],
                     ]
 
                     b_field = (
-                        b_field + ignition_wire._magnetic_field[self.sensor_from_cso_t]
+                        b_field + ignition_wire._magnetic_field[self.sensor_from_bacs_t]
                     )
         else:
             raise ValueError(
-                "The parachute events should be passed if a wire has ignition_wire_function == parachute_ignition"
+                "The parachute events should be passed if a wire has ignition_wire_function == parachute_deployment"
             )
 
         return b_field
@@ -925,21 +933,20 @@ class Magnetometer(InertialSensor):
             interference.
         """
         if (
-            rocket.motor.burn_start_time - ignition_wire.lead_ignition_time
-            <= current_time
+            current_time
             <= rocket.motor.burn_start_time + ignition_wire.extra_ignition_time
         ):
-            if not self.sensor_from_cso_t in ignition_wire._magnetic_field:
-                ignition_wire.measure_magnetic_field(self._sensor_from_cso)
+            if not self.sensor_from_bacs_t in ignition_wire._magnetic_field:
+                ignition_wire.measure_magnetic_field(self._sensor_from_bacs)
             self.activation_signal_interference = [
                 self.activation_signal_interference[0]
-                + ignition_wire.magnetic_field[self.sensor_from_cso_t][0],
+                + ignition_wire.magnetic_field[self.sensor_from_bacs_t][0],
                 self.activation_signal_interference[1]
-                + ignition_wire.magnetic_field[self.sensor_from_cso_t][1],
+                + ignition_wire.magnetic_field[self.sensor_from_bacs_t][1],
                 self.activation_signal_interference[2]
-                + ignition_wire.magnetic_field[self.sensor_from_cso_t][2],
+                + ignition_wire.magnetic_field[self.sensor_from_bacs_t][2],
             ]
-            b_field = b_field + ignition_wire._magnetic_field[self.sensor_from_cso_t]
+            b_field = b_field + ignition_wire._magnetic_field[self.sensor_from_bacs_t]
         return b_field
 
     def export_measured_data(self, filename, file_format="csv"):

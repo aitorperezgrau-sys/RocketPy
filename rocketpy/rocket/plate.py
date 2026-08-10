@@ -22,8 +22,8 @@ class Plate:
         or 'personalized'.
     Plate.dimensions: float, int or list[list]
         Dimensions of the plate. When the shape is squared or
-        circular it has a float or int, whereas it is a list of
-        lists when shape is 'personalized'.
+        circular it has a float or int, whereas it is a list when
+        the shape is 'personalized'.
     Plate.material: str
         Material from which the plate is composed. Allowed strings
         are 'iron', 'carbon steel', or 'personalized' if we want to
@@ -66,10 +66,11 @@ class Plate:
     def __init__(
         self,
         shape: str,
-        dimensions: float | int | list,
-        material,
-        thickness: int | float = 0.001,
-        absolute_magnetic_permeability: float | int | None = None,
+        dimensions: int | float,
+        material: str,
+        thickness: int | float,
+        absolute_magnetic_permeability: int | float | None = None,
+        relative_magnetic_permeability: int | float | None = None,
         grid_spacing: int | float = 0.001,
         z_points: float | int = 40,
         angular_points: float | int = 70,
@@ -80,7 +81,7 @@ class Plate:
 
         Parameters
         ----------
-        shape: str
+        shape: str, optional
             The shape of the plate, allowed parameters are:
 
             If 'circular': then the plate is assumed to be
@@ -95,9 +96,10 @@ class Plate:
 
             If 'personalized': then the plate will have the shape
             specified by the vertexes defined in 'dimensions'
-        dimensions: float, int, list
+        dimensions: float, int
             Dimensions of the plate, which depend on 'shape'
-            definition:
+            definition, if it is 'circular' or 'squared' it is
+            a mandatory parameter:
 
             - If shape is 'circular', the dimension is a float or int,
             which represents the radius when the shape is flat.
@@ -105,21 +107,25 @@ class Plate:
             - If shape is 'squared', the dimension is a float or int,
             which represents the side length when the shape is flat.
 
-            - If shape is 'personalized', dimensions must be a list
+            - If shape is 'personalized', position must be a list
             with lists as the vertixes that form the shape. They must be
-            in sequential order (clockwise or counter-clockwise) and at
-            least 3 non-collinear vertices must be defined in the user
+            in sequential order (clockwise or counter-clockwise) and
+            at least 3 non-collinear vertices must be defined in the user
             defined coordinate system.
-        material: str
+        material: str, optional
             Material from which the plate is composed Allowed strings
             are 'iron', 'carbon_steel', or 'personalized' if we want
             to define the material based on the magnetic permeability.
-        thickness: float or int
+        thickness: float or int, optional
             Thickness of the plate in m.
         absolute_magnetic_permeability: float, int, optional
             Magnetic permeability of the material, which is the measure
             of a material ability to allow magnetic field lines to pass
-            through it.
+            through it. Default is 1e-5.
+        relative_magnetic_permeability: float, int, optional
+            Ratio of the absolute magnetic permeability and the permeability
+            of vacuum. If defined it overwrittes the value of the
+            absolute_magnetic_permeability. Default is None.
         grid_spacing: float, optional,
             Only used when the shape is personalized and it determines
             the space between the points of the approximated shape defined
@@ -138,60 +144,38 @@ class Plate:
         self.points = []
         self.plots = None
         self.prints = _PlatePrints(self)
-        self._validate_material(material, absolute_magnetic_permeability)
-        self._validate_shape(shape, dimensions, z_points, angular_points, grid_spacing)
-
-        self.relative_magnetic_permeability = self.absolute_magnetic_permeability / (
-            4 * np.pi * 1e-7
+        self.validate_parameters(
+            material,
+            absolute_magnetic_permeability,
+            relative_magnetic_permeability,
+            shape,
+            dimensions,
+            z_points,
+            angular_points,
+            grid_spacing,
         )
-
         self.thickness = thickness
         self.name = name
 
-    def define_plate_position(
+    def validate_parameters(
         self,
-        rocket,
-        position: str | None = None,
-        height: float | int | None = None,
-    ) -> None:
+        material,
+        absolute_magnetic_permeability,
+        shape,
+        dimensions,
+        z_points,
+        angular_points,
+        grid_spacing,
+    ):
         """
-        Defines the geometry of the plate from the
-        shape, position, dimensions and height defined in the add_plate()
-        rocket class method.
-
-        Parameters
-        ----------
-        position: float, int, optional
-            Position of the plate, when the shape is 'squared' or 'circular'
-            It is the angle between the y axis of the user defined coordinate system
-            and the geometric center of the plate in degrees. The positive direction is defined
-            as the direciton in which the right hand rule coincides with the z direction
-            based on the coordinate system orientation.
-        height: float, int, optional
-            Position of the geometric center of plate when the shape is not
-            'personalized' along the z axis relative to the user defined coordiante
-            system.
-        rocket: Rocket
-            RocketPy class.
-
-        Returns
-        -------
-        None
+        Validates input parameters and defines attributes
         """
-        if self.shape == "squared":
-            self.generate_points(rocket, position, height)
-            self.area = self.dimensions * self.dimensions
-            self.volume = self.area * self.thickness
-        elif self.shape == "circular":
-            self.generate_points(rocket, position, height)
-            self.area = np.pi * (self.dimensions**2)
-            self.volume = self.area * self.thickness
-        else:  # personalized
-            self.generate_points(rocket, position, height)
-            self.area = len(self.points) * (self.grid_spacing**2)
-            self.volume = self.area * self.thickness
+        self._validate_material(material, absolute_magnetic_permeability)
+        self._validate_shape(shape, dimensions, z_points, angular_points, grid_spacing)
 
-    def _validate_material(self, material, absolute_magnetic_permeability):
+    def _validate_material(
+        self, material, absolute_magnetic_permeability, relative_magnetic_permeability
+    ):
         """
         Validates and defines the input parameters related to the material
         and magnetic permeability.
@@ -206,11 +190,34 @@ class Plate:
             elif material == "personalized":
                 self.material = "personalized"
 
-                if absolute_magnetic_permeability is None:
+                if (
+                    absolute_magnetic_permeability is None
+                    and relative_magnetic_permeability is None
+                ):
                     raise ValueError(
-                        "The magnetic permeability is compulsory when personalized is chosen"
+                        "The magnetic permeability or relative magnetic permeability must be defined if 'material' is 'personalized"
                     )
-                self.absolute_magnetic_permeability = absolute_magnetic_permeability
+
+                if not isinstance(absolute_magnetic_permeability, (float, int, None)):
+                    raise ValueError(
+                        "The absolute magnetic permeability can only be None, float or int"
+                    )
+                else:
+                    self.absolute_magnetic_permeability = absolute_magnetic_permeability
+
+                if relative_magnetic_permeability is None:
+                    self.relative_magnetic_permeability = (
+                        self.absolute_magnetic_permeability / (4 * np.pi * 1e-7)
+                    )
+                elif isinstance(relative_magnetic_permeability, (float, int)):
+                    self.relative_magnetic_permeability = relative_magnetic_permeability
+                    self.absolute_magnetic_permeability = (
+                        self.relative_magnetic_permeability * 4 * np.pi * 1e-7
+                    )
+                else:
+                    raise ValueError(
+                        "The relative magnetic permeability can only be None or a float or int"
+                    )
             else:
                 raise ValueError(
                     "Material argument can only be iron, carbon_steel or personalized"
@@ -234,7 +241,7 @@ class Plate:
 
             elif shape == "personalized":
                 self.shape = shape
-                self.dimensions = dimensions
+                self.dimensions = None
                 self.grid_spacing = grid_spacing
                 self.z_points = None
                 self.angular_points = None
@@ -244,6 +251,47 @@ class Plate:
                 )
         else:
             raise ValueError("The shape must be defined as a string")
+
+    def define_plate_position(
+        self,
+        rocket,
+        position: str | None = None,
+        height: float | int | None = None,
+    ) -> None:
+        """
+        Defines the geometry of the plate from the
+        shape, position, dimensions and height defined in the add_plate()
+        rocket class method.
+
+        Parameters
+        ----------
+        position: float, int, optional
+            Position of the plate,
+            - If the shape is 'squared' or 'circular': It is the angle between
+            the y axis of the user defined coordinate system and the geometric
+            center of the plate in degrees. The positive direction is defined
+            as the direciton in which the right hand rule coincides with the
+            z direction based on the coordinate system orientation.
+        height: float, int, optional
+            Position of the geometric center of plate when the shape is not
+            'personalized' along the z axis relative to the user defined coordiante
+            system.
+        rocket: Rocket
+            RocketPy class.
+
+        Returns
+        -------
+        None
+        """
+        self._rocket_belonging(rocket)
+        self.generate_points(rocket, position, height)
+        if self.shape == "squared":
+            self.area = self.dimensions * self.dimensions
+        elif self.shape == "circular":
+            self.area = np.pi * (self.dimensions**2)
+        else:  # personalized
+            self.area = len(self.points) * (self.grid_spacing**2)
+        self.volume = self.area * self.thickness
 
     def generate_points(
         self,
@@ -259,16 +307,17 @@ class Plate:
         ------------
         rocket: Rocket
             RocketPy class.
-        position: float, int, optional
-            Position of the plate, when the shape is 'squared' or 'circular'
-            It is the angle between the y axis of the user defined coordinate system
-            and the geometric center of the plate in degrees. The positive direction is defined
-            as the direciton in which the right hand rule coincides with the z direction
-            based on the coordinate system orientation.
         height: float, int, optional
             Position of the geometric center of plate when the shape is 'circular'
             or 'squared' along the z axis relative to the user defined
             coordiante system.
+        position: float, int, optional
+            Position of the plate,
+            - If the shape is 'squared' or 'circular': It is the angle between
+            the y axis of the user defined coordinate system and the geometric
+            center of the plate in degrees. The positive direction is defined
+            as the direciton in which the right hand rule coincides with the
+            z direction based on the coordinate system orientation.
 
         Returns
         -------
@@ -278,9 +327,7 @@ class Plate:
         self.points = []
 
         if self.shape == "personalized":
-            self.generate_personalized_internal_plate(
-                rocket.general_radius, rocket.z_bounds_check, rocket
-            )
+            self.generate_personalized_internal_plate(rocket)
         else:
             upper_z = height + self.dimensions / 2
             lower_z = height - self.dimensions / 2
@@ -314,7 +361,13 @@ class Plate:
                     else:
                         self.points.append([x, y, z_bacs])
 
-    def _circular_angle_calculation(self, z, center_z, geometric_center_angle, r):
+    def _circular_angle_calculation(
+        self, z, center_z, geometric_center_angle, r
+    ) -> list:
+        """
+        Returns the initial and final angle for the point generation
+        when the shape is circular.
+        """
         dz = z - center_z
         inside_sqrt = max(self.dimensions**2 - dz**2, 0)
         extension_angle = m.sqrt(inside_sqrt) / r
@@ -322,7 +375,11 @@ class Plate:
         beta = geometric_center_angle + extension_angle / 2
         return alpha, beta
 
-    def _squared_angle_calculation(self, geometric_center_angle, r):
+    def _squared_angle_calculation(self, geometric_center_angle, r) -> list:
+        """
+        Returns the initial and final angle for the point generation
+        when the shape is squared.
+        """
         extension_angle = self.dimensions / r
         alpha = geometric_center_angle - extension_angle / 2
         beta = geometric_center_angle + extension_angle / 2
@@ -330,8 +387,6 @@ class Plate:
 
     def generate_personalized_internal_plate(
         self,
-        radius_func: Function,
-        z_checking_function: Function,
         rocket,
     ) -> None:
         """
@@ -340,11 +395,6 @@ class Plate:
 
         Parameters
         ----------
-        radius_func:
-            A callable function that takes Z relative to the and returns the rocket radius.
-        z_checking_function:
-            A callable function that takes z and returns True if it is inside
-            the rocket, False, otherwise.
         rocket: Rocket
             Rocket to which the plate belongs.
 
@@ -353,7 +403,7 @@ class Plate:
         None
         """
         # Processing of points
-        vertices = self.vertices_definition(z_checking_function, radius_func, rocket)
+        vertices = self.vertices_definition(rocket)
 
         centroid = [sum(col) / len(vertices) for col in zip(*vertices)]
         cx, cy, cz = centroid[0], centroid[1], centroid[2]
@@ -381,7 +431,9 @@ class Plate:
                     p3d_y = cy + (curr_u * uy) + (curr_v * vy)
                     p3d_z = cz + (curr_u * uz) + (curr_v * vz)
 
-                    if m.hypot(p3d_x, p3d_y) < radius_func(p3d_z, frame="bacs"):
+                    if m.hypot(p3d_x, p3d_y) < rocket.general_radius(
+                        p3d_z, frame="bacs"
+                    ):
                         final_3d_points.append([p3d_x, p3d_y, p3d_z])
 
                 curr_v += self.grid_spacing
@@ -389,11 +441,25 @@ class Plate:
 
         self.points = final_3d_points
 
-    def vertices_definition(self, z_checking_function, radius_func, rocket):
+    def vertices_definition(self, rocket) -> list:
+        """
+        Defines the vertices in the BACS frame.
+        Parameters
+        ----------
+        rocket: Rocket
+            Rocket to which the plate belongs.
+
+        Returns
+        -------
+        vertices: list
+            List of the vertices in the bacs frame.
+        """
         vertices = []
         cdm_user_frame = Vector([0, 0, rocket.center_of_dry_mass_position])
+        if len(self.points) < 3:
+            raise ValueError("The length of the vertices must be at least 3")
         for pt in self.dimensions:
-            self.check_entry_dimensions(pt, z_checking_function, radius_func)
+            self.check_entry_dimensions(pt, rocket)
 
             # Transform to BACS
             sensor_vec = Vector(pt) - cdm_user_frame
@@ -401,24 +467,45 @@ class Plate:
                 vertices.append([-sensor_vec[0], sensor_vec[1], -sensor_vec[2]])
             else:
                 vertices.append([sensor_vec[0], sensor_vec[1], sensor_vec[2]])
+        colinear = False
+        for num in range(len(vertices) - 1):
+            if Vector(vertices[num]) @ Vector(vertices[num + 1]) == 0:
+                colinear = True
+            else:
+                colinear = False
+        if colinear:
+            raise ValueError("All values cannot be colinear")
+
         return vertices
 
-    def check_entry_dimensions(self, pt, z_checking_function, radius_func):
+    def check_entry_dimensions(self, pt, rocket) -> None:
         """
         Check whether the points passed when shape is personalized are inside the rocket
         and in the case it is wrong prints why.
+
+        Parameters
+        ----------
+        pt: list
+            Point belonging to the set of vertices defined by the user
+        rocket: Rocket
+            Rocket to which the plate belongs.
+
+        Returns
+        -------
+        None
         """
-        # Bounds checking
-        if not z_checking_function(pt[2], frame="ucs")[0]:
+        if not rocket.z_bounds_check(pt[2], frame="ucs")[0]:
             raise ValueError(
                 f"The z component: {pt[2]} of {pt} is outside the rocket range."
             )
 
-        if m.hypot(pt[0], pt[1]) > radius_func(pt[2], frame="ucs"):
+        if m.hypot(pt[0], pt[1]) > rocket.general_radius(pt[2], frame="ucs"):
             raise ValueError(f"Point {pt} is outside the rocket radius at z={pt[2]}.")
 
     def _calculate_uv_frame(self, vertices):
-        """Helper method to calculate the 2D local coordinate system vectors."""
+        """
+        Calculate the 2D local coordinate system vectors.
+        """
         v0, v1, v2 = vertices[:3]
         nx = (v1[1] - v0[1]) * (v2[2] - v0[2]) - (v1[2] - v0[2]) * (v2[1] - v0[1])
         ny = (v1[2] - v0[2]) * (v2[0] - v0[0]) - (v1[0] - v0[0]) * (v2[2] - v0[2])
@@ -451,8 +538,8 @@ class Plate:
         ----------
         position_vector: Vector, list, tuple
             Vector containing the position in the body axis coordinate system
-            of the point in m for which we want to calculate the soft iron
-            distortion matrix.
+            of the point in m for which the soft iron distortion matrix will be
+            calculated.
 
         Returns
         -------
@@ -536,7 +623,6 @@ class Plate:
         """
         Initializate _PlatePlot class with the rocket instance to which it belogns.
 
-
         Parameters
         ----------
         rocket: Rocket
@@ -579,15 +665,20 @@ class Plate:
 
         """
         return cls(
-            # Mandatory Parameter
+            # Compulsory Parameters
             shape=data["shape"],
             dimensions=data["dimensions"],
             material=data["material"],
-            # Optional Parameter
-            thickness=data.get("thickness", 0.001),
+            thickness=data["thickness"],
+            # Optional Parameters
             absolute_magnetic_permeability=data.get(
-                "absolute_magnetic_permeability", None
+                "absolute_magnetic_permeability", 1e-5
+            ),
+            relative_magnetic_permeability=data.get(
+                "relative_magnetic_permeability", None
             ),
             grid_spacing=data.get("grid_spacing", 0.001),
+            z_points=data.get("z_points", 40),
+            angular_points=data.get("angular_points", 70),
             name=data.get("name", "Plate"),
         )

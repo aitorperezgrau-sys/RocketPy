@@ -1886,19 +1886,19 @@ class Rocket:
         None
         """
         if isinstance(position, (float, int)):
-            position = (0, 0, position)
-        position = Vector(position)
-        self.sensors.add(sensor, position)
-
-        sensor._set_sensor_from_cso(position)
-
+            position_ucs = (0, 0, position)
+        position_ucs = Vector(position)
+        self.sensors.add(sensor, position_ucs)
         try:
             sensor._attached_rockets[self] += 1
         except KeyError:
             sensor._attached_rockets[self] = 1
 
     def add_wire(
-        self, wire: Wire, position_edges: list | tuple[tuple | list | float | int]
+        self,
+        wire: Wire,
+        position_edges: list | tuple[tuple | list | float | int],
+        parachute_name: str | None = None,
     ) -> None:
         """
         Adds the wire to the rocket.
@@ -1917,7 +1917,13 @@ class Rocket:
             z axis of each edge.
 
             This is: [Edge_A, Edge_B]. Conventional current flows from Edge_A to Edge_B.
-
+        parachute_name : str, mandatory when it is an ignition wire whose function is parachute
+            In the case ignition_wire_function is parachute:
+                Name of the parachtue in whose deployment we want the wire to have
+                charge flow, it must be the same as the name assigned for the parachute
+                The magnetic disturbance will ocurr during the selected parachute
+                ejection, simulating the signal sent by the avionics. The ejection
+                conditions will be taken from the parachute definition.
         Returns
         -------
         None
@@ -1944,6 +1950,16 @@ class Rocket:
                 raise ValueError(
                     f"{name} with coordinates {edge} is outside the rocket since the radius {r_edge} is bigger than the radius of the rocket at that z: {z}, which is: {r}"
                 )
+
+            if wire.ignition_wire_function == "parachute_deployment":
+                if parachute_name is None:
+                    raise ValueError(
+                        "The name of the parachute is compulsory if the ignition_wire_function is parachute"
+                    )
+                elif not isinstance(parachute_name, str):
+                    raise ValueError("The name of the parchute must be a string")
+                else:
+                    wire.parachute_name = parachute_name
 
         wire._set_wire_edges_from_bacs(self, [edge_a, edge_b])
         wire._rocket_belonging(self)
@@ -2029,11 +2045,12 @@ class Rocket:
         plate : Plate
             The Plate instance to be attached to the rocket.
         position: float, int, optional
-            Position of the plate, when the shape is 'squared' or 'circular'
-            It is the angle between the y axis of the user defined coordinate system
-            and the geometric center of the plate in degrees. The positive direction is defined
-            as the direciton in which the right hand rule coincides with the z direction
-            based on the coordinate system orientation.
+            Position of the plate,
+            - If the shape is 'squared' or 'circular': It is the angle between
+            the y axis of the user defined coordinate system and the geometric
+            center of the plate in degrees. The positive direction is defined
+            as the direciton in which the right hand rule coincides with the
+            z direction based on the coordinate system orientation.
         height : float or int, optional
             Z-axis height relative to user defined coordinate sytem.
             Required if plate shape is 'circular' or 'squared'.
@@ -2045,23 +2062,20 @@ class Rocket:
         if plate.shape in ("circular" or "squared"):
             if position is None:
                 raise ValueError(
-                    "The position when the shape is circular or squared must be defined"
+                    "position must be defined when the shape is 'circular' or 'squared"
                 )
-            elif not isinstance(position, (float, int)):
-                raise ValueError("The position can only be a float or int")
-
+            if not isinstance(position, (float, int)):
+                raise ValueError("Position can only be a float or int ")
             if height is None:
                 raise ValueError(
                     "The height when the shape is circular or squared must be defined"
                 )
-
-            elif not isinstance(height, (float, int)):
+            range, flag = self.z_bounds_check(height, frame="ucs")
+            if not flag:
                 raise ValueError(
-                    "The height must be a float or int, when the shape is circular or squared"
+                    f"The defiend height must be inside the rocket which has a range of: {range} in the user frame"
                 )
-
         plate.define_plate_position(self, position, height)
-        plate._rocket_belonging(self)
         self.plates.append(plate)
 
     def add_air_brakes(

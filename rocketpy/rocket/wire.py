@@ -1,3 +1,5 @@
+import math as m
+
 from rocketpy.mathutils.vector_matrix import Vector
 from rocketpy.plots.wire_plots import _WirePlots
 from rocketpy.prints.wire_prints import _WirePrints
@@ -19,8 +21,9 @@ class Wire:
     Wire.magnetic_field : dict
         Dictionary of all the magnetic fields calculated,
         the key is the position vector of the point relative
-        to the cso, and the value is the magnetic field due to
-        the wire at that point as a list in T.
+        to the body axis coordinate system,
+        and the value is the magnetic field due to the wire
+        at that point as a list in T.
     Wire.wire_length : float
         Length of the wire in m.
     Wire.wire_type : str
@@ -28,10 +31,7 @@ class Wire:
     Wire.ignition_wire_function : str
         Sub-type of the wire, when it is an ignition wire
         because it is a HIL wire it can be:
-        'parachute' or 'motor_ignition
-    Wire.parachute_name : str
-        Name of the parachute to which it is attached the wire
-        in the case ignition_wire_function is parachute
+        'parachute_deployment' or 'motor_ignition
     Wire.name: str
         Name of the wire.
 
@@ -42,9 +42,7 @@ class Wire:
         current: float | int,
         wire_type: str,
         ignition_wire_function: str | None = None,
-        lead_ignition_time: float = 0,
         extra_ignition_time: float = 0,
-        parachute_name: str | None = None,
         name: str = "wire",
     ):
         """
@@ -68,44 +66,38 @@ class Wire:
             type of ingnition wire. This parameter must be a string, for a solid rocket
             the only ignitions are the parachutes and the motor at the beggining
             of the flight. In this case, the valid arguments are 'motor_ignition'
-            or 'parachute_ignitions'. Default is None.
+            or 'parachute_deployments'. Default is None.
         extra_ignition_time : float, optional
-            is 'parachute_ignition'.
+            is 'parachute_deployment'.
             Time after the ignition, in which the ignition signal is
             wanted to be sent. Default is 0.
-        lead_ignition_time : float, optional
-            Time before the ignition in which the ignition signal
-            is considered to be sent, thus magnetic distortion could be applied.
-            Default is 0.
-        parachute_name : str, mandatory when it is an ignition wire whose function is parachute
-            In the case ignition_wire_function is parachute:
-                Name of the parachtue in whose deployment we want the wire to have
-                charge flow, it must be the same as the name assigned for the parachute
-                The magnetic disturbance will ocurr during the selected parachute
-                ejection, simulating the signal sent by the avionics. The ejection
-                conditions will be taken from the parachute definition.
         name : str, optional
             Name of the wire. Default is 'wire'
 
         """
-        self.current = current
-        self.extra_ignition_time = extra_ignition_time
-        self.lead_ignition_time = lead_ignition_time
-        self.name = name
-
+        self.validate_parameters(
+            current, extra_ignition_time, wire_type, ignition_wire_function
+        )
         self._magnetic_field = {}
         self.magnetic_field = {}
         self._wire_edges_from_cdm = []
         self.wire_length = 0
+        self.parachute_name = None
 
         # prints and plots
         self.prints = _WirePrints(self)
         self.plots = None
 
-        # definition of the type of wire
-        self.validate_wire_type(wire_type, ignition_wire_function, parachute_name)
+    def validate_parameters(
+        self, current, extra_ignition_time, wire_type, ignition_wire_function
+    ):
+        """
+        Check and defines several attributes of wire.
+        """
+        self._validate_wire_type(wire_type, ignition_wire_function)
+        self._validate_numbers(current, extra_ignition_time)
 
-    def validate_wire_type(self, wire_type, ignition_wire_function, parachute_name):
+    def _validate_wire_type(self, wire_type, ignition_wire_function):
         """
         Check and defines the attributes related to the type of wire
         """
@@ -119,31 +111,33 @@ class Wire:
                     raise ValueError(
                         "The ignition type is compulsory when it is an ignition wire"
                     )
-                elif isinstance(ignition_wire_function, str):
-                    if ignition_wire_function.lower() == "parachute_ignition":
-                        self.ignition_wire_function = "parachute_ignition"
-                        if parachute_name is None:
-                            raise ValueError(
-                                "The name of the parachute is compulsory if the ignition_wire_function is parachute"
-                            )
-                        else:
-                            self.parachute_name = parachute_name
-                    else:
-                        self.ignition_wire_function = ignition_wire_function
+                elif not isinstance(ignition_wire_function, str):
+                    raise ValueError("Ignition wire function must be a string")
+                else:
+                    self.ignition_wire_function = ignition_wire_function
+        else:
+            raise ValueError("Wire type must be a string")
+
+    def _validate_numbers(self, current, extra_ignition_time):
+        if not isinstance(current, (float, int)):
+            raise ValueError("Current must be a float or int. ")
+        if not isinstance(extra_ignition_time, (float, int)):
+            raise ValueError("extra_ignition_time must be a float or int.")
+        else:
+            if extra_ignition_time < 0:
+                raise ValueError("extra_ignition_time must be greater or equal than 0.")
 
     def measure_magnetic_field(self, position_vector: list | tuple | Vector) -> None:
         """
         Measures the magnetic field on a given position_vector based on the position
-        of the edges of the wire. the magnetic field is calculated assuming that the
+        of the edges of the wire. The magnetic field is calculated assuming that the
         wire is straight.
 
         Parameters
         ----------
-
         position_vector: list, tuple or Vector
             position vector of the point in which the magnetic field
-            is going to be measured relative to the coordiante system origin choosen
-            by the user.
+            is going to be measured in the user defined coordinate system
 
         Returns
         -------
@@ -185,14 +179,14 @@ class Wire:
         magnetic_field: float | int | list | tuple | Vector,
     ) -> None:
         """
-        Allows to defined the magnetic field at a certain point and this will the
+        Allows to define the magnetic field at a certain point and this will the
         value used for the calculations.
 
         Parameters
         ----------
         position_vector: list, tuple
             position vector of the point where the magnetic field is
-            defined.
+            defined in the body axis coordinate system.
         magnetic_field: int, float, list, tuple
             Magnetic influence on the position given by position_vector in T:
 
@@ -201,7 +195,6 @@ class Wire:
 
             - If a tuple, list or Vector, it assumes that the wire genertes the given magnetic
               field.
-
         Returns
         -------
         None
@@ -232,9 +225,11 @@ class Wire:
         -------
         None
         """
+
         self._wire_edges_from_cdm = []
         cdm_user_frame = Vector([0, 0, rocket.center_of_dry_mass_position])
         for edge_from_user in _wire_edges_from_user_coordinate_system:
+            self.check_entry_dimensions(edge_from_user, rocket)
             edge_from_cdm_user_frame = edge_from_user - cdm_user_frame
             if rocket._csys == -1:  # nose to tail
                 edge_position_bacs_frame = Vector(
@@ -284,6 +279,29 @@ class Wire:
         self.plots.all()
         self.prints.all()
 
+    def check_entry_dimensions(self, pt, rocket) -> None:
+        """
+        Check whether the edges are inside the rocket.
+
+        Parameters
+        ----------
+        edge: list
+            Edge given as a list of three components in the usc frame.
+        rocket: Rocket
+            Rocket to which the plate belongs.
+
+        Returns
+        -------
+        None
+        """
+        if not rocket.z_bounds_check(pt[2], frame="ucs")[0]:
+            raise ValueError(
+                f"The z component: {pt[2]} of {pt} is outside the rocket range."
+            )
+
+        if m.hypot(pt[0], pt[1]) > rocket.general_radius(pt[2], frame="ucs"):
+            raise ValueError(f"Point {pt} is outside the rocket radius at z={pt[2]}.")
+
     @classmethod
     def from_dict(cls, data: dict) -> "Wire":
         """
@@ -307,7 +325,5 @@ class Wire:
             wire_type=data["wire_type"],
             # Optional Parameters
             ignition_wire_function=data.get("ignition_wire_function", None),
-            lead_ignition_time=data.get("lead_ignition_time", 0),
             extra_ignition_time=data.get("extra_ignition_time", 0),
-            parachute_name=data.get("parachute_name", None),
         )

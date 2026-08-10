@@ -206,29 +206,6 @@ class Sensor(ABC):
         if self._counter == len(self.measured_data):
             self._counter = 0
 
-    def _set_sensor_from_cso(self, sensor_from_cso):
-        """
-        save as an attribute the position of the sensor from the coordiante system
-        origin.
-
-        input:
-        ------------------
-        sensor_from_cso: list, tuple, Vector
-            sensor position relative to the the coordiante system
-            origin
-        """
-
-        if isinstance(sensor_from_cso, Vector):
-            self._sensor_from_cso = sensor_from_cso
-            self.sensor_from_cso_t = tuple(sensor_from_cso)
-
-        elif isinstance(sensor_from_cso, (list, tuple)):
-            self.sensor_from_cso_t = tuple(sensor_from_cso)
-            self._sensor_from_cso = Vector(sensor_from_cso)
-
-        else:
-            raise ValueError("sensor_from_cso can only be a list, a tuple or a Vector")
-
     @abstractmethod
     def measure(self, time, **kwargs):
         """Measure the sensor data at a given time"""

@@ -46,6 +46,8 @@ GRAVITY = 9.81
 @pytest.mark.parametrize(
     "sensor",
     [
+        "noisy_rotated_magnetometer",
+        "quantized_magnetometer",
         "noisy_rotated_accelerometer",
         "quantized_accelerometer",
         "noisy_rotated_gyroscope",
@@ -152,7 +154,7 @@ def test_quantization(sensor, input_value, expected_output, request):
 @pytest.mark.parametrize(
     "sensor",
     [
-        "ideal_accelerometer",
+        "ideal_magnetometerideal_accelerometer",
         "ideal_gyroscope",
     ],
 )
@@ -265,6 +267,114 @@ def test_scalar_measured_data(sensor, request, example_plain_env):
     assert len(sensor.measured_data[1]) == 3
 
 
+def test_noisy_rotated_magnetometer(
+    noisy_rotated_magnetometer,
+    example_plain_env,
+    calisto_robust,
+    ignition_wire_motor,
+    ignition_wire_parachute,
+    test_circular_plate,
+    test_personalized_plate,
+    calisto_main_chute,
+):
+    """
+    Test the measure method of the Magnetometer class.
+    Verifies coordinate transformations, magnetic field readings,
+    hard/soft iron distortions and power interference.
+    """
+    calisto_robust.add_sensor(noisy_rotated_magnetometer, position=[0, 0, 0.5])
+    calisto_robust.add_wire(
+        ignition_wire_motor, position_edges=[[0.002, 0.004, -0.3], [0.003, 0.001, -1.3]]
+    )
+    calisto_robust.add_wire(
+        ignition_wire_parachute,
+        position_edges=[[0.002, 0.004, 0.3], [0.003, 0.001, 0.5]],
+        parachute_name="calisto_main_chute",
+    )
+    calisto_robust.add_plate(test_circular_plate, position=30, height=0.2)
+    calisto_robust.add_plate(
+        test_personalized_plate,
+        position=[[0.003, 0.001, -0.4], [0.002, 0.002, -0.4], [-0.002, 0.002, -0.4]],
+    )
+    u = U
+    current_time = TIME
+    parachute_events = [[6, calisto_main_chute]]
+    sensor_from_bacs = [0.001, 0.002, 0.3]
+    lat0, lon0, launch_site_elevation = (
+        example_plain_env.latitude,
+        example_plain_env.longitude,
+        example_plain_env.elevation,
+    )
+    earth_radius = example_plain_env.earth_radius
+    rocket = calisto_robust
+
+    rotation_bacs_to_inertial = Matrix.transformation(u[6:10])
+
+    x_inertial, y_inertial, z_inertial = (
+        rotation_bacs_to_inertial @ sensor_from_bacs + Vector(u[0:3])
+    )
+    b_north, b_east, b_down = noisy_rotated_magnetometer.obtain_magnetic_field(
+        x_inertial,
+        y_inertial,
+        z_inertial,
+        launch_site_elevation,
+        earth_radius,
+        lat0,
+        lon0,
+    )
+    b_field_inertial = Vector([b_east, b_north, -b_down])  # T
+    b_field_bacs = rotation_bacs_to_inertial.transpose @ b_field_inertial  # T
+    # expected measurement without noise
+    b_sensor = (
+        calisto_robust._total_rotation_sensor_to_body.transpose @ b_field_bacs
+    )  # T
+    # apply magnetic interference:
+    hard_iron_distortion = [60e-6, 60e-6, 60e-6]
+    soft_iron_matrix = Matrix.identity()
+    for plate in [test_circular_plate, test_personalized_plate]:
+        plate.calculate_soft_iron_distortion_matrix(
+            noisy_rotated_magnetometer._sensor_from_bacs
+        )
+        soft_iron_matrix += plate._magnetic_distortion_matrixes(
+            noisy_rotated_magnetometer._sensor_from_bacs
+        )
+
+    b_sensor = b_sensor @ soft_iron_matrix
+    b_sensor = b_sensor + hard_iron_distortion
+
+    bx, by, bz = b_sensor
+    noisy_rotated_magnetometer.measure(
+        time=TIME,
+        u=U,
+        u_dot=U_DOT,
+        relative_position=[0, 0, 0.5],
+        environment=example_plain_env,
+    )
+
+    # noise, temperature drift and quantize
+    cross_axis_sensitivity = Matrix(
+        [
+            [1, 0.005, 0.005],
+            [0.005, 1, 0.005],
+            [0.005, 0.005, 1],
+        ]
+    )
+    sensor_rotation = Matrix.transformation(
+        euler313_to_quaternions(*np.deg2rad([60, 60, 60]))
+    )
+    total_rotation = sensor_rotation @ cross_axis_sensitivity
+    b_field_sensor = total_rotation @ b_field_bacs
+    bx, by, bz = b_field_sensor
+
+    # Assert that the sensor outputs the expected magnetic field
+    assert noisy_rotated_magnetometer.measurement == approx([bx, by, bz], rel=0.1)
+    assert len(noisy_rotated_magnetometer.measurement) == 3
+    assert noisy_rotated_magnetometer.measured_data[0][1:] == approx(
+        [bx, by, bz], rel=0.1
+    )
+    assert noisy_rotated_magnetometer.measured_data[0][0] == TIME
+
+
 def test_noisy_rotated_accelerometer(noisy_rotated_accelerometer, example_plain_env):
     """Test the measure method of the Accelerometer class. Checks if saved
     measurement is (ax,ay,az) and if measured_data is [(t, (ax,ay,az)), ...]
@@ -297,8 +407,8 @@ def test_noisy_rotated_accelerometer(noisy_rotated_accelerometer, example_plain_
     # expected measurement without noise
     ax, ay, az = total_rotation @ (rocket_rotation @ acceleration)
     # expected measurement with constant bias
-    ax += 0.5
-    ay += 0.5
+    ax += 0
+    ay += 0.3
     az += 0.5
 
     # check last measurement considering noise error bounds
@@ -441,6 +551,7 @@ def test_noisy_gnss(noisy_gnss, example_plain_env):
 @pytest.mark.parametrize(
     "sensor, file_format, expected_header",
     [
+        ("ideal_magnetometer", "csv", "t,Bx,By,Bz\n"),
         ("ideal_accelerometer", "csv", "t,ax,ay,az\n"),
         ("ideal_gyroscope", "csv", "t,wx,wy,wz\n"),
         ("ideal_barometer", "csv", "t,pressure\n"),
@@ -482,6 +593,7 @@ def test_export_data_csv(
 @pytest.mark.parametrize(
     "sensor, file_format, expected_keys",
     [
+        ("ideal_magnetometer", "json", ("Bx", "By", "Bz")),
         ("ideal_accelerometer", "json", ("ax", "ay", "az")),
         ("ideal_gyroscope", "json", ("wx", "wy", "wz")),
         ("ideal_barometer", "json", ("pressure",)),

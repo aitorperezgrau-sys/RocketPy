@@ -241,26 +241,22 @@ class Accelerometer(InertialSensor):
         omega = Vector(u[10:13])
         omega_dot = Vector(u_dot[10:13])
 
-        # Measured acceleration at sensor position in inertial frame
-        A = (
-            inertial_acceleration
+        inertial_to_body = Matrix.transformation(u[6:10]).transpose
+        body_acceleration = inertial_to_body @ inertial_acceleration
+
+        A_body = (
+            body_acceleration
             + Vector.cross(omega_dot, r)
             + Vector.cross(omega, Vector.cross(omega, r))
         )
-        # Transform to sensor frame
-        inertial_to_sensor = (
-            self._total_rotation_sensor_to_body
-            @ Matrix.transformation(u[6:10]).transpose
-        )
-        A = inertial_to_sensor @ A
-
+        A_sensor = self._total_rotation_sensor_to_body @ A_body
         # Apply noise + bias and quantize
-        A = self.apply_noise(A)
-        A = self.apply_temperature_drift(A)
-        A = self.quantize(A)
+        A_sensor = self.apply_noise(A_sensor)
+        A_sensor = self.apply_temperature_drift(A_sensor)
+        A_sensor = self.quantize(A_sensor)
 
-        self.measurement = tuple([*A])
-        self._save_data((time, *A))
+        self.measurement = tuple([*A_sensor])
+        self._save_data((time, *A_sensor))
 
     def export_measured_data(self, filename, file_format="csv"):
         """Export the measured values to a file

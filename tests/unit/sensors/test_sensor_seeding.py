@@ -22,6 +22,7 @@ from rocketpy.sensors.accelerometer import Accelerometer
 from rocketpy.sensors.barometer import Barometer
 from rocketpy.sensors.gnss_receiver import GnssReceiver
 from rocketpy.sensors.gyroscope import Gyroscope
+from rocketpy.sensors.magnetometer import Magnetometer
 
 
 def _accelerometer(seed):
@@ -124,6 +125,10 @@ def test_seed_survives_serialization_round_trip():
                 sampling_rate=1, position_accuracy=5.0, altitude_accuracy=5.0, seed=44
             ),
             44,
+            Magnetometer(
+                sampling_rate=10, noise_density=1.0, noise_variance=1.0, seed=11
+            ),
+            55,
         ),
     ]
     for sensor, seed in cases:
