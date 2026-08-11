@@ -223,10 +223,8 @@ class NoseCone(AeroSurface):
 
     @property
     def radius(self):
-
         if self._radius_function is None:
             self._radius_function = self._compute_radius_function()
-
         return self._radius_function
 
     @property
@@ -480,7 +478,6 @@ class NoseCone(AeroSurface):
         """
 
         data = np.column_stack(self.shape_vec)
-
         return Function(data, inputs="z", outputs="nose_radius")
 
     def evaluate_lift_coefficient(self):

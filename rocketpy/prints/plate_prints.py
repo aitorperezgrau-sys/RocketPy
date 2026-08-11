@@ -37,6 +37,12 @@ class _PlatePrints:
             )
 
     def all(self):
+        """Prints all print methods about the Plate.
+
+        Returns
+        -------
+        None
+        """
         print(f"\n{self.plate.name} information: ")
         self.properties_material()
         self.len_points_print()

@@ -1103,8 +1103,11 @@ def test_evaluate_reduced_mass_with_motor(calisto):
             "test_circular_plate",
             [[0.001, 0.001, 0], [0.001, -0.001, 0]],
             None,
-        )(  # wrong wire: not Wire
-            "test_communications_wire", 1, None
+        ),  # wrong wire: not Wire
+        (
+            "test_communications_wire",
+            1,
+            None,
         ),  # wrong dimensions: number
         (
             "test_communications_wire",
@@ -1143,10 +1146,10 @@ def test_evaluate_reduced_mass_with_motor(calisto):
         ),  # wrong parachute_name: number
     ],
 )
-def test_add_wire(request, wire, position_edges, parachute_name, calisto):
+def test_add_wire(request, wire, position_edges, parachute_name, calisto_robust):
     wire_object = request.getfixturevalue(wire)
     with pytest.raises(ValueError):
-        calisto.add_wire(wire_object, position_edges, parachute_name)
+        calisto_robust.add_wire(wire_object, position_edges, parachute_name)
 
 
 @pytest.mark.parametrize(
@@ -1160,10 +1163,10 @@ def test_add_wire(request, wire, position_edges, parachute_name, calisto):
         ("test_circular_plate", 30, 40),  # wrong height: out of bounds
     ],
 )
-def test_add_plate(request, plate, positon, height, calisto):
+def test_add_plate(request, plate, position, height, calisto_robust):
     plate_obj = request.getfixturevalue(plate)
     with pytest.raises(ValueError):
-        calisto.add_plate(plate_obj, positon, height)
+        calisto_robust.add_plate(plate_obj, position, height)
 
 
 def test_general_radius(calisto_robust):
@@ -1172,18 +1175,18 @@ def test_general_radius(calisto_robust):
     nose cone radius function and the tail radius function.
     """
     prev = 0
-    for z in np.linspace(-1.313, 1.160, 100):
-        rocket_radius = calisto_robust.general_radius(
+    for z in np.linspace(-1.313 - 0.06, 1.16, 100):
+        current_radius = calisto_robust.general_radius(
             z, frame="ucs"
-        )  # in this case the bacs frame is the same as the ucs frames
-        if -1.313 <= z <= -1.313 + 0.06:
-            assert 0.0435 <= rocket_radius <= 0.0635
-            assert rocket_radius > prev
-            prev = rocket_radius
+        )  
+        if -1.313 - 0.06 <= z <= -1.313:
+            assert 0.0435 <= current_radius <= 0.0635
+            assert current_radius > prev
+            prev = current_radius
         elif z <= 1.160 - 0.55829:
-            assert rocket_radius == 0.0635
-            prev = rocket_radius
+            assert current_radius == 0.0635
+            prev = current_radius
         else:
-            assert 0.0635 <= rocket_radius <= 0
-            assert rocket_radius < prev
-            prev = rocket_radius
+            assert 0 <= current_radius <= calisto_robust.radius
+            assert current_radius < prev
+            prev = current_radius

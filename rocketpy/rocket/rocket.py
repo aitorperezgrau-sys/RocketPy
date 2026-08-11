@@ -2072,7 +2072,7 @@ class Rocket:
                 raise ValueError(
                     "The height when the shape is circular or squared must be defined"
                 )
-            range, flag = self.z_bounds_check(height, frame="ucs")
+            flag, range = self.z_bounds_check(height, frame="ucs")
             if not flag:
                 raise ValueError(
                     f"The defiend height must be inside the rocket which has a range of: {range} in the user frame"
@@ -2453,34 +2453,32 @@ class Rocket:
             Radius for the z value in the whole rocket.
 
         """
-        if isinstance(z, (float, int)):
-            if not isinstance(self.nose_cone, NoseCone):
-                raise ValueError("Define a nose cone first")
-
+        if not isinstance(z, (float, int)):
+            raise ValueError("Z must be a float or int")
+        if not isinstance(self.nose_cone, NoseCone):
+            raise ValueError("Define a nose cone first")
+        if not isinstance(frame, str):
+            raise ValueError("frame parameter must be a string")
+        else:
             if isinstance(frame, str):
                 if frame.lower() == "ucs":
-                    distance_from_nose = z - self._nose_tip_from_ucs  # nose cone frame
+                    distance_from_nose = (
+                        self._nose_tip_from_ucs - z
+                    ) * self._csys  # nose cone frame
                     z_bacs = (z - self.center_of_dry_mass_position) * self._csys
                 elif frame.lower() == "bacs":
                     nose_tip_bacs = (
                         self._nose_tip_from_ucs - self.center_of_dry_mass_position
                     ) * self._csys
-                    distance_from_nose = z - nose_tip_bacs  # nose cone frame
-
+                    distance_from_nose = nose_tip_bacs - z  # nose cone frame
                     z_bacs = z
                 else:
                     raise ValueError("Accepted strings for frame are ucs and bacs")
-            else:
-                raise ValueError("Frame parameter must be a string")
-
             if 0 <= distance_from_nose <= self.nose_cone.length:
                 r = self.nose_cone.radius(distance_from_nose)
             else:
                 r = self._calculate_radius_z_intermediate(z_bacs)
-
             return r
-        else:
-            raise ValueError("The z component must be a float or int")
 
     def _calculate_radius_z_intermediate(self, z: float) -> float:
         """
@@ -2504,9 +2502,8 @@ class Rocket:
             tail_bacs = (
                 tail_from_ucs[2] - self.center_of_dry_mass_position
             ) * self._csys
-            distance_from_tail_tip = (z - tail_bacs) * self._csys
             tails_bacs.append((tail, tail_bacs))
-
+            distance_from_tail_tip = tail_bacs - z
             if 0 <= distance_from_tail_tip <= tail.length:
                 r = tail.radius(distance_from_tail_tip)
                 return r

@@ -159,17 +159,17 @@ class _WirePlots:
         None
         """
         # change nose to tail with nose origin
-        edge_a_x = self.wire._wire_edges_from_cdm[0][0] * self.rocket._csys
-        edge_b_x = self.wire._wire_edges_from_cdm[1][0] * self.rocket._csys
+        edge_a_x = self.wire._wire_edges_bacs[0][0] * self.rocket._csys
+        edge_b_x = self.wire._wire_edges_bacs[1][0] * self.rocket._csys
 
-        edge_a_y = self.wire._wire_edges_from_cdm[0][1]
-        edge_b_y = self.wire._wire_edges_from_cdm[1][1]
+        edge_a_y = self.wire._wire_edges_bacs[0][1]
+        edge_b_y = self.wire._wire_edges_bacs[1][1]
 
         edge_a_z = self.rocket.center_of_dry_mass_position + (
-            self.wire._wire_edges_from_cdm[0][2] * self.rocket._csys
+            self.wire._wire_edges_bacs[0][2] * self.rocket._csys
         )
         edge_b_z = self.rocket.center_of_dry_mass_position + (
-            self.wire._wire_edges_from_cdm[1][2] * self.rocket._csys
+            self.wire._wire_edges_bacs[1][2] * self.rocket._csys
         )
         if plane == "xz":
             r_a = edge_a_x

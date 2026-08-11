@@ -22,7 +22,7 @@ class _WirePrints:
 
     def edges(self):
         print(
-            f"Edge A is {self.wire._wire_edges_from_cso[0]}, Edge B is {self.wire._wire_edges_from_cso[1]}"
+            f"Edge A is {self.wire._wire_edges_bacs[0]}, Edge B is {self.wire._wire_edges_bacs[1]} in the body axis coordinates sytem"
         )
 
     def wire_type(self):
@@ -32,15 +32,27 @@ class _WirePrints:
             print("Wire type: ignition type")
             print(f"Ignition wire function: {self.wire.ignition_wire_function}")
 
-    def magnetic_field_vector(self):
-        for key in self.wire.magnetic_field:
-            print(
-                f"Magnetic field vector at position: {key} due to the wire is {self.wire.magnetic_field[key]}"
-            )
+    def magnetic_field_vectors(self) -> None:
+        """Prints the magnetic field vectors stored in the wire for all recorded positions."""
+        for position, b_field in self.wire.magnetic_field.items():
+            if b_field is None:
+                print(
+                    f"Magnetic field vector at position {position} hasn't been measured yet."
+                )
+            else:
+                print(
+                    f"Magnetic field vector at position {position} due to the wire is {b_field}"
+                )
 
     def all(self):
+        """Prints all print methods about the Wire.
+
+        Returns
+        -------
+        None
+        """
         print(f"\n{self.wire.name} information: ")
         self.wire_type()
         self.current()
-        self.magnetic_field_vector()
+        self.magnetic_field_vectors()
         self.edges()

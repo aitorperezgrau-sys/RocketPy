@@ -166,7 +166,6 @@ class Tail(AeroSurface):
             np.array([0, self.length]),
             np.array([self.top_radius, self.bottom_radius]),
         ]
-        print(f"self.top_radius: {self.top_radius}, bottom radius {self.bottom_radius}")
 
     def _compute_radius_function(self):
         """
@@ -178,17 +177,9 @@ class Tail(AeroSurface):
             - Z axis along the longitudinal axis of symmetry, positive downwards (top -> bottom).
             - Origin located at top of the tail (generally the portion closest to the rocket's nose).
         """
-        # print('has entered')
         z = np.linspace(self.shape_vec[0][0], self.shape_vec[0][1], 100)
-        # print(f'init z in local tail: {self.shape_vec[0][0]}')
-        # print(f'init z in local tail: {self.shape_vec[0][1]}')
-
         r = np.linspace(self.shape_vec[1][0], self.shape_vec[1][1], 100)
-        # print(f'top radius {self.shape_vec[1][0]}')
-        # print(f'bottom radius: {self.shape_vec[1][1]}')
-
         data = np.column_stack((z, r))
-
         return Function(data, inputs="z", outputs="tail_radius")
 
     def evaluate_lift_coefficient(self):

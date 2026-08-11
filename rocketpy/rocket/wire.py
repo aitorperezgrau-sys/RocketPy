@@ -80,7 +80,7 @@ class Wire:
         )
         self._magnetic_field = {}
         self.magnetic_field = {}
-        self._wire_edges_from_cdm = []
+        self._wire_edges_bacs = []
         self.wire_length = 0
         self.parachute_name = None
         self.name = name
@@ -122,11 +122,15 @@ class Wire:
     def _validate_numbers(self, current, extra_ignition_time):
         if not isinstance(current, (float, int)):
             raise ValueError("Current must be a float or int. ")
+        else:
+            self.current = current
         if not isinstance(extra_ignition_time, (float, int)):
             raise ValueError("extra_ignition_time must be a float or int.")
         else:
             if extra_ignition_time < 0:
                 raise ValueError("extra_ignition_time must be greater or equal than 0.")
+            else:
+                self.extra_ignition_time = extra_ignition_time
 
     def measure_magnetic_field(self, position_vector: list | tuple | Vector) -> None:
         """
@@ -145,8 +149,8 @@ class Wire:
         None
         """
         # definition of the required values
-        r1 = self._wire_edges_from_cdm[0]  # m
-        r2 = self._wire_edges_from_cdm[1]  # m
+        r1 = self._wire_edges_bacs[0]  # m
+        r2 = self._wire_edges_bacs[1]  # m
 
         r_v = Vector(position_vector)  # m
         r_t = tuple(position_vector)  # m
@@ -227,7 +231,7 @@ class Wire:
         None
         """
 
-        self._wire_edges_from_cdm = []
+        self._wire_edges_bacs = []
         cdm_user_frame = Vector([0, 0, rocket.center_of_dry_mass_position])
         for edge_from_user in _wire_edges_from_user_coordinate_system:
             self.check_entry_dimensions(edge_from_user, rocket)
@@ -242,7 +246,7 @@ class Wire:
                 )
             else:  # tail to nose
                 edge_position_bacs_frame = edge_from_cdm_user_frame
-            self._wire_edges_from_cdm.append(edge_position_bacs_frame)
+            self._wire_edges_bacs.append(edge_position_bacs_frame)
 
     def _rocket_belonging(self, rocket) -> None:
         """

@@ -644,9 +644,6 @@ class Magnetometer(InertialSensor):
                                 self.sensor_from_bacs_t
                             ]
                         )
-                        print(
-                            f"{plate.name}: {plate._magnetic_distortion_matrixes[self.sensor_from_bacs_t]}"
-                        )
                 self.total_soft_iron_distortion_matrix_computed = True
             b_field_distorted = self._soft_iron_distortion_matrix @ b_field
         else:
