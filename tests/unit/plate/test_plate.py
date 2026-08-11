@@ -3,6 +3,7 @@ import pytest
 
 from rocketpy.mathutils import Matrix
 from rocketpy.rocket.plate import Plate
+from rocketpy.plots.plate_plots import _PlatePlots
 
 
 @pytest.mark.parametrize(
@@ -259,6 +260,9 @@ def test_compare_soft_iron_distortion_matrix(
                 small_plate_matrix[row, column]
             )
 
+def test_rocket_belonging(test_circular_plate, calisto):
+    calisto.add_plate(test_circular_plate, position = -0.3, height = 0.3)
+    assert isinstance(test_circular_plate.plots, _PlatePlots)
 
 def test_from_dict():
     plate_dict = {

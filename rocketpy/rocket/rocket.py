@@ -1960,6 +1960,8 @@ class Rocket:
                     raise ValueError("The name of the parchute must be a string")
                 else:
                     wire.parachute_name = parachute_name
+            else:
+                wire.parachute_name = None
 
         wire._set_wire_edges_from_bacs(self, [edge_a, edge_b])
         wire._rocket_belonging(self)
