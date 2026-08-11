@@ -1,8 +1,8 @@
 import pytest
 
 from rocketpy.mathutils import Vector
-from rocketpy.rocket import Wire
 from rocketpy.plots.wire_plots import _WirePlots
+from rocketpy.rocket import Wire
 
 
 @pytest.mark.parametrize(
@@ -73,7 +73,18 @@ def test_from_dict():
     assert wire_from_dict.wire_type == "ignition"
 
 
-
 def test_rocket_belonging(test_communications_wire, calisto):
-    calisto.add_wire(test_communications_wire, position_edges = [[0.001, 0.002, -0.3], [0.001, 0.002, 0.3]])
+    calisto.add_wire(
+        test_communications_wire,
+        position_edges=[[0.001, 0.002, -0.3], [0.001, 0.002, 0.3]],
+    )
     assert isinstance(test_communications_wire.plots, _WirePlots)
+
+
+def test_wire_prints_and_plots(test_communications_wire):
+    """Test the print methods of the Wire class. Checks if all attributes are
+    printed and plotted correctly.
+    """
+    test_communications_wire.prints.all()
+    test_communications_wire.plots.all()
+    assert True

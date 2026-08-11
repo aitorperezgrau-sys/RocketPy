@@ -6,6 +6,7 @@ import pytest
 from pytest import approx
 
 from rocketpy.mathutils.vector_matrix import Matrix, Vector
+from rocketpy.sensors.magnetometer import Magnetometer
 from rocketpy.tools import euler313_to_quaternions
 
 # calisto standard simulation no wind solution index 200
@@ -297,7 +298,6 @@ def test_noisy_rotated_magnetometer(
         position=[[0.003, 0.001, -0.4], [0.002, 0.002, -0.4], [-0.002, 0.002, -0.4]],
     )
     u = U
-    current_time = TIME
     parachute_events = [[6, calisto_main_chute]]
     sensor_from_bacs = [0.001, 0.002, 0.3]
     lat0, lon0, launch_site_elevation = (
@@ -306,8 +306,6 @@ def test_noisy_rotated_magnetometer(
         example_plain_env.elevation,
     )
     earth_radius = example_plain_env.earth_radius
-    rocket = calisto_robust
-
     rotation_bacs_to_inertial = Matrix.transformation(u[6:10])
 
     x_inertial, y_inertial, z_inertial = (
@@ -349,6 +347,8 @@ def test_noisy_rotated_magnetometer(
         u_dot=U_DOT,
         relative_position=[0, 0, 0.5],
         environment=example_plain_env,
+        rocket=calisto_robust,
+        parachute_events=parachute_events,
     )
 
     # noise, temperature drift and quantize
@@ -425,6 +425,102 @@ def test_noisy_rotated_accelerometer(noisy_rotated_accelerometer, example_plain_
         [ax, ay, az], rel=0.1
     )
     assert noisy_rotated_accelerometer.measured_data[0][0] == TIME
+
+
+@pytest.mark.parametrize(
+    "power_interference, hard_iron_distortion, soft_iron_distortion, activation_signal_interference, communications_interference",
+    [
+        (
+            "a",
+            [10, 10, 0],
+            "plates",
+            "wires",
+            "wires",
+        ),  # wrong power_interference: not allowed str
+        (
+            "personalized",
+            [10, 10, 0],
+            "plates",
+            None,
+            None,
+        ),  # wrong personalized inputs: activaiton signal and communications interference cannot be None
+        (
+            "personalized",
+            [10, 10, 0],
+            "plates",
+            "a",
+            None,
+        ),  # wrong activaiton_signal_interference: not allowed str
+        (
+            "personalized",
+            [10, 10, 0],
+            "plates",
+            3,
+            "None",
+        ),  # wrong communications_interference: not allowed str
+        (
+            "personalized",
+            [10, 10, 0],
+            "a",
+            3,
+            "None",
+        ),  # wrong soft_iron_distortion: not allowed str
+    ],
+)
+def test_magnetometer_valid_parameters(
+    power_interference,
+    hard_iron_distortion,
+    soft_iron_distortion,
+    activation_signal_interference,
+    communications_interference,
+):
+    """
+    Validation of the input parameters of the arguments that are
+    unique of the magnetometer (not shared with parent classes).
+    """
+    # common attributes
+    with pytest.raises(ValueError):
+        Magnetometer(
+            sampling_rate=40,
+            hard_iron_distortion=hard_iron_distortion,
+            soft_iron_distortion=soft_iron_distortion,
+            power_interference=power_interference,
+            activation_signal_interference=activation_signal_interference,
+            communications_interference=communications_interference,
+        )
+
+
+def test_from_dict_magnetometer():
+    all_default_magnetometer_dict = {
+        "sampling_rate": 40,
+    }
+    all_default_magnetometer = Magnetometer.from_dict(all_default_magnetometer_dict)
+    assert isinstance(all_default_magnetometer, Magnetometer)
+
+    nothing_default_magnetometer_dict = {
+        "sampling_rate": 100.0,
+        "orientation": (0.0, 0.0, 0.0),
+        "measurement_range": 16.0,
+        "resolution": 16,
+        "hard_iron_distortion": 0.05,
+        "soft_iron_distortion": 3 * Matrix.identity(),
+        "power_interference": 0.01,
+        "activation_signal_interference": None,
+        "communications_interference": None,
+        "noise_density": 0.001,
+        "noise_variance": 0.05,
+        "random_walk_density": 0.0001,
+        "random_walk_variance": 0.01,
+        "constant_bias": 0.02,
+        "operating_temperature": 298.15,
+        "temperature_bias": 0.005,
+        "temperature_scale_factor": 0.001,
+        "cross_axis_sensitivity": 0.02,
+    }
+    nothing_default_magnetometer = Magnetometer.from_dict(
+        nothing_default_magnetometer_dict
+    )
+    assert isinstance(nothing_default_magnetometer, Magnetometer)
 
 
 def test_noisy_rotated_gyroscope(noisy_rotated_gyroscope, example_plain_env):

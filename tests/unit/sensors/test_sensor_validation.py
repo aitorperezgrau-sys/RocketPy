@@ -7,10 +7,12 @@ tests never reach, so the base class is fully covered.
 
 import pytest
 
+from rocketpy.mathutils import Matrix
 from rocketpy.mathutils.vector_matrix import Vector
 from rocketpy.sensors.accelerometer import Accelerometer
 from rocketpy.sensors.barometer import Barometer
 from rocketpy.sensors.magnetometer import Magnetometer
+
 
 def test_measurement_range_wrong_length_raises():
     with pytest.raises(ValueError, match="measurement range"):
@@ -60,29 +62,3 @@ def test_call_dispatches_to_measure(example_plain_env):
         environment=example_plain_env,
     )
     assert len(barometer.measured_data) == 1
-
-
-
-@pytest.mark.parametrize('power_interference, hard_iron_distortion, soft_iron_distortion, activation_signal_interference, communications_interference', [
-    ('a', [10, 10, 0],'plates','wires', 'wires'), # wrong power_interference: not allowed str
-    ('personalized', [10, 10, 0],'plates', None, None), # wrong personalized inputs: activaiton signal and communications interference cannot be None
-    ('personalized', [10, 10, 0],'plates', 'a', None), # wrong activaiton_signal_interference: not allowed str
-    ('personalized', [10, 10, 0],'plates', 3, "None"), # wrong communications_interference: not allowed str
-    ('personalized', [10, 10, 0],'a', 3, "None"), # wrong soft_iron_distortion: not allowed str
-])
-def test_magnetometer_valid_parameters(power_interference, hard_iron_distortion, soft_iron_distortion, activation_signal_interference, communications_interference):
-    '''
-    Validation of the input parameters of the arguments that are 
-    unique of the magnetometer (not shared with parent classes). 
-    '''
-    #common attributes
-    with pytest.raises(ValueError):
-        Magnetometer(
-            sampling_rate=40, 
-            hard_iron_distortion=hard_iron_distortion, 
-            soft_iron_distortion=soft_iron_distortion, 
-            power_interference=power_interference, 
-            activation_signal_interference=activation_signal_interference, 
-            communications_interference=communications_interference, 
-            )
-        

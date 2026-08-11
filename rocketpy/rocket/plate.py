@@ -112,11 +112,11 @@ class Plate:
             in sequential order (clockwise or counter-clockwise) and
             at least 3 non-collinear vertices must be defined in the user
             defined coordinate system.
-        material: str, optional
+        material: str
             Material from which the plate is composed Allowed strings
             are 'iron', 'carbon_steel', or 'personalized' if we want
             to define the material based on the magnetic permeability.
-        thickness: float or int, optional
+        thickness: float or int
             Thickness of the plate in m.
         absolute_magnetic_permeability: float, int, optional
             Magnetic permeability of the material, which is the measure
@@ -161,6 +161,7 @@ class Plate:
         self,
         material,
         absolute_magnetic_permeability,
+        relative_magnetic_permeability,
         shape,
         dimensions,
         z_points,
@@ -170,7 +171,9 @@ class Plate:
         """
         Validates input parameters and defines attributes
         """
-        self._validate_material(material, absolute_magnetic_permeability)
+        self._validate_material(
+            material, absolute_magnetic_permeability, relative_magnetic_permeability
+        )
         self._validate_shape(shape, dimensions, z_points, angular_points, grid_spacing)
 
     def _validate_material(
@@ -184,9 +187,15 @@ class Plate:
             if material == "iron":
                 self.material = "iron"
                 self.absolute_magnetic_permeability = 1.25e-3
+                self.relative_magnetic_permeability = (
+                    self.absolute_magnetic_permeability / (4 * np.pi * 1e-7)
+                )
             elif material == "carbon_steel":
                 self.material = "carbon_steel"
                 self.absolute_magnetic_permeability = 1.2e-4
+                self.relative_magnetic_permeability = (
+                    self.absolute_magnetic_permeability / (4 * np.pi * 1e-7)
+                )
             elif material == "personalized":
                 self.material = "personalized"
 
@@ -198,7 +207,9 @@ class Plate:
                         "The magnetic permeability or relative magnetic permeability must be defined if 'material' is 'personalized"
                     )
 
-                if not isinstance(absolute_magnetic_permeability, (float, int, None)):
+                if not isinstance(
+                    absolute_magnetic_permeability, (float, int, type(None))
+                ):
                     raise ValueError(
                         "The absolute magnetic permeability can only be None, float or int"
                     )
@@ -241,7 +252,7 @@ class Plate:
 
             elif shape == "personalized":
                 self.shape = shape
-                self.dimensions = None
+                self.dimensions = dimensions
                 self.grid_spacing = grid_spacing
                 self.z_points = None
                 self.angular_points = None
@@ -456,7 +467,7 @@ class Plate:
         """
         vertices = []
         cdm_user_frame = Vector([0, 0, rocket.center_of_dry_mass_position])
-        if len(self.points) < 3:
+        if len(self.dimensions) < 3:
             raise ValueError("The length of the vertices must be at least 3")
         for pt in self.dimensions:
             self.check_entry_dimensions(pt, rocket)

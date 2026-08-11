@@ -32,7 +32,7 @@ pytest_plugins = [
     "tests.fixtures.generic_surfaces.generic_surfaces_fixtures",
     "tests.fixtures.generic_surfaces.linear_generic_surfaces_fixtures",
     "tests.fixtures.plates.plate_fixtures",
-    "tests.fixtures.wire.wire_fixtures.py",
+    "tests.fixtures.wire.wire_fixtures",
 ]
 
 

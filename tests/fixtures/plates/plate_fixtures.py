@@ -33,7 +33,9 @@ def test_squared_plate():
 def test_personalized_plate():
     return Plate(
         shape="personalized",
+        dimensions=[[0.001, 0.002, 0.3], [-0.001, 0.002, 0.4], [-0.001, -0.002, 0.4]],
         material="carbon_steel",
+        thickness=0.001,
         grid_spacing=0.002,
         name="test_personalized_plate",
     )

@@ -101,8 +101,7 @@ class _PlatePlots:
         self,
         vis_args: dict | None = None,
         plane: str = "xz",
-        color: str = "darkgree",
-        marker="o",
+        color: str = "darkgreen",
         filename=None,
     ) -> None:
         """
@@ -162,7 +161,7 @@ class _PlatePlots:
             }
 
         ax, _, _ = self.rocket.plots._rocket_shape_plot(vis_args, plane)
-        self._plot_plate_rocket(ax, plane, marker, color)
+        self._plot_plate_rocket(ax, plane, color)
 
         plt.title("Plate representation")
         plt.xlim()

@@ -431,7 +431,7 @@ class Magnetometer(InertialSensor):
                 State vector of the rocket.
                 u = [x, y, z, vx, vy, vz, e0, e1, e2, e3, wx, wy, wz]
 
-            rocket: Rocket
+            - rocket: Rocket
                 Rocketpy Rocket class
 
             - u_dot : np.array
