@@ -362,14 +362,14 @@ class Plate:
                     )
 
                 for theta in np.linspace(alpha, beta, self.angular_points):
-                    x = r * np.sin(theta)
+                    x = -r * np.sin(theta)
                     y = r * np.cos(theta)
 
-                    # change to body axis coordiante system
+                    # change to body axis coordinate system
                     z_bacs = (z - rocket.center_of_dry_mass_position) * rocket._csys
-                    if rocket._csys == -1:
+                    if rocket._csys == -1:  # nose_to_tail
                         self.points.append([-x, y, z_bacs])
-                    else:
+                    else:  # tail_to_nose
                         self.points.append([x, y, z_bacs])
 
     def _circular_angle_calculation(

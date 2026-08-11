@@ -83,6 +83,7 @@ class Wire:
         self._wire_edges_from_cdm = []
         self.wire_length = 0
         self.parachute_name = None
+        self.name = name
 
         # prints and plots
         self.prints = _WirePrints(self)

@@ -78,15 +78,22 @@ class _PlatePlots:
         -------
         None
         """
-        # Unpack columns into separate x, y, and z components
+        # from bacs to usc
         x, y, z = zip(*self.plate.points)
+        if self.rocket._csys == -1:
+            x = -np.array(x)
+        else:
+            x = np.array(x)
+        z = self.rocket.center_of_dry_mass_position + (self.rocket._csys * np.array(z))
+        y = np.array(y)
 
         fig = plt.figure(figsize=(8, 6))
         ax = fig.add_subplot(111, projection="3d")
-
         # plot individual points
         ax.scatter(x, y, z, color=color, marker=marker, label=self.plate.name)
         ax.view_init(elev=elev, azim=azim)
+        if self.rocket._csys == 1:
+            ax.invert_xaxis()
 
         # Labels & formatting
         ax.set_xlabel("X (m)")

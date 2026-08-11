@@ -163,35 +163,31 @@ def test_generate_personalized_points_bounds(
 
 
 @pytest.mark.parametrize(
-    "angle, expected_x",
+    "angle, expected_x",  # considering that calisto's rocket frame is tail to nose, the same as bacs
     [
-        (0, 0),  # when angle is 0, x must include the 0 in bacs
-        (90, +0.0635),  # when angle is 90, x must include + radius in bacs
-        (180, 0),  # when angle is 180, x must include the 0 in bacs
-        (90, -0.0635),  # when angle is 270, x must include - dimensions in bacs
+        (0, 0.0),  # Angle = 0°   -> x = 0
+        (90, -0.0635),  # Angle = 90°  -> x = -R
+        (180, 0.0),  # Angle = 180° -> x = 0
+        (270, +0.0635),  # Angle = 270° -> x = +R
     ],
 )
 def test_generate_not_personalized_plate_position(angle, expected_x, calisto_robust):
     """
-    Using small dimension plate, ensures that for each angle, the proper orientation of
-    the plate is created in the bacs frame.
+    Ensures proper position vector generation in the BACS frame.
     """
-    one_x_true = False
     small_plate = Plate(
         shape="circular",
-        dimensions=0.00003,
+        dimensions=0.004,
         material="carbon_steel",
         thickness=0.0002,
         z_points=40,
-        angular_points=40,
+        angular_points=70,
         name="small_circular_plate",
     )
     calisto_robust.add_plate(small_plate, position=angle, height=0.2)
-    for point in small_plate.points:
-        x = point[0]
-        if x == expected_x:
-            one_x_true = True
-            break
+    one_x_true = any(
+        pytest.approx(expected_x, abs=1e-3) == point[0] for point in small_plate.points
+    )
     assert one_x_true
 
 
@@ -238,7 +234,7 @@ def test_no_soft_iron_distortion_matrix(calisto_robust):
         dimensions=0.04,
         material="personalized",
         thickness=0.001,
-        absolute_magnetic_permeability=0,
+        absolute_magnetic_permeability=4 * np.pi * 1e-7,
         name="identity_soft_iron",
     )
     calisto_robust.add_plate(test_plate, position=30, height=0.3)
@@ -268,11 +264,11 @@ def test_no_soft_iron_distortion_matrix(calisto_robust):
         (
             0.07,
             "personalized",
-            1.25e-6,
+            1.25e-7,
             0.07,
             "personalized",
-            1.25e-7,
-        ),  # bigger absolute magnetic permeability -> higher distortion (with a material with lower magnetic permeabilty than vacuum)
+            1.25e-6,
+        ),  # lower absolute magnetic permeability (diamagnetic materials) than vacuum -> higher distortion
     ],
 )
 def test_compare_soft_iron_distortion_matrix(
@@ -325,7 +321,7 @@ def test_compare_soft_iron_distortion_matrix(
     # small_plate
     calisto_robust.add_plate(small_plate, position=position, height=height)
     small_plate.calculate_soft_iron_distortion_matrix((0, 0, 0))
-    small_plate_matrix = big_plate._magnetic_distortion_matrixes[(0, 0, 0)]
+    small_plate_matrix = small_plate._magnetic_distortion_matrixes[(0, 0, 0)]
 
     for row in range(3):
         for column in range(3):
