@@ -1886,8 +1886,9 @@ class Rocket:
         None
         """
         if isinstance(position, (float, int)):
-            position_ucs = (0, 0, position)
-        position_ucs = Vector(position)
+            position_ucs = Vector([0, 0, position])
+        else:
+            position_ucs = Vector(position)
         self.sensors.add(sensor, position_ucs)
         try:
             sensor._attached_rockets[self] += 1

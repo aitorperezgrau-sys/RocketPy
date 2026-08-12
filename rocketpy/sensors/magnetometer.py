@@ -290,6 +290,7 @@ class Magnetometer(InertialSensor):
             else:
                 raise ValueError("The accepted strings are 'wires' or 'personalized'")
         else:
+            self.initial_power_interference = 'number'
             if isinstance(power_interference, (int, float)):
                 power_interference = [power_interference] * 3
             self.power_interference = list(power_interference)
@@ -332,6 +333,7 @@ class Magnetometer(InertialSensor):
         if isinstance(soft_iron_distortion, Matrix):
             self._soft_iron_distortion_matrix = soft_iron_distortion
             self.soft_iron_distortion_difference = []
+            self.initial_soft_iron_distortion_matrix = 'matrix'
         elif isinstance(soft_iron_distortion, str):
             if soft_iron_distortion == "plates":
                 self._soft_iron_distortion_matrix = Matrix.identity()
