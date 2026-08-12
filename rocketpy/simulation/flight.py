@@ -884,7 +884,7 @@ class Flight:
                 pressure=self.env.pressure,
                 earth_radius=self.env.earth_radius,
                 initial_coordinates=(self.env.latitude, self.env.longitude),
-                rocket = self
+                rocket=self,
             )
 
     def __check_and_handle_parachute_triggers(

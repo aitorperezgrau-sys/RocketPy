@@ -7,6 +7,7 @@ from pywmm.calculator import calculate_geomagnetic
 from pywmm.date_utils import decimal_year
 
 from rocketpy.mathutils.vector_matrix import Matrix, Vector
+from rocketpy.prints.sensors_prints import _InertialSensorPrints
 from rocketpy.rocket import Rocket
 from rocketpy.sensors.sensor import InertialSensor
 from rocketpy.tools import inverted_haversine
@@ -90,6 +91,8 @@ class Magnetometer(InertialSensor):
     normal_vector : Vector
         The normal vector of the sensor in the rocket frame of reference.
     """
+
+    units = "T"
 
     def __init__(  # pylint: disable=too-many-arguments
         self,
@@ -290,7 +293,7 @@ class Magnetometer(InertialSensor):
             else:
                 raise ValueError("The accepted strings are 'wires' or 'personalized'")
         else:
-            self.initial_power_interference = 'number'
+            self.initial_power_interference = "number"
             if isinstance(power_interference, (int, float)):
                 power_interference = [power_interference] * 3
             self.power_interference = list(power_interference)
@@ -298,6 +301,7 @@ class Magnetometer(InertialSensor):
 
         self.validate_soft_iron(soft_iron_distortion)
         self.validate_hard_iron(hard_iron_distortion)
+        self.prints = _InertialSensorPrints(self)
 
         # Get current decimal year
         current_date = datetime.now().strftime("%Y-%m-%d")
@@ -333,7 +337,7 @@ class Magnetometer(InertialSensor):
         if isinstance(soft_iron_distortion, Matrix):
             self._soft_iron_distortion_matrix = soft_iron_distortion
             self.soft_iron_distortion_difference = []
-            self.initial_soft_iron_distortion_matrix = 'matrix'
+            self.initial_soft_iron_distortion_matrix = "matrix"
         elif isinstance(soft_iron_distortion, str):
             if soft_iron_distortion == "plates":
                 self._soft_iron_distortion_matrix = Matrix.identity()
@@ -469,7 +473,9 @@ class Magnetometer(InertialSensor):
             kwargs["environment"].elevation,
         )
         earth_radius = kwargs["environment"].earth_radius
-        rocket = kwargs["rocket"]
+        rocket = kwargs.get(
+            "rocket"
+        )  # if there is no distortion the rocket is not necessary
 
         # u[6:10]: Quaternion represents the center of dry mass with respect to the inertial frame.
         rotation_bacs_to_inertial = Matrix.transformation(

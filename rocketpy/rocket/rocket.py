@@ -1932,39 +1932,33 @@ class Rocket:
         if not isinstance(wire, Wire):
             raise ValueError("The wire must be a wire instance")
 
-        edge_a, edge_b = self._define_3d_edges(position_edges)
+        edges = self._define_3d_edges(position_edges)
 
-        for edge, name in [(edge_a, "Edge_a"), (edge_b, "Edge_b")]:
-            x, y, z = edge[0], edge[1], edge[2]
+        if wire.ignition_wire_function == "parachute_deployment":
+            if not isinstance(parachute_name, str):
+                raise ValueError(
+                    "The parachute_name must be a string when the wire function is parachute_deployment"
+                )
+            wire.parachute_name = parachute_name
+        else:
+            wire.parachute_name = None
 
-            # height boundds
+        for edge, name in zip(edges, ("Edge_a", "Edge_b")):
+            x, y, z = edge
             flag, range_z = self.z_bounds_check(z, frame="ucs")
             if not flag:
                 raise ValueError(
-                    f"The z component: {z} of {name} is outside the rocket range {range_z}"
+                    f"{name} z-coordinate {z} is outside rocket range {range_z}"
                 )
 
-            # radial bounds
-            r_edge = math.sqrt(x**2 + y**2)
-            r = self.general_radius(z, frame="ucs")
-            if r_edge > r:
+            r_edge = math.hypot(x, y)
+            r_rocket = self.general_radius(z, frame="ucs")
+            if r_edge > r_rocket:
                 raise ValueError(
-                    f"{name} with coordinates {edge} is outside the rocket since the radius {r_edge} is bigger than the radius of the rocket at that z: {z}, which is: {r}"
+                    f"{name} with coordinates {edge} is outside the rocket since the radius {r_edge} is bigger than the radius of the rocket at that z: {z}, which is: {r_rocket}"
                 )
 
-            if wire.ignition_wire_function == "parachute_deployment":
-                if parachute_name is None:
-                    raise ValueError(
-                        "The name of the parachute is compulsory if the ignition_wire_function is parachute"
-                    )
-                elif not isinstance(parachute_name, str):
-                    raise ValueError("The name of the parchute must be a string")
-                else:
-                    wire.parachute_name = parachute_name
-            else:
-                wire.parachute_name = None
-
-        wire._set_wire_edges_from_bacs(self, [edge_a, edge_b])
+        wire._set_wire_edges_from_bacs(self, edges)
         wire._rocket_belonging(self)
 
         if wire.wire_type == "communications":
@@ -2073,10 +2067,10 @@ class Rocket:
                 raise ValueError(
                     "The height when the shape is circular or squared must be defined"
                 )
-            flag, range = self.z_bounds_check(height, frame="ucs")
+            flag, range_z = self.z_bounds_check(height, frame="ucs")
             if not flag:
                 raise ValueError(
-                    f"The defiend height must be inside the rocket which has a range of: {range} in the user frame"
+                    f"The defiend height must be inside the rocket which has a range of: {range_z} in the user frame"
                 )
         plate.define_plate_position(self, position, height)
         self.plates.append(plate)

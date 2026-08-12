@@ -8,10 +8,10 @@ import pytest
 from rocketpy.mathutils.vector_matrix import Vector
 from rocketpy.rocket.components import Components
 from rocketpy.sensors.accelerometer import Accelerometer
-from rocketpy.sensors.magnetometer import Magnetometer
 from rocketpy.sensors.barometer import Barometer
 from rocketpy.sensors.gnss_receiver import GnssReceiver
 from rocketpy.sensors.gyroscope import Gyroscope
+from rocketpy.sensors.magnetometer import Magnetometer
 from rocketpy.simulation import FlightDataExporter
 
 
@@ -123,37 +123,51 @@ def test_export_all_sensors_data(flight_calisto_with_sensors):
     # convert list of tuples into list of lists to compare with the json
     flight_calisto_with_sensors.rocket.sensors[0].component.measured_data[0] = [
         list(measurement)
-        for measurement in flight_calisto_with_sensors.rocket.sensors[0].component.measured_data[0]
+        for measurement in flight_calisto_with_sensors.rocket.sensors[
+            0
+        ].component.measured_data[0]
     ]
     flight_calisto_with_sensors.rocket.sensors[1].component.measured_data[1] = [
         list(measurement)
-        for measurement in flight_calisto_with_sensors.rocket.sensors[1].component.measured_data[1]
+        for measurement in flight_calisto_with_sensors.rocket.sensors[
+            1
+        ].component.measured_data[1]
     ]
     flight_calisto_with_sensors.rocket.sensors[2].component.measured_data = [
         list(measurement)
-        for measurement in flight_calisto_with_sensors.rocket.sensors[2].component.measured_data
+        for measurement in flight_calisto_with_sensors.rocket.sensors[
+            2
+        ].component.measured_data
     ]
     flight_calisto_with_sensors.rocket.sensors[3].component.measured_data = [
         list(measurement)
-        for measurement in flight_calisto_with_sensors.rocket.sensors[3].component.measured_data
+        for measurement in flight_calisto_with_sensors.rocket.sensors[
+            3
+        ].component.measured_data
     ]
     flight_calisto_with_sensors.rocket.sensors[4].component.measured_data = [
         list(measurement)
-        for measurement in flight_calisto_with_sensors.rocket.sensors[4].component.measured_data
+        for measurement in flight_calisto_with_sensors.rocket.sensors[
+            4
+        ].component.measured_data
     ]
     flight_calisto_with_sensors.rocket.sensors[5].component.measured_data = [
         list(measurement)
-        for measurement in flight_calisto_with_sensors.rocket.sensors[5].component.measured_data
+        for measurement in flight_calisto_with_sensors.rocket.sensors[
+            5
+        ].component.measured_data
     ]
     assert (
         sensor_data["Accelerometer"]
         == flight_calisto_with_sensors.rocket.sensors[0].component.measured_data
     )
     assert (
-        sensor_data["Gyroscope"] == flight_calisto_with_sensors.rocket.sensors[2].component.measured_data
+        sensor_data["Gyroscope"]
+        == flight_calisto_with_sensors.rocket.sensors[2].component.measured_data
     )
     assert (
-        sensor_data["Barometer"] == flight_calisto_with_sensors.rocket.sensors[3].component.measured_data
+        sensor_data["Barometer"]
+        == flight_calisto_with_sensors.rocket.sensors[3].component.measured_data
     )
     assert (
         sensor_data["GnssReceiver"]
@@ -186,9 +200,12 @@ def test_export_single_sensor_data(flight_calisto_with_sensors):
     # convert list of tuples into list of lists to compare with the json
     flight_calisto_with_sensors.rocket.sensors[2].component.measured_data = [
         list(measurement)
-        for measurement in flight_calisto_with_sensors.rocket.sensors[2].component.measured_data
+        for measurement in flight_calisto_with_sensors.rocket.sensors[
+            2
+        ].component.measured_data
     ]
     assert (
-        sensor_data["Gyroscope"] == flight_calisto_with_sensors.rocket.sensors[2].component.measured_data
+        sensor_data["Gyroscope"]
+        == flight_calisto_with_sensors.rocket.sensors[2].component.measured_data
     )
     os.remove(filename)

@@ -7,11 +7,9 @@ tests never reach, so the base class is fully covered.
 
 import pytest
 
-from rocketpy.mathutils import Matrix
 from rocketpy.mathutils.vector_matrix import Vector
 from rocketpy.sensors.accelerometer import Accelerometer
 from rocketpy.sensors.barometer import Barometer
-from rocketpy.sensors.magnetometer import Magnetometer
 
 
 def test_measurement_range_wrong_length_raises():

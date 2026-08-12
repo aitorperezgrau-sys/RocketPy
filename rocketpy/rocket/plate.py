@@ -4,7 +4,6 @@ import numpy as np
 from matplotlib.path import Path
 
 from rocketpy.mathutils import Matrix, Vector
-from rocketpy.mathutils.function import Function
 from rocketpy.plots.plate_plots import _PlatePlots
 from rocketpy.prints.plate_prints import _PlatePrints
 
@@ -183,58 +182,54 @@ class Plate:
         Validates and defines the input parameters related to the material
         and magnetic permeability.
         """
-        if isinstance(material, str):
-            if material == "iron":
-                self.material = "iron"
-                self.absolute_magnetic_permeability = 1.25e-3
-                self.relative_magnetic_permeability = (
-                    self.absolute_magnetic_permeability / (4 * np.pi * 1e-7)
+        if not isinstance(material, str):
+            raise ValueError("material argument can only be a string")
+
+        mu_0 = 4 * np.pi * 1e-7
+        predefined = {"iron": 1.25e-3, "carbon_steel": 1.2e-4}
+
+        if material in predefined:
+            self.material = material
+            self.absolute_magnetic_permeability = predefined[material]
+            self.relative_magnetic_permeability = (
+                self.absolute_magnetic_permeability / mu_0
+            )
+
+        elif material == "personalized":
+            if not isinstance(absolute_magnetic_permeability, (float, int, type(None))):
+                raise ValueError(
+                    "The absolute magnetic permeability can only be None, float or int"
                 )
-            elif material == "carbon_steel":
-                self.material = "carbon_steel"
-                self.absolute_magnetic_permeability = 1.2e-4
-                self.relative_magnetic_permeability = (
-                    self.absolute_magnetic_permeability / (4 * np.pi * 1e-7)
+            if (
+                absolute_magnetic_permeability is None
+                and relative_magnetic_permeability is None
+            ):
+                raise ValueError(
+                    "The magnetic permeability or relative magnetic permeability must be defined if 'material' is 'personalized"
                 )
-            elif material == "personalized":
-                self.material = "personalized"
 
-                if (
-                    absolute_magnetic_permeability is None
-                    and relative_magnetic_permeability is None
-                ):
-                    raise ValueError(
-                        "The magnetic permeability or relative magnetic permeability must be defined if 'material' is 'personalized"
-                    )
+            self.material = "personalized"
 
-                if not isinstance(
-                    absolute_magnetic_permeability, (float, int, type(None))
-                ):
-                    raise ValueError(
-                        "The absolute magnetic permeability can only be None, float or int"
-                    )
-                else:
-                    self.absolute_magnetic_permeability = absolute_magnetic_permeability
+            if relative_magnetic_permeability is None:
+                self.absolute_magnetic_permeability = absolute_magnetic_permeability
+                self.relative_magnetic_permeability = (
+                    absolute_magnetic_permeability / mu_0
+                )
 
-                if relative_magnetic_permeability is None:
-                    self.relative_magnetic_permeability = (
-                        self.absolute_magnetic_permeability / (4 * np.pi * 1e-7)
-                    )
-                elif isinstance(relative_magnetic_permeability, (float, int)):
-                    self.relative_magnetic_permeability = relative_magnetic_permeability
-                    self.absolute_magnetic_permeability = (
-                        self.relative_magnetic_permeability * 4 * np.pi * 1e-7
-                    )
-                else:
-                    raise ValueError(
-                        "The relative magnetic permeability can only be None or a float or int"
-                    )
+            elif isinstance(relative_magnetic_permeability, (float, int)):
+                self.relative_magnetic_permeability = relative_magnetic_permeability
+                self.absolute_magnetic_permeability = (
+                    relative_magnetic_permeability * mu_0
+                )
+
             else:
                 raise ValueError(
-                    "Material argument can only be iron, carbon_steel or personalized"
+                    "The relative magnetic permeability can only be None or a float or int"
                 )
         else:
-            raise ValueError("material argument can only be a string")
+            raise ValueError(
+                "Material argument can only be iron, carbon_steel or personalized"
+            )
 
     def _validate_shape(
         self, shape, dimensions, z_points, angular_points, grid_spacing
@@ -478,15 +473,12 @@ class Plate:
                 vertices.append([-sensor_vec[0], sensor_vec[1], -sensor_vec[2]])
             else:
                 vertices.append([sensor_vec[0], sensor_vec[1], sensor_vec[2]])
-        colinear = False
-        for num in range(len(vertices) - 1):
-            if Vector(vertices[num]) @ Vector(vertices[num + 1]) == 0:
-                colinear = True
-            else:
-                colinear = False
+        colinear = all(
+            Vector(vertices[i]) @ Vector(vertices[i + 1]) == 0
+            for i in range(len(vertices) - 1)
+        )
         if colinear:
             raise ValueError("All values cannot be colinear")
-
         return vertices
 
     def check_entry_dimensions(self, pt, rocket) -> None:

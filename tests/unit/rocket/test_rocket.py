@@ -1176,9 +1176,7 @@ def test_general_radius(calisto_robust):
     """
     prev = 0
     for z in np.linspace(-1.313 - 0.06, 1.16, 100):
-        current_radius = calisto_robust.general_radius(
-            z, frame="ucs"
-        )  
+        current_radius = calisto_robust.general_radius(z, frame="ucs")
         if -1.313 - 0.06 <= z <= -1.313:
             assert 0.0435 <= current_radius <= 0.0635
             assert current_radius > prev
