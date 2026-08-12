@@ -40,6 +40,7 @@ Attention: The newest changes should be on top -->
 
 ### Changed
 
+- CI: make the Gemini PR reviewer actually review [#1140](https://github.com/RocketPy-Team/RocketPy/pull/1140)
 - MNT: declare dependency floors the package can actually run on [#1108](https://github.com/RocketPy-Team/RocketPy/pull/1108)
 - CI: build the docs for pull requests into develop as well [#1104](https://github.com/RocketPy-Team/RocketPy/pull/1104)
 - CI: make changelog automation LLM-based (Gemini) and race-safe [#1082](https://github.com/RocketPy-Team/RocketPy/pull/1082)
