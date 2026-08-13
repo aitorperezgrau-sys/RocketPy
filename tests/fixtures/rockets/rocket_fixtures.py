@@ -424,6 +424,7 @@ def prometheus_rocket(generic_motor_cesaroni_M1520):
 def calisto_robust_with_magnetometer_wires_and_plates(
     noisy_rotated_magnetometer,
     calisto_robust,
+    test_communications_wire,
     test_ignition_wire_motor,
     test_ignition_wire_parachute,
     test_circular_plate,
@@ -432,7 +433,12 @@ def calisto_robust_with_magnetometer_wires_and_plates(
 
     calisto_robust.add_sensor(noisy_rotated_magnetometer, position=[0, 0, 0.5])
     calisto_robust.add_wire(
-        test_ignition_wire_motor, position_edges=[[0.002, 0.004, -0.3], [0.003, 0.001, -1.3]]
+        test_ignition_wire_motor,
+        position_edges=[[0.002, 0.004, -0.3], [0.003, 0.001, -1.3]],
+    )
+    calisto_robust.add_wire(
+        test_communications_wire,
+        position_edges=[[0.002, 0.004, -0.3], [0.003, 0.001, -1.3]],
     )
     calisto_robust.add_wire(
         test_ignition_wire_parachute,

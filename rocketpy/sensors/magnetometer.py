@@ -480,7 +480,7 @@ class Magnetometer(InertialSensor):
         # u[6:10]: Quaternion represents the center of dry mass with respect to the inertial frame.
         rotation_bacs_to_inertial = Matrix.transformation(
             u[6:10]
-        )  # rotation matrix from com to inertial frame
+        )  # rotation matrix from cdm to inertial frame
 
         # --- obtain the current longitude, latitude and elevation ---
         # obtain the sensor coordinates in the inertial frame, by adding the offset to the positon vector
@@ -510,12 +510,10 @@ class Magnetometer(InertialSensor):
         b_field_bacs = self.apply_magnetic_interference(
             b_field_bacs, rocket, current_time, parachute_events
         )  # T
-
         # Transform body frame (bacs) to sensor frame, includes the cross-axis sensitivity adjustment
         b_field_sensor = (
             self._total_rotation_sensor_to_body.transpose @ b_field_bacs
-        )  # T
-
+        )  # Ts
         # --- apply noise and quantize ---
         b_field_sensor = self.apply_temperature_drift(b_field_sensor)  # T
         b_field_sensor = self.apply_noise(b_field_sensor)  # T

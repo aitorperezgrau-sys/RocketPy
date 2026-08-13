@@ -273,6 +273,7 @@ def test_noisy_rotated_magnetometer(
     noisy_rotated_magnetometer,
     example_plain_env,
     calisto_robust_with_magnetometer_wires_and_plates,
+    test_communications_wire,
     test_circular_plate,
     test_personalized_plate,
     calisto_main_chute,
@@ -282,60 +283,48 @@ def test_noisy_rotated_magnetometer(
     Verifies coordinate transformations, magnetic field readings,
     hard/soft iron distortions and power interference.
     """
-    lat0, lon0, launch_site_elevation = (
-        example_plain_env.latitude,
-        example_plain_env.longitude,
-        example_plain_env.elevation,
-    )
-    earth_radius = example_plain_env.earth_radius
-    rotation_bacs_to_inertial = Matrix.transformation(U[6:10])
-
-    x_inertial, y_inertial, z_inertial = rotation_bacs_to_inertial @ [
+    sensor_from_bacs_list = [
         0.001,
         0.002,
         0.3,
-    ] + Vector(U[0:3])
+    ]
+    rotation_bacs_to_inertial = Matrix.transformation(U[6:10])
+
+    x_inertial, y_inertial, z_inertial = rotation_bacs_to_inertial @ Vector(
+        sensor_from_bacs_list
+    ) + Vector(U[0:3])
     b_north, b_east, b_down = noisy_rotated_magnetometer.obtain_magnetic_field(
         x_inertial,
         y_inertial,
         z_inertial,
-        launch_site_elevation,
-        earth_radius,
-        lat0,
-        lon0,
+        example_plain_env.elevation,
+        example_plain_env.earth_radius,
+        example_plain_env.latitude,
+        example_plain_env.longitude,
     )
     b_field_bacs = rotation_bacs_to_inertial.transpose @ Vector(
         [b_east, b_north, -b_down]
     )  # T
-    # expected measurement without noise
-    b_sensor = (
-        calisto_robust_with_magnetometer_wires_and_plates._total_rotation_sensor_to_body.transpose
-        @ b_field_bacs
-    )  # T
+    print(f"b field manual without any alteration: {b_field_bacs}")
+
     # apply magnetic interference:
-    hard_iron_distortion = [60e-6, 60e-6, 60e-6]
+    # soft iron
     soft_iron_matrix = Matrix.identity()
     for plate in [test_circular_plate, test_personalized_plate]:
-        plate.calculate_soft_iron_distortion_matrix(
-            noisy_rotated_magnetometer._sensor_from_bacs
-        )
-        soft_iron_matrix += plate._magnetic_distortion_matrixes(
-            noisy_rotated_magnetometer._sensor_from_bacs
-        )
+        plate.calculate_soft_iron_distortion_matrix(Vector(sensor_from_bacs_list))
+        soft_iron_matrix += plate._magnetic_distortion_matrixes[
+            tuple(sensor_from_bacs_list)
+        ]
+    b_field_bacs = soft_iron_matrix @ b_field_bacs
 
-    b_sensor = b_sensor @ soft_iron_matrix
-    b_sensor = b_sensor + hard_iron_distortion
+    # hard iron
+    b_field_bacs += Vector([60e-6] * 3)
 
-    bx, by, bz = b_sensor
-    noisy_rotated_magnetometer.measure(
-        time=TIME,
-        u=U,
-        u_dot=U_DOT,
-        relative_position=[0.001, 0.002, 0.3],
-        environment=example_plain_env,
-        rocket=calisto_robust_with_magnetometer_wires_and_plates,
-        parachute_events=[[6, calisto_main_chute]],
-    )
+    # communicatons interference
+    test_communications_wire.measure_magnetic_field(Vector(sensor_from_bacs_list))
+    b_field_bacs += test_communications_wire._magnetic_field[
+        tuple(sensor_from_bacs_list)
+    ]
 
     # noise, temperature drift and quantize
     cross_axis_sensitivity = Matrix(
@@ -349,9 +338,22 @@ def test_noisy_rotated_magnetometer(
         euler313_to_quaternions(*np.deg2rad([60, 60, 60]))
     )
     total_rotation = sensor_rotation @ cross_axis_sensitivity
-    b_field_sensor = total_rotation @ b_field_bacs
-    bx, by, bz = b_field_sensor
 
+    # expected measurement without noise (and without temperature drift, operating temperature is 298.15)
+    b_field_sensor = total_rotation.transpose @ b_field_bacs
+    # expected measurement with constant bias
+    bx, by, bz = b_field_sensor + Vector([1e-6] * 3)
+
+    # with measure
+    noisy_rotated_magnetometer.measure(
+        time=TIME,
+        u=U,
+        u_dot=U_DOT,
+        relative_position=Vector(sensor_from_bacs_list),
+        environment=example_plain_env,
+        rocket=calisto_robust_with_magnetometer_wires_and_plates,
+        parachute_events=[[6, calisto_main_chute]],
+    )
     # Assert that the sensor outputs the expected magnetic field
     assert noisy_rotated_magnetometer.measurement == approx([bx, by, bz], rel=0.1)
     assert len(noisy_rotated_magnetometer.measurement) == 3
@@ -371,8 +373,9 @@ def test_noisy_rotated_accelerometer(noisy_rotated_accelerometer, example_plain_
     inertial_acceleration = Vector(U_DOT[3:6]) + Vector([0, 0, -GRAVITY])
     omega = Vector(U[10:13])
     omega_dot = Vector(U_DOT[10:13])
+    body_acceleration = Matrix.transformation(U[6:10]).transpose @ inertial_acceleration
     acceleration = (
-        inertial_acceleration
+        body_acceleration
         + Vector.cross(omega_dot, relative_position)
         + Vector.cross(omega, Vector.cross(omega, relative_position))
     )

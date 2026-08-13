@@ -528,7 +528,6 @@ class InertialSensor(Sensor):
                 [self.cross_axis_sensitivity, self.cross_axis_sensitivity, 100],
             ]
         )
-
         # compute total rotation matrix given cross axis sensitivity
         self._total_rotation_sensor_to_body = (
             self.rotation_sensor_to_body @ cross_axis_matrix

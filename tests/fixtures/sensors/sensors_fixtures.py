@@ -18,14 +18,15 @@ def noisy_rotated_magnetometer():
         hard_iron_distortion=60e-6,
         soft_iron_distortion="plates",
         power_interference="wires",
-        noise_density=0.3e-6,
-        random_walk_density=0.02e-6,
+        noise_density=0.3e-7,
+        random_walk_density=0.02e-7,
         constant_bias=1e-6,
-        operating_temperature=298,
+        operating_temperature=298.15,
         temperature_bias=0.005e-6,
-        temperature_scale_factor=0.001,
-        cross_axis_sensitivity=0.002,
+        temperature_scale_factor=0.0001,
+        cross_axis_sensitivity=0.5,
         name="Magnetometer",
+        seed=42,
     )
 
 
