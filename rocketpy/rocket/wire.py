@@ -133,7 +133,6 @@ class Wire:
             else:
                 self.extra_ignition_time = extra_ignition_time
 
-
     def measure_magnetic_field(self, position_vector: list | tuple | Vector) -> None:
         """
         Measures the magnetic field on a given position_vector based on the position
@@ -150,36 +149,50 @@ class Wire:
         -------
         None
         """
-        # definition of the required values
-        r1 = self._wire_edges_bacs[0]  # m
-        r2 = self._wire_edges_bacs[1]  # m
+        r1 = self._wire_edges_bacs[0]  # starting edge
+        r2 = self._wire_edges_bacs[1]  # final end
 
-        r_v = Vector(position_vector)  # m
-        r_t = tuple(position_vector)  # m
+        r_v = Vector(position_vector)
+        r_t = tuple(position_vector)
 
-        l = r2 - r1  # m
-        self.wire_length = abs(l)  # m
+        l = r2 - r1  # Vector along the wire pointing in direction of current
+        self.wire_length = abs(l)
 
-        r1_v = r_v - r1  # m
-        r2_v = r_v - r2  # m
+        if self.wire_length < 1e-12:
+            self.magnetic_field[r_t] = [0.0, 0.0, 0.0]
+            self._magnetic_field[r_t] = Vector([0.0, 0.0, 0.0])
+            return
 
-        cross_r1_r2 = r1_v ^ r2_v
-        cross_norm_r1_r2 = abs(cross_r1_r2)
+        r1_v = r_v - r1
+        r2_v = r_v - r2
 
-        dot_term = l.unit_vector @ (r1_v.unit_vector - r2_v.unit_vector)
+        cross_l_r1 = l ^ r1_v
+        cross_norm = abs(cross_l_r1)
 
-        if (
-            cross_norm_r1_r2 < 1e-12
-        ):  # along the same line, cross product is zero -> magnetic field is 0
+        if cross_norm < 1e-12:
             b_v = Vector([0, 0, 0])
-            warnings.warn('The wire is along the same line as the position vector, thus the magnetic field is 0', UserWarning)
+            warnings.warn(
+                "The wire is along the same line as the position vector, thus the magnetic field is 0",
+                UserWarning,
+            )
         else:
+            l_unit = l / self.wire_length
+            cos_theta1 = (
+                l_unit @ r1_v.unit_vector
+            )  
+            cos_theta2 = (
+                l_unit @ r2_v.unit_vector
+            )  
+
             b_v = (
-                (1e-7 * self.current) * (cross_r1_r2 / (cross_norm_r1_r2**2)) * dot_term
-            )  # T
+                (1e-7 * self.current)
+                * (cross_l_r1 / (cross_norm**2))
+                * (cos_theta1 - cos_theta2)
+                * self.wire_length
+            )
+
         self.magnetic_field[r_t] = list(b_v)
         self._magnetic_field[r_t] = b_v
-
 
     def define_magnetic_field(
         self,

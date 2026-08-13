@@ -61,25 +61,44 @@ def test_define_magnetic_field(test_communications_wire):
     )
 
 
-def test_current_directon(calisto_robust):
+def test_current_directon(calisto_with_sensors):
     horizontal_wire_1 = Wire(10, wire_type="communications", name="horizontal_wire")
     horizontal_wire_2 = Wire(10, wire_type="communications", name="horizontal_wire")
-    calisto_robust.add_wire(horizontal_wire_1, [[0.001, 0.001, 0], [0.001, -0.001, 0]])
-    calisto_robust.add_wire(horizontal_wire_2, [[0.001, -0.001, 0], [0.001, 0.001, 0]])
+    calisto_with_sensors.add_wire(horizontal_wire_1, [[0.001, 0.001, 0], [0.001, -0.001, 0]])
+    calisto_with_sensors.add_wire(horizontal_wire_2, [[0.001, -0.001, 0], [0.001, 0.001, 0]])
 
-    horizontal_wire_1.measure_magnetic_field([0, 0, 0])
+    horizontal_wire_1.measure_magnetic_field([0, 0, 0]) 
     horizontal_wire_2.measure_magnetic_field([0, 0, 0])
 
-    # calisto_robust has the same user defined coordinate  as the body axis coordinate system (center at cdm and orientation tail to nose)
     b_field_1 = horizontal_wire_1._magnetic_field[(0, 0, 0)]
     b_field_2 = horizontal_wire_2._magnetic_field[(0, 0, 0)]
-    assert b_field_1[0] == 0
-    assert b_field_1[1] == 0
-    assert b_field_2[0] == 0
+
+    # given the calisto_robust frame, [0, 0, 0] is the center of dry mass WITHOUT THE MOTOR, 
+    # However the bacs frame in which the magnetic field is calculated is slighlty bellow along the z axis
+    # As a result, following right-hand rule the x component won't be 0, but a really small number, and in opposite directions
+    # In y axis since they are symmetrical component of both field will be 0
+    # In the z axis they will oppose since the direciton is opposite
+    assert b_field_1[0] == pytest.approx(0, abs=1e-6)
+    assert b_field_1[1] == 0 
+    assert b_field_2[0] == pytest.approx(0, abs=1e-6)
     assert b_field_2[1] == 0
+    assert b_field_1[0] == - b_field_2[0]
     assert b_field_2[2] != 0
     assert b_field_1[2] != 0
-    assert b_field_2[2] == -b_field_1[2]
+    assert b_field_2[2] == - b_field_1[2]
+
+def test_dimension_increase(calisto_with_sensors):
+    closer_wire = Wire(10, wire_type="communications", name="horizontal_wire")
+    farther_wire = Wire(10, wire_type="communications", name="horizontal_wire")
+    calisto_with_sensors.add_wire(closer_wire, [[0.001, 0.001, 0], [0.001, -0.001, 0]])
+    calisto_with_sensors.add_wire(farther_wire, [[0.001, 0.001, 0], [0.001, -0.001, 0]])
+
+    closer_wire.measure_magnetic_field([0, 0, 0]) 
+    farther_wire.measure_magnetic_field([-0.4, 0, 0])
+
+    b_field_closer = closer_wire._magnetic_field[(0, 0, 0)]
+    b_field_farther = farther_wire._magnetic_field[(-0.4, 0, 0)]
+    assert abs(b_field_closer) > abs(b_field_farther) # closer wire must have a higher magnetic field
 
 def test_from_dict():
     wire_dict = {

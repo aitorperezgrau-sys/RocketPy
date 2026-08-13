@@ -1012,5 +1012,5 @@ class Magnetometer(InertialSensor):
             temperature_bias=data.get("temperature_bias", 0),
             temperature_scale_factor=data.get("temperature_scale_factor", 0),
             cross_axis_sensitivity=data.get("cross_axis_sensitivity", 0),
-            seed = data.get("seed", None)
+            seed=data.get("seed", None),
         )
