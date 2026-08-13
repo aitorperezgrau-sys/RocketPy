@@ -249,7 +249,7 @@ class Accelerometer(InertialSensor):
             + Vector.cross(omega_dot, r)
             + Vector.cross(omega, Vector.cross(omega, r))
         )
-        a_sensor = self._total_rotation_sensor_to_body @ a_body
+        a_sensor = self._total_rotation_sensor_to_body.transpose @ a_body
         # Apply noise + bias and quantize
         a_sensor = self.apply_noise(a_sensor)
         a_sensor = self.apply_temperature_drift(a_sensor)

@@ -303,7 +303,6 @@ def calisto_with_sensors(
     calisto.add_sensor(ideal_barometer, (0, 0, -0.1180124376577797))
     calisto.add_sensor(ideal_gnss, (0, 0, -0.1180124376577797))
     calisto.add_sensor(ideal_magnetometer, (0, 0, -0.1180124376577797))
-    calisto.add_sensor(ideal_magnetometer, (0, 0, -0.1180124376577797))
     return calisto
 
 

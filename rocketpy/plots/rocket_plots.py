@@ -798,11 +798,11 @@ class _RocketPlots:
         ax, _, _ = self._rocket_shape_plot(vis_args, plane)
 
         if wires == "all":
-            wires_list = self.rocket.ignition_wires + self.rocket.communication_wires
+            wires_list = self.rocket._ignition_wires + self.rocket._communication_wires
         elif wires == "communication_wires":
-            wires_list = self.rocket.communication_wires
+            wires_list = self.rocket._communication_wires
         elif wires == "ignition_wires":
-            wires_list = self.rocket.ignition_wires
+            wires_list = self.rocket._ignition_wires
         else:
             raise ValueError(
                 "Only communication_wires, ignition_wires or all are valid inputs"
@@ -901,7 +901,10 @@ class _RocketPlots:
 
         ax, _, _ = self._rocket_shape_plot(vis_args, plane)
 
-        plates_list = self.rocket.plates
+        if self.rocket.plates:
+            plates_list, _, _ = zip(*self.rocket.plates)
+        else:
+            plates_list = ()
 
         if isinstance(color, str):
             if color == "default":

@@ -189,10 +189,8 @@ class Rocket:
         RailButtons object containing the rail buttons information.
     Rocket.motor : Motor
         Rocket's motor. See Motor class for more details.
-    Rocket.communication_wires: list[Wire]
-        Collection of the communication wires attached to the rocket.
-    Rocket.ignition_wires: list[Wire]
-        Collection of the ignition wires attached to the rocket.
+    Rocket.wires: list[Wire]
+        Collection of all the attached to the rocket.
     Rocket.plates: list[Plate]
         Collection of the plates attached to the rocket.
     Rocket.motor_position : float
@@ -384,8 +382,9 @@ class Rocket:
         self.parachutes = []
         self._controllers = []
         self.air_brakes = []
-        self.communication_wires = []
-        self.ignition_wires = []
+        self._communication_wires = []
+        self._ignition_wires = []
+        self.wires = Components()
         self.plates = []
         self.sensors = Components()
         self.aerodynamic_surfaces = Components()
@@ -1962,9 +1961,10 @@ class Rocket:
         wire._rocket_belonging(self)
 
         if wire.wire_type == "communications":
-            self.communication_wires.append(wire)
+            self._communication_wires.append(wire)
         elif wire.wire_type == "ignition":
-            self.ignition_wires.append(wire)
+            self._ignition_wires.append(wire)
+        self.wires.add(wire, position_edges)
 
     def _define_3d_edges(
         self, position_edges: list | tuple[tuple | list | float | int]
@@ -2073,7 +2073,7 @@ class Rocket:
                     f"The defiend height must be inside the rocket which has a range of: {range_z} in the user frame"
                 )
         plate.define_plate_position(self, position, height)
-        self.plates.append(plate)
+        self.plates.append([plate, position, height])
 
     def add_air_brakes(
         self,
@@ -2646,6 +2646,8 @@ class Rocket:
             "air_brakes": self.air_brakes,
             "_controllers": self._controllers,
             "sensors": self.sensors,
+            "wires": self.wires,
+            "plates": self.plates,
         }
 
         if kwargs.get("include_outputs", False):
@@ -2787,10 +2789,10 @@ class Rocket:
                         )
             rocket._add_controllers(controller)
 
-        for wire, position_edges in data["wires"]:
+        for wire, position_edges in data.get("wires", []):
             rocket.add_wire(wire, position_edges)
 
-        for plate, position, height in data["plate"]:
+        for plate, position, height in data.get("plate", []):
             rocket.add_plate(plate, position, height)
 
         return rocket

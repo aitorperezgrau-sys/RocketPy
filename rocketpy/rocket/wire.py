@@ -1,4 +1,5 @@
 import math as m
+import warnings
 
 from rocketpy.mathutils.vector_matrix import Vector
 from rocketpy.plots.wire_plots import _WirePlots
@@ -132,6 +133,7 @@ class Wire:
             else:
                 self.extra_ignition_time = extra_ignition_time
 
+
     def measure_magnetic_field(self, position_vector: list | tuple | Vector) -> None:
         """
         Measures the magnetic field on a given position_vector based on the position
@@ -159,24 +161,25 @@ class Wire:
         self.wire_length = abs(l)  # m
 
         r1_v = r_v - r1  # m
-        r1_v = r_v - r2  # m
+        r2_v = r_v - r2  # m
 
-        cross_r1_r2 = r1_v ^ r1_v
+        cross_r1_r2 = r1_v ^ r2_v
         cross_norm_r1_r2 = abs(cross_r1_r2)
 
-        dot_term = l @ (r1_v.unit_vector - r1_v.unit_vector)
+        dot_term = l.unit_vector @ (r1_v.unit_vector - r2_v.unit_vector)
 
         if (
             cross_norm_r1_r2 < 1e-12
         ):  # along the same line, cross product is zero -> magnetic field is 0
             b_v = Vector([0, 0, 0])
+            warnings.warn('The wire is along the same line as the position vector, thus the magnetic field is 0', UserWarning)
         else:
             b_v = (
                 (1e-7 * self.current) * (cross_r1_r2 / (cross_norm_r1_r2**2)) * dot_term
             )  # T
-
         self.magnetic_field[r_t] = list(b_v)
         self._magnetic_field[r_t] = b_v
+
 
     def define_magnetic_field(
         self,

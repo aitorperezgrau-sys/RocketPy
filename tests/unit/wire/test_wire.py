@@ -77,8 +77,9 @@ def test_current_directon(calisto_robust):
     assert b_field_1[1] == 0
     assert b_field_2[0] == 0
     assert b_field_2[1] == 0
+    assert b_field_2[2] != 0
+    assert b_field_1[2] != 0
     assert b_field_2[2] == -b_field_1[2]
-
 
 def test_from_dict():
     wire_dict = {

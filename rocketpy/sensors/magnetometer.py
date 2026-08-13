@@ -636,7 +636,7 @@ class Magnetometer(InertialSensor):
         """
         if self.initial_soft_iron_distortion_matrix == "plates":
             if not self.total_soft_iron_distortion_matrix_computed:
-                for plate in rocket.plates:
+                for plate, _, _ in rocket.plates:
                     if (
                         not self.sensor_from_bacs_t
                         in plate._magnetic_distortion_matrixes
@@ -656,7 +656,6 @@ class Magnetometer(InertialSensor):
             b_field_distorted = self._soft_iron_distortion_matrix @ b_field
 
         self.soft_iron_distortion_difference = list(b_field_distorted - b_field)
-
         return b_field_distorted
 
     def apply_hard_iron(self, b_field: Vector) -> Vector:
@@ -757,9 +756,9 @@ class Magnetometer(InertialSensor):
             interference.
         """
         if self.initial_communications_interference == "wires":
-            if rocket.communication_wires:
+            if rocket._communication_wires:
                 if not self.communications_computed:
-                    for communication_wire in rocket.communication_wires:
+                    for communication_wire in rocket._communication_wires:
                         communication_wire.measure_magnetic_field(
                             self._sensor_from_bacs
                         )
@@ -828,9 +827,9 @@ class Magnetometer(InertialSensor):
         """
 
         if self.initial_activation_signal_interference == "wires":
-            if rocket.ignition_wires:
+            if rocket._ignition_wires:
                 self.activation_signal_interference = [0, 0, 0]
-                for ignition_wire in rocket.ignition_wires:
+                for ignition_wire in rocket._ignition_wires:
                     if ignition_wire.ignition_wire_function == "parachute_deployment":
                         b_field = (
                             self.calculate_activation_signal_interference_parachute(
@@ -1013,4 +1012,5 @@ class Magnetometer(InertialSensor):
             temperature_bias=data.get("temperature_bias", 0),
             temperature_scale_factor=data.get("temperature_scale_factor", 0),
             cross_axis_sensitivity=data.get("cross_axis_sensitivity", 0),
+            seed = data.get("seed", None)
         )

@@ -125,12 +125,15 @@ def test_seed_survives_serialization_round_trip():
                 sampling_rate=1, position_accuracy=5.0, altitude_accuracy=5.0, seed=44
             ),
             44,
+        ),
+        (
             Magnetometer(
-                sampling_rate=10, noise_density=1.0, noise_variance=1.0, seed=11
+                sampling_rate=10, noise_density=1.0, noise_variance=1.0, seed=55
             ),
             55,
         ),
     ]
+
     for sensor, seed in cases:
         assert sensor.to_dict()["seed"] == seed
         data = json.loads(json.dumps(sensor.to_dict(), cls=RocketPyEncoder))

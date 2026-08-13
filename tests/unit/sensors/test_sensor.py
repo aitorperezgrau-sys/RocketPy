@@ -305,8 +305,6 @@ def test_noisy_rotated_magnetometer(
     b_field_bacs = rotation_bacs_to_inertial.transpose @ Vector(
         [b_east, b_north, -b_down]
     )  # T
-    print(f"b field manual without any alteration: {b_field_bacs}")
-
     # apply magnetic interference:
     # soft iron
     soft_iron_matrix = Matrix.identity()
@@ -374,12 +372,11 @@ def test_noisy_rotated_accelerometer(noisy_rotated_accelerometer, example_plain_
     omega = Vector(U[10:13])
     omega_dot = Vector(U_DOT[10:13])
     body_acceleration = Matrix.transformation(U[6:10]).transpose @ inertial_acceleration
-    acceleration = (
+    a_body = (
         body_acceleration
         + Vector.cross(omega_dot, relative_position)
         + Vector.cross(omega, Vector.cross(omega, relative_position))
     )
-
     # calculate total rotation matrix
     cross_axis_sensitivity = Matrix(
         [
@@ -391,15 +388,13 @@ def test_noisy_rotated_accelerometer(noisy_rotated_accelerometer, example_plain_
     sensor_rotation = Matrix.transformation(
         euler313_to_quaternions(*np.deg2rad([60, 60, 60]))
     )
-    total_rotation = sensor_rotation @ cross_axis_sensitivity
-    rocket_rotation = Matrix.transformation(U[6:10]).transpose
-    # expected measurement without noise
-    ax, ay, az = total_rotation @ (rocket_rotation @ acceleration)
+    total_rotation_sensor_to_body = sensor_rotation @ cross_axis_sensitivity
+    # expected measurement without noise in sensor frame
+    ax, ay, az = total_rotation_sensor_to_body.transpose @ a_body
     # expected measurement with constant bias
     ax += 0
     ay += 0.3
     az += 0.5
-
     # check last measurement considering noise error bounds
     noisy_rotated_accelerometer.measure(
         time=TIME,
