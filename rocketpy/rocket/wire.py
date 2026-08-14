@@ -177,12 +177,8 @@ class Wire:
             )
         else:
             l_unit = l / self.wire_length
-            cos_theta1 = (
-                l_unit @ r1_v.unit_vector
-            )  
-            cos_theta2 = (
-                l_unit @ r2_v.unit_vector
-            )  
+            cos_theta1 = l_unit @ r1_v.unit_vector
+            cos_theta2 = l_unit @ r2_v.unit_vector
 
             b_v = (
                 (1e-7 * self.current)
