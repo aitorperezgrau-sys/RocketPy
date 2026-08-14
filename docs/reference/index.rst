@@ -16,6 +16,8 @@ This reference manual details functions, modules, methods and attributes include
    classes/Parachute
    classes/sensors/index.rst
    classes/Flight
+   classes/Wire
+   classes/Plate
    Utilities <classes/utils/index>
    classes/EnvironmentAnalysis
    Monte Carlo Analysis <classes/monte_carlo/index>
