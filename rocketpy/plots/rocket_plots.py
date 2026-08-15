@@ -921,7 +921,12 @@ class _RocketPlots:
         plt.ylim([-self.rocket.radius * 4, self.rocket.radius * 6])
         plt.xlabel("Position (m)")
         plt.ylabel("Radius (m)")
-        plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left", handlelength=0.8, handleheight=0.6)
+        plt.legend(
+            bbox_to_anchor=(1.05, 1),
+            loc="upper left",
+            handlelength=0.8,
+            handleheight=0.6,
+        )
         plt.tight_layout()
         show_or_save_plot(filename)
 
@@ -977,6 +982,7 @@ class _RocketPlots:
     ) -> tuple[Axes, float, float]:
         """
         This is an auxiliary function that plots the outline of the rocket
+        including the aerodynamic surfaces. 
 
         Parameters
         ----------
