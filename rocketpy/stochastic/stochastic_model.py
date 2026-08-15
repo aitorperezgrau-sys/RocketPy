@@ -694,9 +694,11 @@ class StochasticModel:
            stochastic inputs (constructor kwargs), not every attribute on
            ``self``. This avoids treating opaque tuples such as
            ``initial_solution`` as ``(nominal, spread, sampler)`` triples.
-            a. If the attribute is a tuple, the value is generated using the\
-                distribution function specified in the tuple.
-            b. If the attribute is a list, the value is randomly chosen from the list.
+
+           a. If the attribute is a tuple, the value is generated using the
+              distribution function specified in the tuple.
+           b. If the attribute is a list, the value is randomly chosen from
+              the list.
         """
         generated_dict = {}
         for arg in self.__stochastic_dict:
