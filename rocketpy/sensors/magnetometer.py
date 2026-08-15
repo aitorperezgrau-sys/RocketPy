@@ -76,8 +76,8 @@ class Magnetometer(InertialSensor):
     measured_data : list
         The stored measured data of the sensor after quantization, noise and
         temperature drift.
-    wmm : WMM
-        WMM object from pywmm library. Details on its GitHub repository:
+    wmm : WMMv2
+        WMMv2 object from pywmm library. Details on its GitHub repository:
         https://github.com/dougc95/pywmm/tree/main
     year : float
         Current decimal year.
@@ -262,7 +262,6 @@ class Magnetometer(InertialSensor):
 
     def _validate_soft_iron(self, soft_iron_distortion) -> None:
         """Checks and defines the soft_iron_distortion parameter."""
-        # initialize soft_iron_distortion attribute
         if isinstance(soft_iron_distortion, Matrix):
             self._soft_iron_distortion_matrix = soft_iron_distortion
             self.soft_iron_distortion_difference = []
@@ -287,20 +286,13 @@ class Magnetometer(InertialSensor):
     def _validate_power_personalized_parameters(
         self, activation_signal_interference, communications_interference
     ) -> None:
-        """Checks and defines the parameters related to the power interference.
-
-        Returns
-        -------
-        None
-        """
-
+        """Checks and defines the parameters related to the power interference."""
         if (
             activation_signal_interference is None
             or communications_interference is None
         ):
             raise ValueError(
-                "For 'personalized' interference, you must provide values for both "
-                "activation_signal_interference and communications_interference."
+                "For 'personalized' interference, you must provide values for both 'activation_signal_interference' and 'communications_interference'."
             )
 
         self._validate_activation_signal_interference(activation_signal_interference)
@@ -309,12 +301,7 @@ class Magnetometer(InertialSensor):
     def _validate_activation_signal_interference(
         self, activation_signal_interference
     ) -> None:
-        """Checks activation signal interference and defines the related attributes.
-
-        Returns
-        -------
-        None
-        """
+        """Checks activation signal interference and defines the related attributes."""
 
         if isinstance(activation_signal_interference, str):
             if activation_signal_interference.lower() == "wires":
@@ -334,12 +321,7 @@ class Magnetometer(InertialSensor):
     def _validate_communications_interference(
         self, communications_interference
     ) -> None:
-        """Checks communications interference and defines the related attributes.
-
-        Returns
-        -------
-        None
-        """
+        """Checks communications interference and defines the related attributes."""
 
         if isinstance(communications_interference, str):
             if communications_interference.lower() == "wires":
@@ -379,8 +361,10 @@ class Magnetometer(InertialSensor):
                 State vector of the rocket.
                 u = [x, y, z, vx, vy, vz, e0, e1, e2, e3, wx, wy, wz]
 
-            - rocket : Rocket
-                Rocketpy Rocket class
+            - rocket : Rocket, optional
+                Rocketpy Rocket class. It is necessary when the magnetic distortion is modelled
+                using wires or plates. If there is no magnetic distortion, or it is defined using the
+                distortion directly is not necessary.
 
             - u_dot : np.array
                 Derivative of the state vector of the rocket.
@@ -395,10 +379,6 @@ class Magnetometer(InertialSensor):
                 List that stores parachute events triggered during flight.
                 it is a list formed by lists which contain the trigger time
                 as the first element and the parachute object as the second.
-
-        Returns
-        -------
-        None
         """
         # initialization of parameters
         u = kwargs["u"]  # state vector
@@ -521,8 +501,7 @@ class Magnetometer(InertialSensor):
         current_time: float | int,
         parachute_events: list | None = None,
     ) -> Vector:
-        """
-        Applies the magnetic distortion due to the power interference,
+        """Applies the magnetic distortion due to the power interference,
         hard iron and soft iron.
 
         Parameters
@@ -567,8 +546,7 @@ class Magnetometer(InertialSensor):
         return b_field
 
     def apply_soft_iron(self, b_field: Vector, rocket: Rocket) -> Vector:
-        """
-        Applies the soft iron distortion which is the distortion
+        """Applies the soft iron distortion which is the distortion
         of the magnetic field due to the higher magnetic permeability of
         some materials relative to the permeability of vacuum. This entails,
         that they have smaller magnetic resistance resulting in a bending of
@@ -611,8 +589,7 @@ class Magnetometer(InertialSensor):
         return b_field_distorted
 
     def apply_hard_iron(self, b_field: Vector) -> Vector:
-        """
-        Applies the hard iron distortion. This magnetic distortion is
+        """Applies the hard iron distortion. This magnetic distortion is
         caused by permanent magnets or magnetized materials on the
         rocket itself that move along with the sensor (from steel screws,
         battery casing, ferromagnetic components), thus it is a constant
@@ -638,8 +615,7 @@ class Magnetometer(InertialSensor):
         current_time: float,
         parachute_events: list | None = None,
     ) -> Vector:
-        """
-        Applies the electromagnetic interference to the magnetic field vector,
+        """Applies the electromagnetic interference to the magnetic field vector,
         when a signal is triggered. It considers that there is electron flow,
         thus, a generation of magnetic field, when the conditions for the trigger
         are fulfilled if it is a ignition wire, or always when it is a
@@ -688,8 +664,7 @@ class Magnetometer(InertialSensor):
     def apply_communications_interference(
         self, b_field: Vector, rocket: Rocket
     ) -> Vector:
-        """
-        Applies the interference caused due to the current flowing
+        """Applies the interference caused due to the current flowing
         through the communication wires.
 
         Parameters
@@ -750,8 +725,7 @@ class Magnetometer(InertialSensor):
         current_time: float,
         parachute_events: list | None = None,
     ) -> Vector:
-        """
-        Applies the magnetic interference caused due to the current
+        """Applies the magnetic interference caused due to the current
         flowing through the ignition wires, during an activation signal.
 
         Parameters
@@ -896,7 +870,7 @@ class Magnetometer(InertialSensor):
             b_field = b_field + ignition_wire._magnetic_field[self.sensor_from_bacs_t]
         return b_field
 
-    def export_measured_data(self, filename, file_format="csv"):
+    def export_measured_data(self, filename, file_format="csv") -> None:
         """Exports the measured values to a file.
 
         Parameters
@@ -906,11 +880,6 @@ class Magnetometer(InertialSensor):
         file_format : str
             Format of the file to export the values to. Options are "csv" and
             "json". Default is "csv".
-
-        Returns
-        -------
-        None
-
         """
         self._generic_export_measured_data(
             filename=filename,

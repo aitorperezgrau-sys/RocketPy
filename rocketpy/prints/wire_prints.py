@@ -38,13 +38,9 @@ class _WirePrints:
     def magnetic_field_vectors(self) -> None:
         """Prints the magnetic field vectors stored in the wire for all recorded positions."""
         for position, b_field in self.wire.magnetic_field.items():
-            if b_field is None:
+            if position is not None:
                 print(
-                    f"Magnetic field vector at position {position} hasn't been measured yet."
-                )
-            else:
-                print(
-                    f"Magnetic field vector at position {position} due to the wire is {b_field}"
+                    f"Magnetic field vector at position {position} due to the wire is {b_field} T"
                 )
 
     def all(self):

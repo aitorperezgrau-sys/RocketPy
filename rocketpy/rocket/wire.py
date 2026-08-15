@@ -82,16 +82,12 @@ class Wire:
     def _validate_parameters(
         self, current, extra_ignition_time, wire_type, ignition_wire_function
     ) -> None:
-        """
-        Check and defines several attributes of wire.
-        """
+        """Check and defines several attributes of wire."""
         self._validate_wire_type(wire_type, ignition_wire_function)
         self._validate_numbers(current, extra_ignition_time)
 
     def _validate_wire_type(self, wire_type, ignition_wire_function) -> None:
-        """
-        Check and defines the attributes related to the type of wire.
-        """
+        """Check and defines the attributes related to the type of wire."""
         if isinstance(wire_type, str):
             if wire_type == "communications":
                 self.wire_type = "communications"
@@ -110,9 +106,7 @@ class Wire:
             raise ValueError("Wire type must be a string.")
 
     def _validate_numbers(self, current, extra_ignition_time) -> None:
-        """
-        Checks and defines the attributes related to the wire physical characteristics.
-        """
+        """Checks and defines the attributes related to the wire physical characteristics."""
         if not isinstance(current, (float, int)):
             raise ValueError("Current must be a float or int.")
         else:
@@ -126,8 +120,7 @@ class Wire:
                 self.extra_ignition_time = extra_ignition_time
 
     def measure_magnetic_field(self, position_vector: list | tuple | Vector) -> None:
-        """
-        Measures the magnetic field on a given position_vector based on the position
+        """Measures the magnetic field on a given position_vector based on the position
         of the edges of the wire. The magnetic field is calculated assuming that the
         wire is straight.
 
@@ -183,8 +176,7 @@ class Wire:
         position_vector: list | tuple | Vector,
         magnetic_field: float | int | list | tuple | Vector,
     ) -> None:
-        """
-        Allows to define the magnetic field at a certain point and this will the
+        """Allows to define the magnetic field at a certain point and this will the
         value used for the calculations.
 
         Parameters

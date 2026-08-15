@@ -345,8 +345,7 @@ class Plate:
         self,
         rocket,
     ) -> None:
-        """
-        Generates a 3D grid of points bounded by an arbitrary set of vertices,
+        """Generates a 3D grid of points bounded by an arbitrary set of vertices,
         forced flat, and filtered to remain inside the rocket.
 
         Parameters
@@ -394,8 +393,7 @@ class Plate:
         self.points = final_3d_points
 
     def _vertices_definition(self, rocket) -> list:
-        """
-        Defines the vertices in the BACS frame.
+        """Defines the vertices in the BACS frame.
         Parameters
         ----------
         rocket: Rocket
@@ -428,8 +426,7 @@ class Plate:
         return vertices
 
     def _check_entry_dimensions(self, pt, rocket) -> None:
-        """
-        Check whether the points passed when shape is personalized are inside the rocket
+        """Check whether the points passed when shape is personalized are inside the rocket
         and in the case it is wrong prints why.
 
         Parameters
