@@ -61,7 +61,6 @@ class _WirePlots:
             Accepted options are 'xz' and 'yz'
             Default value is 'xz'. 
         color : str, optional
-            Color of the points. 
             A full list of color names can be found at:
             https://matplotlib.org//gallery/color/named_colors
             Default is 'salmon'. 
@@ -102,7 +101,6 @@ class _WirePlots:
         ax, _, _ = self.rocket.plots._rocket_shape_plot(vis_args, plane)
         self._draw_wires(ax, plane, color, marker, linestyle, edges_names)
 
-        plt.title(f"{self.wire.name} representation")
         plt.xlim()
         plt.ylim([-self.rocket.radius * 4, self.rocket.radius * 6])
         plt.xlabel("Position (m)")
@@ -178,19 +176,19 @@ class _WirePlots:
         if edges_names is True:
             ax.scatter(z, r, marker=marker, color=color, zorder=5, label="Wire edges")
 
-            # Add text labels
             ax.annotate(
                 "Edge A",
-                (edge_a_z, r_a),
+                xy=(edge_a_z, r_a),
+                xytext=(6, 10),
                 textcoords="offset points",
-                xytext=(5, 5),
                 fontsize=9,
             )
+
             ax.annotate(
                 "Edge B",
-                (edge_b_z, r_b),
+                xy=(edge_b_z, r_b),
+                xytext=(6, -14),
                 textcoords="offset points",
-                xytext=(5, 5),
                 fontsize=9,
             )
         elif not edges_names:

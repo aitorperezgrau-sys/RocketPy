@@ -756,7 +756,7 @@ class _RocketPlots:
             Accepted options are 'xz' and 'yz'. 
             Default value is 'xz'. 
         color : str, list optional
-            Color of the points. If it is a list, it must contain one
+            Color of the wires. If it is a list, it must contain one
             color for each wire. 
             A full list of color names can be found at:
             https://matplotlib.org//gallery/color/named_colors
@@ -829,10 +829,10 @@ class _RocketPlots:
         plt.ylim([-self.rocket.radius * 4, self.rocket.radius * 6])
         plt.xlabel("Position (m)")
         plt.ylabel("Radius (m)")
-        leg = ax.legend()
-        for line in leg.get_lines():
-            line.set_linewidth(2.0)
-        plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+        leg = plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+        if leg:
+            for handle in leg.legend_handles:
+                handle.set_linewidth(2.0)
         plt.tight_layout()
         show_or_save_plot(filename)
 
@@ -890,7 +890,6 @@ class _RocketPlots:
                 "buttons": "black",
                 "line_width": 1.0,
             }
-
         ax, _, _ = self._rocket_shape_plot(vis_args, plane)
 
         if self.rocket.plates:
@@ -913,7 +912,8 @@ class _RocketPlots:
         else:
             raise ValueError("The accepted entries for color are str or list or tuple")
 
-        for plate, color_plate in zip(plates_list, color_list):
+        sorted_plates_list = sorted(plates_list, key=lambda p: p.area, reverse=True)
+        for plate, color_plate in zip(sorted_plates_list, color_list):
             plate.plots._plot_plate_rocket(ax, plane, color_plate)
 
         plt.title("Plates representation")
@@ -921,10 +921,7 @@ class _RocketPlots:
         plt.ylim([-self.rocket.radius * 4, self.rocket.radius * 6])
         plt.xlabel("Position (m)")
         plt.ylabel("Radius (m)")
-        leg = ax.legend()
-        for line in leg.get_lines():
-            line.set_linewidth(2.0)
-        plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+        plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left", handlelength=0.8, handleheight=0.6)
         plt.tight_layout()
         show_or_save_plot(filename)
 

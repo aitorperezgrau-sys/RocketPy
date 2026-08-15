@@ -23,7 +23,6 @@ class _PlatePlots:
         """
         self.plate = plate
         self.rocket = None
-        self.color = None
 
     def draw_3d(
         self,
@@ -74,8 +73,6 @@ class _PlatePlots:
             raise ValueError(
                 "Plate points list is empty. Add the plate to a rocket before plotting."
             )
-        if self.color is None:
-            self.color = color
         # from bacs to usc
         x, y, z = zip(*self.plate.points)
         if self.rocket._csys == -1:
@@ -88,7 +85,7 @@ class _PlatePlots:
         fig = plt.figure(figsize=(8, 6))
         ax = fig.add_subplot(111, projection="3d")
         # plot individual points
-        ax.scatter(x, y, z, color=self.color, marker=marker, label=self.plate.name)
+        ax.scatter(x, y, z, color=color, marker=marker, label=self.plate.name)
         ax.view_init(elev=elev, azim=azim)
         if self.rocket._csys == 1:
             ax.invert_xaxis()
@@ -137,8 +134,6 @@ class _PlatePlots:
             Accepted options are 'xz' and 'yz'.
             Default value is 'xz'. 
         color : str, optional
-            Color of the points, the color will be taken as the color defined
-            in the first call to a plot function. 
             A full list of color names can be found at:
             https://matplotlib.org//gallery/color/named_colors
             Default is 'darkgreen'. 
@@ -152,8 +147,6 @@ class _PlatePlots:
             raise ValueError(
                 "Plate points list is empty. Add the plate to a rocket before plotting."
             )
-        if self.color is None:
-            self.color = color
         if vis_args is None:
             vis_args = {
                 "background": "#EEEEEE",
@@ -169,37 +162,23 @@ class _PlatePlots:
         ax, _, _ = self.rocket.plots._rocket_shape_plot(vis_args, plane)
         self._plot_plate_rocket(ax, plane, color)
 
-        plt.title("Plate representation")
         plt.ylim([-self.rocket.radius * 4, self.rocket.radius * 6])
         plt.xlabel("Position (m)")
         plt.ylabel("Radius (m)")
-        plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+        plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left", handlelength=0.8, handleheight=0.6)
         plt.tight_layout()
         show_or_save_plot(filename)
 
     def _plot_plate_rocket(
         self, ax, plane: str = "xz", color: str = "darkgreen"
     ) -> None:
-        """Plots the plate on the rocket:
 
-        Parameters
-        ----------
-        plane : str, optional
-            Plane that it is wanted to be represented:
-            Accepted options are 'xz' and 'yz'
-            Default value is 'xz'.
-        color : str, optional
-            Color of the points, the color will be taken as the color defined
-            in the first call to a plot function.
-            https://matplotlib.org//gallery/color/named_colors
-            Default is 'darkgreen'.
-        """
-        if self.color is None:
-            self.color = color
-        x, y, z = zip(*self.plate.points)  # in the bacs frame z tail to nose
+        x, y, z = zip(*self.plate.points)
 
         x = self.rocket._csys * np.array(x)
-        z = self.rocket.center_of_dry_mass_position + (self.rocket._csys * np.array(z))
+        z = self.rocket.center_of_dry_mass_position + (
+            self.rocket._csys * np.array(z)
+        )
         y = np.array(y)
 
         if plane == "xz":
@@ -209,26 +188,13 @@ class _PlatePlots:
         else:
             raise ValueError("Plane value can only be xz or yz")
 
-        if isinstance(self.plate.dimensions, float) and self.plate.dimensions > 0.1:
-            ax.plot(
-                z,
-                r,
-                color=self.color,
-                linewidth=3,
-                linestyle="-",
-                label=self.plate.name,
-                zorder=1,
-            )
-        else:
-            ax.plot(
-                z,
-                r,
-                color=self.color,
-                linewidth=2,
-                linestyle="-",
-                label=self.plate.name,
-                zorder=1,
-            )
+        unique_z = np.unique(z)
+        r_min = np.array([r[z == uz].min() for uz in unique_z])
+        r_max = np.array([r[z == uz].max() for uz in unique_z])
+
+        ax.fill_between(
+            unique_z, r_min, r_max, color=color, alpha=0.9, label=self.plate.name
+        )
 
     def all(self) -> None:
         """Plots all graphs available about the Plate. It simply calls

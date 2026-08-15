@@ -587,7 +587,7 @@ class Plate:
             https://matplotlib.org//gallery/color/named_colors
             Default is 'teal'.
         marker: str
-            shape of the points from which the plate is formed.
+            Shape of the points from which the plate is formed.
             A full list of markers can be found at:
             https://matplotlib.org/stable/api/markers_api.html
             Default is 'h', hexagon.
