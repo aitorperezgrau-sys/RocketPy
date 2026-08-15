@@ -77,7 +77,7 @@ class Wire:
 
         # prints and plots
         self.prints = _WirePrints(self)
-        self.plots = None
+        self.plots = _WirePlots(self)
 
     def _validate_parameters(
         self, current, extra_ignition_time, wire_type, ignition_wire_function
@@ -199,7 +199,7 @@ class Wire:
         self._magnetic_field[position_vector_t] = Vector(magnetic_field)
         self.magnetic_field[position_vector_t] = magnetic_field
 
-    def _set_wire_edges_from_ucs(
+    def _set_wire_edges_to_bacs(
         self,
         rocket,
         _wire_edges_from_user_coordinate_system: list[Vector] | tuple[Vector, Vector],
@@ -240,7 +240,7 @@ class Wire:
         rocket : Rocket
             Rocket instance to which it belongs.
         """
-        self.plots = _WirePlots(self, rocket)
+        self.plots.rocket = rocket
 
     def info(self) -> None:
         """Print a summary of the information stored in the wire object."""

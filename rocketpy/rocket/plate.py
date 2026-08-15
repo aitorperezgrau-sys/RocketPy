@@ -16,12 +16,13 @@ class Plate:
     Attributes
     ----------
     Plate.shape : str
-        Shape of the plate. It can be 'circular', 'squared'
+        Shape of the plate. It can be 'circular', 'rectangular'
         or 'personalized'.
     Plate.dimensions : float, int or list[list]
-        Dimensions of the plate. When the shape is squared or
-        circular it has a float or int, whereas it is a list of vertices
-        when the shape is 'personalized'.
+        Dimensions of the plate. When the shape is circular
+        it is a float or int, whereas it is a list of vertices
+        when the shape is 'personalized' and a list with [width, height]
+        when it is 'rectangular' .
     Plate.material : str
         Material from which the plate is composed. Allowed strings
         are 'iron', 'carbon_steel', or 'personalized' if we want to
@@ -35,7 +36,7 @@ class Plate:
         Thickness of the plate in meters (m).
     Plate.area : float, int
         Area of the plate in square meters (m^2). When the parameter is
-        circular or squared, the standard formula is used, while with
+        circular or rectangular, the standard formula is used, while with
         personalized, the area is the minimal area of the region contained
         within the vertices.
     Plate.volume : float, int
@@ -51,9 +52,9 @@ class Plate:
     Plate.grid_spacing : float, int
         Space between points in meters (m) when shape is 'personalized'.
     Plate.z_points : int
-        Number of points along the z-axis when shape is 'circular' or 'squared'.
+        Number of points along the z-axis when shape is 'circular' or 'rectangular'.
     Plate.angular_points : int
-        Number of angular points when shape is 'circular' or 'squared'.
+        Number of angular points when shape is 'circular' or 'rectangular'.
     Plate.name : str
         Name of the plate.
     """
@@ -80,15 +81,17 @@ class Plate:
 
             - If 'circular': the plate is assumed to be a circle, and the input
               'dimensions' refers to the radius in meters.
-            - If 'squared': the plate is assumed to be a square, and the input
-              'dimensions' refers to the side length in meters.
+            - If 'rectangular': the plate is assumed to be a rectangle, and the input
+              'dimensions' refers to the side lengths in meters.
             - If 'personalized': the plate has the shape specified by the
               vertices defined in 'dimensions'.
         dimensions : float, int, list
             Dimensions of the plate, which depend on 'shape':
 
             - If shape is 'circular', float or int representing radius in m.
-            - If shape is 'squared', float or int representing side length in m.
+            - If shape is 'rectangular', list of float or int with the width,
+              in the first argument, and the height in the second, or a float,
+              in which case it will be considered a squared.
             - If shape is 'personalized', list of 3D vertices [x, y, z] in sequential
               order (clockwise or counter-clockwise) with at least 3 non-collinear
               vertices defined in the user-defined coordinate system (UCS).
@@ -108,17 +111,17 @@ class Plate:
             Used when shape is 'personalized'; determines the spacing between
             discretization grid points in meters (m). Default is 0.001.
         z_points : int, optional
-            Number of points taken along the z-axis for 'circular' or 'squared'
+            Number of points taken along the z-axis for 'circular' or 'rectangular'
             shapes. Default is 40.
         angular_points : int, optional
-            Number of angular discretization points for 'circular' or 'squared'
+            Number of angular discretization points for 'circular' or 'rectangular'
             shapes. Default is 70.
         name : str, optional
             Name of the plate. Default is 'Plate'.
         """
         self._magnetic_distortion_matrices = {}
         self.points = []
-        self.plots = None
+        self.plots = _PlatePlots(self)
         self.prints = _PlatePrints(self)
         self._validate_parameters(
             material,
@@ -179,7 +182,7 @@ class Plate:
                 and relative_magnetic_permeability is None
             ):
                 raise ValueError(
-                    "The magnetic permeability or relative magnetic permeability must be defined if 'material' is 'personalized."
+                    "The magnetic permeability or relative magnetic permeability must be defined if 'material' is 'personalized'."
                 )
 
             self.material = "personalized"
@@ -210,13 +213,10 @@ class Plate:
     ) -> None:
         """Validates and defines the input parameters related to the shape."""
         if isinstance(shape, str):
-            if shape in ("circular", "squared"):
-                self.shape = shape
-                self.dimensions = dimensions
-                self.z_points = z_points
-                self.angular_points = angular_points
-                self.grid_spacing = None
-
+            if shape in ("circular", "rectangular"):
+                self._validate_not_personalized_shape(
+                    shape, dimensions, z_points, angular_points
+                )
             elif shape == "personalized":
                 self.shape = shape
                 self.dimensions = dimensions
@@ -225,10 +225,44 @@ class Plate:
                 self.angular_points = None
             else:
                 raise ValueError(
-                    "The accepted strings are 'circular', 'squared' or 'personalized'."
+                    "The accepted strings are 'circular', 'rectangular' or 'personalized'."
                 )
         else:
             raise ValueError("The shape must be defined as a string")
+
+    def _validate_not_personalized_shape(
+        self, shape, dimensions, z_points, angular_points
+    ):
+        """Validates and defines the input parameters related to the shape, when shape is
+        not personalized."""
+        if shape == "circular":
+            if not isinstance(dimensions, (float, int)):
+                raise ValueError(
+                    "For 'circular' shape, dimensions must be a float or int representing radius in meters."
+                )
+            self.shape = "circular"
+            self.dimensions = dimensions  # radius
+            self.z_points = z_points
+            self.angular_points = angular_points
+            self.grid_spacing = None
+
+        elif shape == "rectangular":
+            self.shape = "rectangular"
+            self.z_points = z_points
+            self.angular_points = angular_points
+            self.grid_spacing = None
+
+            if isinstance(dimensions, (float, int)):
+                width = dimensions
+                height = dimensions
+            elif isinstance(dimensions, (list, tuple)) and len(dimensions) == 2:
+                width = float(dimensions[0])
+                height = float(dimensions[1])
+            else:
+                raise ValueError(
+                    "For 'rectangular' shape, dimensions must be a float/int (square) or a 2-element sequence [width, height]."
+                )
+            self.dimensions = (width, height)
 
     def define_plate_position(
         self,
@@ -246,7 +280,7 @@ class Plate:
         position : float, int, optional
             Position of the plate:
 
-            - If shape is 'squared' or 'circular': the angle between the y-axis
+            - If shape is 'rectangular' or 'circular': the angle between the y-axis
               of the user-defined coordinate system and the geometric center of
               the plate in degrees. Positive direction follows the right-hand rule
               along the z-axis.
@@ -256,8 +290,8 @@ class Plate:
         """
         self._rocket_belonging(rocket)
         self.generate_points(rocket, position, height)
-        if self.shape == "squared":
-            self.area = self.dimensions * self.dimensions
+        if self.shape == "rectangular":
+            self.area = self.dimensions[0] * self.dimensions[1]
         elif self.shape == "circular":
             self.area = np.pi * (self.dimensions**2)
         else:  # personalized
@@ -279,7 +313,7 @@ class Plate:
             RocketPy Rocket instance.
         position : float, int, optional
             Position angle of the geometric center in degrees when shape is
-            'circular' or 'squared'.
+            'circular' or 'rectangular'.
         height : float, int, optional
             Position of the geometric center along the z-axis relative to the
             user-defined coordinate system in meters (m).
@@ -289,8 +323,12 @@ class Plate:
         if self.shape == "personalized":
             self._generate_personalized_internal_plate(rocket)
         else:
-            upper_z = height + self.dimensions / 2
-            lower_z = height - self.dimensions / 2
+            if self.shape == "circular":
+                upper_z = height + self.dimensions
+                lower_z = height - self.dimensions
+            else:
+                upper_z = height + self.dimensions[1] / 2
+                lower_z = height - self.dimensions[1] / 2
             geometric_center_angle = position * (np.pi / 180)
             for z in np.linspace(lower_z, upper_z, self.z_points):
                 if not rocket.z_bounds_check(z, frame="ucs")[0]:
@@ -299,17 +337,7 @@ class Plate:
                 r = rocket.general_radius(z, frame="ucs")
                 if r <= 1e-6:
                     continue
-
-                if self.shape == "circular":
-                    center_z = height
-                    alpha, beta = self._circular_angle_calculation(
-                        z, center_z, geometric_center_angle, r
-                    )
-                else:  # squared
-                    alpha, beta = self._squared_angle_calculation(
-                        geometric_center_angle, r
-                    )
-
+                alpha, beta = self._define_angles(z, geometric_center_angle, r, height)
                 for theta in np.linspace(alpha, beta, self.angular_points):
                     x = -r * np.sin(theta)
                     y = r * np.cos(theta)
@@ -321,22 +349,34 @@ class Plate:
                     else:  # tail_to_nose
                         self.points.append([x, y, z_bacs])
 
+    def _define_angles(
+        self, z, geometric_center_angle, r, height
+    ) -> tuple[float, float]:
+        """Calculates angular span for plate discretization."""
+        if self.shape == "circular":
+            alpha, beta = self._circular_angle_calculation(
+                z=z, center_z=height, geometric_center_angle=geometric_center_angle, r=r
+            )
+        else:  # rectangular
+            alpha, beta = self._rectangular_angle_calculation(geometric_center_angle, r)
+        return alpha, beta
+
     def _circular_angle_calculation(
         self, z, center_z, geometric_center_angle, r
     ) -> tuple[float, float]:
         """Calculates angular span for circular plate discretization."""
         dz = z - center_z
         inside_sqrt = max(self.dimensions**2 - dz**2, 0)
-        extension_angle = m.sqrt(inside_sqrt) / r
-        alpha = geometric_center_angle - extension_angle / 2
-        beta = geometric_center_angle + extension_angle / 2
+        half_extension_angle = m.sqrt(inside_sqrt) / r
+        alpha = geometric_center_angle - half_extension_angle
+        beta = geometric_center_angle + half_extension_angle
         return alpha, beta
 
-    def _squared_angle_calculation(
+    def _rectangular_angle_calculation(
         self, geometric_center_angle, r
     ) -> tuple[float, float]:
-        """Calculates angular span for squared plate discretization."""
-        extension_angle = self.dimensions / r
+        """Calculates angular span for rectangular plate discretization."""
+        extension_angle = self.dimensions[0] / r
         alpha = geometric_center_angle - extension_angle / 2
         beta = geometric_center_angle + extension_angle / 2
         return alpha, beta
@@ -417,12 +457,14 @@ class Plate:
                 vertices.append([-sensor_vec[0], sensor_vec[1], -sensor_vec[2]])
             else:
                 vertices.append([sensor_vec[0], sensor_vec[1], sensor_vec[2]])
-        colinear = all(
-            (Vector(vertices[i]) ^ Vector(vertices[i + 1])) == 0
-            for i in range(len(vertices) - 1)
-        )
-        if colinear:
-            raise ValueError("All values cannot be colinear.")
+        collinear = []
+        for i in range(len(vertices) - 2):
+            e1 = Vector(vertices[i + 1]) - Vector(vertices[i])
+            e2 = Vector(vertices[i + 2]) - Vector(vertices[i + 1])
+            collinear.append(abs(e1 ^ e2) <= 1e-12)
+
+        if all(collinear):
+            raise ValueError("All vertices of the personalized plate are collinear.")
         return vertices
 
     def _check_entry_dimensions(self, pt, rocket) -> None:
@@ -444,7 +486,9 @@ class Plate:
         if m.hypot(pt[0], pt[1]) > rocket.general_radius(pt[2], frame="ucs"):
             raise ValueError(f"Point {pt} is outside the rocket radius at z={pt[2]}.")
 
-    def _calculate_uv_frame(self, vertices) -> tuple[float]:
+    def _calculate_uv_frame(
+        self, vertices
+    ) -> tuple[float, float, float, float, float, float]:
         """Calculate the 2D local coordinate system vectors."""
         v0, v1, v2 = vertices[:3]
         nx = (v1[1] - v0[1]) * (v2[2] - v0[2]) - (v1[2] - v0[2]) * (v2[1] - v0[1])
@@ -563,7 +607,7 @@ class Plate:
         rocket : Rocket
             Rocket instance to which it belongs.
         """
-        self.plots = _PlatePlots(self, rocket)
+        self.plots.rocket = rocket
 
     def info(self) -> None:
         """Prints a summary of the information stored in the plate object."""

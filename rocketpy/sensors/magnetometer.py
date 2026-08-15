@@ -443,7 +443,7 @@ class Magnetometer(InertialSensor):
         self.measurement = (b_field_sensor.x, b_field_sensor.y, b_field_sensor.z)  # T
         self._save_data((time, *b_field_sensor))
 
-    def obtain_magnetic_field(
+    def _obtain_magnetic_field(
         self,
         x_inertial: float,
         y_inertial: float,

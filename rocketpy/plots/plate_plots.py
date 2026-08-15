@@ -13,19 +13,17 @@ class _PlatePlots:
         Plate object that will be used for the plots.
     """
 
-    def __init__(self, plate, rocket) -> None:
+    def __init__(self, plate) -> None:
         """Initializes _PlatePlots class.
 
         Parameters
         ----------
         plate: Plate
             Plate instance.
-        rocket: Rocket
-            Rocket instance to which the plate
-            is attached.
         """
         self.plate = plate
-        self.rocket = rocket
+        self.rocket = None
+        self.color = None
 
     def draw_3d(
         self,
@@ -72,6 +70,12 @@ class _PlatePlots:
             eps, jpg, jpeg, pdf, pgf, png, ps, raw, rgba, svg, svgz, tif, tiff
             and webp (these are the formats supported by matplotlib).
         """
+        if self.rocket is None:
+            raise ValueError(
+                "Plate points list is empty. Add the plate to a rocket before plotting."
+            )
+        if self.color is None:
+            self.color = color
         # from bacs to usc
         x, y, z = zip(*self.plate.points)
         if self.rocket._csys == -1:
@@ -84,7 +88,7 @@ class _PlatePlots:
         fig = plt.figure(figsize=(8, 6))
         ax = fig.add_subplot(111, projection="3d")
         # plot individual points
-        ax.scatter(x, y, z, color=color, marker=marker, label=self.plate.name)
+        ax.scatter(x, y, z, color=self.color, marker=marker, label=self.plate.name)
         ax.view_init(elev=elev, azim=azim)
         if self.rocket._csys == 1:
             ax.invert_xaxis()
@@ -133,7 +137,8 @@ class _PlatePlots:
             Accepted options are 'xz' and 'yz'.
             Default value is 'xz'. 
         color : str, optional
-            Color of the points. 
+            Color of the points, the color will be taken as the color defined
+            in the first call to a plot function. 
             A full list of color names can be found at:
             https://matplotlib.org//gallery/color/named_colors
             Default is 'darkgreen'. 
@@ -143,6 +148,12 @@ class _PlatePlots:
             eps, jpg, jpeg, pdf, pgf, png, ps, raw, rgba, svg, svgz, tif, tiff
             and webp (these are the formats supported by matplotlib).
         """
+        if self.rocket is None:
+            raise ValueError(
+                "Plate points list is empty. Add the plate to a rocket before plotting."
+            )
+        if self.color is None:
+            self.color = color
         if vis_args is None:
             vis_args = {
                 "background": "#EEEEEE",
@@ -159,7 +170,6 @@ class _PlatePlots:
         self._plot_plate_rocket(ax, plane, color)
 
         plt.title("Plate representation")
-        plt.xlim()
         plt.ylim([-self.rocket.radius * 4, self.rocket.radius * 6])
         plt.xlabel("Position (m)")
         plt.ylabel("Radius (m)")
@@ -179,11 +189,13 @@ class _PlatePlots:
             Accepted options are 'xz' and 'yz'
             Default value is 'xz'.
         color : str, optional
-            Color of the points.
-            A full list of color names can be found at:
+            Color of the points, the color will be taken as the color defined
+            in the first call to a plot function.
             https://matplotlib.org//gallery/color/named_colors
             Default is 'darkgreen'.
         """
+        if self.color is None:
+            self.color = color
         x, y, z = zip(*self.plate.points)  # in the bacs frame z tail to nose
 
         x = self.rocket._csys * np.array(x)
@@ -201,7 +213,7 @@ class _PlatePlots:
             ax.plot(
                 z,
                 r,
-                color=color,
+                color=self.color,
                 linewidth=3,
                 linestyle="-",
                 label=self.plate.name,
@@ -211,7 +223,7 @@ class _PlatePlots:
             ax.plot(
                 z,
                 r,
-                color=color,
+                color=self.color,
                 linewidth=2,
                 linestyle="-",
                 label=self.plate.name,

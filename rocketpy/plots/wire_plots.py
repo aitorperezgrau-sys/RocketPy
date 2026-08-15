@@ -13,19 +13,16 @@ class _WirePlots:
         Wire object that will be used for the plots.
     """
 
-    def __init__(self, wire, rocket) -> None:
+    def __init__(self, wire) -> None:
         """Initializes _WirePlots class.
 
         Parameters
         ----------
         wire: Wire
             Wire instance.
-        rocket: Rocket
-            Rocket instance to which the wire
-            is attached.
         """
         self.wire = wire
-        self.rocket = rocket
+        self.rocket = None
 
     def draw(
         self,
@@ -88,6 +85,8 @@ class _WirePlots:
             eps, jpg, jpeg, pdf, pgf, png, ps, raw, rgba, svg, svgz, tif, tiff
             and webp (these are the formats supported by matplotlib). 
         """
+        if self.rocket is None:
+            raise ValueError("Add the wire to a rocket before plotting.")
         if vis_args is None:
             vis_args = {
                 "background": "#EEEEEE",

@@ -38,9 +38,9 @@ class _PlatePrints:
 
     def magnetic_distortion_matrix(self) -> None:
         """Prints the magnetic distortion matrix at all recorded positions."""
-        for key in self.plate._magnetic_distortion_matrixes:
+        for key in self.plate._magnetic_distortion_matrices:
             print(
-                f"Magnetic distortion matrix at position: {key} is {self.plate._magnetic_distortion_matrixes[key]}"
+                f"Magnetic distortion matrix at position: {key} is {self.plate._magnetic_distortion_matrices[key]}"
             )
 
     def all(self) -> None:

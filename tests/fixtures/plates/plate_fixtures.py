@@ -19,13 +19,26 @@ def test_circular_plate():
 @pytest.fixture()
 def test_squared_plate():
     return Plate(
-        shape="squared",
+        shape="rectangular",
         dimensions=0.03,
         material="carbon_steel",
         thickness=0.0002,
         z_points=40,
         angular_points=40,
         name="test_squared_plate",
+    )
+
+
+@pytest.fixture()
+def test_rectangular_plate():
+    return Plate(
+        shape="rectangular",
+        dimensions=(0.03, 0.04),
+        material="carbon_steel",
+        thickness=0.0002,
+        z_points=40,
+        angular_points=40,
+        name="test_rectangular_plate",
     )
 
 

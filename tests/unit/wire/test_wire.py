@@ -42,11 +42,14 @@ from rocketpy.rocket import Wire
     ],
 )
 def validate_wire_type(wire_type, ignition_wire_function, current, extra_ignition_time):
+    """Tests that ValueError are raised with incorrect entry parameters."""
     with pytest.raises(ValueError):
         Wire(current, wire_type, ignition_wire_function, extra_ignition_time)
 
 
 def test_define_magnetic_field(test_communications_wire):
+    """Ensures proper handling of the magnetic field calculated
+    in the _magnetic_field dictionary."""
     position_vector = [0.003, 0.002, 1]
     magnetic_field = [10, 25, 10]
     test_communications_wire.define_magnetic_field(position_vector, magnetic_field)
@@ -136,6 +139,8 @@ def test_wire_prints_and_plots(test_communications_wire, calisto_robust):
     """Test the print methods of the Wire class. Checks if all attributes are
     printed and plotted correctly.
     """
+    with pytest.raises(ValueError):
+        test_communications_wire.plots.draw()
     calisto_robust.add_wire(
         test_communications_wire, [[0.001, 0.002, -0.3], [0.001, 0.002, 0.3]]
     )

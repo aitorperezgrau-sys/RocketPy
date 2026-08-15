@@ -20,8 +20,8 @@ from rocketpy.rocket.plate import Plate
             40,
             None,
             "plate_test",
-        ),
-        (  # wrong name: not str
+        ),  # wrong shape: not str
+        (
             "hi",
             0.05,
             "personalized",
@@ -32,10 +32,10 @@ from rocketpy.rocket.plate import Plate
             40,
             None,
             "plate_test",
-        ),
-        (  # wrong name: not allowed str
-            "hi",
-            0.05,
+        ),  # wrong shape: not allowed str
+        (
+            "rectangular",
+            "0.05",
             "personalized",
             0.002,
             1e-3,
@@ -44,8 +44,32 @@ from rocketpy.rocket.plate import Plate
             40,
             None,
             "plate_test",
-        ),
-        (  # wrong name: not allowed str
+        ),  # wrong dimensions rectangular: string
+        (
+            "rectangular",
+            [0, 9, 10],
+            "personalized",
+            0.002,
+            1e-3,
+            0.0002,
+            40,
+            40,
+            None,
+            "plate_test",
+        ),  # wrong dimensions rectangular: list of not 2 elements
+        (
+            "circular",
+            "0.05",
+            "personalized",
+            0.002,
+            1e-3,
+            0.0002,
+            40,
+            40,
+            None,
+            "plate_test",
+        ),  # wrong dimensions: string
+        (
             "circular",
             0.05,
             0,
@@ -56,8 +80,8 @@ from rocketpy.rocket.plate import Plate
             40,
             None,
             "plate_test",
-        ),
-        (  # wrong material: not str
+        ),  # wrong material: not a string
+        (
             "circular",
             0.05,
             "0",
@@ -68,8 +92,8 @@ from rocketpy.rocket.plate import Plate
             40,
             None,
             "plate_test",
-        ),
-        (  # wrong material: not allowed
+        ),  # wrong material: not allowed str
+        (
             "circular",
             0.05,
             "personalized",
@@ -80,8 +104,8 @@ from rocketpy.rocket.plate import Plate
             40,
             None,
             "plate_test",
-        ),
-        (  # wrong magnetic inputs: neither relative nor absolute defined
+        ),  # wrong magnetic inputs: neither relative nor absolute defined
+        (
             "circular",
             0.05,
             "personalized",
@@ -92,8 +116,8 @@ from rocketpy.rocket.plate import Plate
             40,
             None,
             "plate_test",
-        ),
-        (  # wrong abs magnetic permeability: str
+        ),  # wrong abs magnetic permeability: str
+        (
             "circular",
             0.05,
             "personalized",
@@ -119,6 +143,7 @@ def test_validate_parameters(
     relative_magnetic_permeability,
     name,
 ):
+    """Tests that ValueError are raised with incorrect entry parameters."""
     with pytest.raises(ValueError):
         Plate(
             shape,
@@ -152,10 +177,29 @@ def test_validate_parameters(
             [0.001, 0.001, 0.04],
             [0.002, 0.002, 0.04],
             [0.003, 0.003, 0.04],
-        ],  # wrong vertices: all colinear
+        ],  # wrong vertices: point
+        [
+            [0, 0, 0],
+            [0.001, 0.001, 0.001],
+            [0.002, 0.002, 0.002],
+        ],  # wrong vertices: 1D (line)
+        [
+            [0, 0, 0],
+            [-0.001, -0.001, -0.001],
+            [0.001, 0.001, 0.001],
+        ],  # wrong vertices: 1D (line)
+        [
+            [0, 0, 0],
+            [-0.001, -0.001, -0.001],
+            [0.001, 0.001, 0.001],
+            [-0.002, -0.002, -0.002],
+            [0.002, 0.002, 0.002],
+        ],  # wrong vertices: 1D (line)
     ],
 )
 def test_generate_personalized_points_bounds(vertices, calisto_robust):
+    """Ensures the raise of ValueError when the vertices are out of the rocket
+    or when they don't form a 2D surface."""
     test_plate = Plate(
         shape="personalized",
         dimensions=vertices,
@@ -177,9 +221,9 @@ def test_generate_personalized_points_bounds(vertices, calisto_robust):
         (270, +0.0635),  # Angle = 270° -> x = +R
     ],
 )
-def test_generate_not_personalized_plate_position(angle, expected_x, calisto_robust):
-    """
-    Ensures proper position vector generation in the BACS frame.
+def test_generate_angular_plate_position(angle, expected_x, calisto_robust):
+    """Ensures proper position vector generation in the BACS frame
+    based on the angular position.
     """
     small_plate = Plate(
         shape="circular",
@@ -198,6 +242,51 @@ def test_generate_not_personalized_plate_position(angle, expected_x, calisto_rob
 
 
 @pytest.mark.parametrize(
+    "plate",
+    [
+        "test_circular_plate",
+        "test_squared_plate",
+        "test_rectangular_plate",
+    ],
+)
+def test_plate_dimensions(request, plate, calisto_robust):
+    """Ensures proper position vector generation in the BACS frame
+    based dimensions.
+    """
+    plate_object = request.getfixturevalue(plate)
+    height = 0.0
+    position_deg = 0.0
+
+    calisto_robust.add_plate(plate_object, position=position_deg, height=height)
+
+    radius = calisto_robust.general_radius(height, frame="ucs")
+
+    # Center position in BACS
+    z_bacs_center = (
+        height - calisto_robust.center_of_dry_mass_position
+    ) * calisto_robust._csys
+
+    if plate_object.shape == "circular":
+        half_height = plate_object.dimensions
+        theta = plate_object.dimensions / radius
+    else:
+        half_height = plate_object.dimensions[1] / 2.0
+        theta = (plate_object.dimensions[0] / 2.0) / radius
+
+    max_expected_x = radius * np.sin(theta)
+    max_expected_y = radius
+    expected_max_z = z_bacs_center + half_height
+    expected_min_z = z_bacs_center - half_height
+
+    points = plate_object.points
+
+    assert any(pytest.approx(max_expected_x, abs=1e-5) == p[0] for p in points)
+    assert any(pytest.approx(max_expected_y, abs=1e-5) == p[1] for p in points)
+    assert any(pytest.approx(expected_max_z, abs=1e-5) == p[2] for p in points)
+    assert any(pytest.approx(expected_min_z, abs=1e-5) == p[2] for p in points)
+
+
+@pytest.mark.parametrize(
     "height_ucs",
     [
         1.15,  # almost out of the rocket(upper bound)
@@ -205,6 +294,9 @@ def test_generate_not_personalized_plate_position(angle, expected_x, calisto_rob
     ],
 )
 def test_less_points_plate(height_ucs, calisto_robust):
+    """Ensures that when the dimensions, or the point generated are out of the rocket
+    no error is raised and some points have been dismissed.
+    """
     z_points = 50
     angular_points = 70
     test_plate = Plate(
@@ -223,18 +315,23 @@ def test_less_points_plate(height_ucs, calisto_robust):
 def test_several_positions_soft_iron_distortion_matrix(
     test_squared_plate, calisto_robust
 ):
+    """Ensures proper handling of the soft iron distoriton matrices
+    as a dictionary.
+    """
     calisto_robust.add_plate(test_squared_plate, position=45, height=0.2)
     test_squared_plate.calculate_soft_iron_distortion_matrix((0, 0, 0))
     test_squared_plate.calculate_soft_iron_distortion_matrix((0.004, 0.003, 0.5))
-    assert len(test_squared_plate._magnetic_distortion_matrixes) == 2
+    assert len(test_squared_plate._magnetic_distortion_matrices) == 2
 
-    list_keys = list(test_squared_plate._magnetic_distortion_matrixes)
+    list_keys = list(test_squared_plate._magnetic_distortion_matrices)
     assert list_keys[0] == (0, 0, 0)
     assert list_keys[1] == (0.004, 0.003, 0.5)
 
 
 def test_no_soft_iron_distortion_matrix(calisto_robust):
-
+    """Ensures that when the relative magnetic permeability is 1
+    there is no distortion added.
+    """
     test_plate = Plate(
         shape="circular",
         dimensions=0.04,
@@ -245,7 +342,7 @@ def test_no_soft_iron_distortion_matrix(calisto_robust):
     )
     calisto_robust.add_plate(test_plate, position=30, height=0.3)
     test_plate.calculate_soft_iron_distortion_matrix([0, 0, 0])
-    assert test_plate._magnetic_distortion_matrixes[(0, 0, 0)] == Matrix.zeros()
+    assert test_plate._magnetic_distortion_matrices[(0, 0, 0)] == Matrix.zeros()
 
 
 @pytest.mark.parametrize(
@@ -322,12 +419,12 @@ def test_compare_soft_iron_distortion_matrix(
     # big_plate
     calisto_robust.add_plate(big_plate, position=position, height=height)
     big_plate.calculate_soft_iron_distortion_matrix((0, 0, 0))
-    big_plate_matrix = big_plate._magnetic_distortion_matrixes[(0, 0, 0)]
+    big_plate_matrix = big_plate._magnetic_distortion_matrices[(0, 0, 0)]
 
     # small_plate
     calisto_robust.add_plate(small_plate, position=position, height=height)
     small_plate.calculate_soft_iron_distortion_matrix((0, 0, 0))
-    small_plate_matrix = small_plate._magnetic_distortion_matrixes[(0, 0, 0)]
+    small_plate_matrix = small_plate._magnetic_distortion_matrices[(0, 0, 0)]
 
     for row in range(3):
         for column in range(3):
@@ -354,6 +451,10 @@ def test_plate_prints_and_plots(request, plate, position, height, calisto_robust
     printed and plotted correctly.
     """
     plate_obj = request.getfixturevalue(plate)
+    with pytest.raises(ValueError):
+        plate_obj.plots.draw()
+    with pytest.raises(ValueError):
+        plate_obj.plots.draw_3d()
     calisto_robust.add_plate(plate_obj, position, height)
     plate_obj.prints.all()
     plate_obj.plots.all()
@@ -362,7 +463,7 @@ def test_plate_prints_and_plots(request, plate, position, height, calisto_robust
 
 def test_from_dict():
     plate_dict = {
-        "shape": "squared",
+        "shape": "rectangular",
         "dimensions": 0.003,
         "material": "personalized",
         "thickness": 0.001,

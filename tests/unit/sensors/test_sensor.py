@@ -293,7 +293,7 @@ def test_noisy_rotated_magnetometer(
     x_inertial, y_inertial, z_inertial = rotation_bacs_to_inertial @ Vector(
         sensor_from_bacs_list
     ) + Vector(U[0:3])
-    b_north, b_east, b_down = noisy_rotated_magnetometer.obtain_magnetic_field(
+    b_north, b_east, b_down = noisy_rotated_magnetometer._obtain_magnetic_field(
         x_inertial,
         y_inertial,
         z_inertial,
@@ -310,7 +310,7 @@ def test_noisy_rotated_magnetometer(
     soft_iron_matrix = Matrix.identity()
     for plate in [test_circular_plate, test_personalized_plate]:
         plate.calculate_soft_iron_distortion_matrix(Vector(sensor_from_bacs_list))
-        soft_iron_matrix += plate._magnetic_distortion_matrixes[
+        soft_iron_matrix += plate._magnetic_distortion_matrices[
             tuple(sensor_from_bacs_list)
         ]
     b_field_bacs = soft_iron_matrix @ b_field_bacs
