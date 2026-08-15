@@ -5,8 +5,7 @@ from rocketpy.plots.plot_helpers import show_or_save_plot
 
 
 class _PlatePlots:
-    """
-    Class that holds plot methods for the Plate class.
+    """Class that holds plot methods for the Plate class.
 
     Attributes
     ----------
@@ -14,8 +13,9 @@ class _PlatePlots:
         Plate object that will be used for the plots.
     """
 
-    def __init__(self, plate, rocket):
-        """
+    def __init__(self, plate, rocket) -> None:
+        """Initializes _PlatePlots class.
+
         Parameters
         ----------
         plate: Plate
@@ -24,6 +24,9 @@ class _PlatePlots:
             Rocket instance to which the plate
             is attached.
 
+        Returns
+        -------
+        None
         """
         self.plate = plate
         self.rocket = rocket
@@ -36,8 +39,7 @@ class _PlatePlots:
         azim: float | int | None = None,
         filename: str | None = None,
     ) -> None:
-        """
-        Plots the scatter plot of the plate formed by the points
+        """Plots the scatter plot of the plate formed by the points
         used to model the magnetic distortion in 3d.
 
         Parameters
@@ -111,8 +113,7 @@ class _PlatePlots:
         color: str = "darkgreen",
         filename=None,
     ) -> None:
-        """
-        Plots the plate together with the outline of the rocket
+        """Plots the plate together with the outline of the rocket
         in 2D. 
 
         Parameters
@@ -153,7 +154,6 @@ class _PlatePlots:
         Returns
         -------
         None
-
         """
         if vis_args is None:
             vis_args = {
@@ -235,8 +235,7 @@ class _PlatePlots:
             )
 
     def all(self) -> None:
-        """
-        Prints out all graphs available about the Plate. It simply calls
+        """Plots all graphs available about the Plate. It simply calls
         all the other plotter methods in this class with all the
         default parameters.
 

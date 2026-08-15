@@ -40,7 +40,7 @@ class Wire:
         ignition_wire_function: str | None = None,
         extra_ignition_time: float = 0,
         name: str = "wire",
-    ):
+    ) -> None:
         """Initializes the Wire class.
 
         Parameters
@@ -81,14 +81,14 @@ class Wire:
 
     def _validate_parameters(
         self, current, extra_ignition_time, wire_type, ignition_wire_function
-    ):
+    ) -> None:
         """
         Check and defines several attributes of wire.
         """
         self._validate_wire_type(wire_type, ignition_wire_function)
         self._validate_numbers(current, extra_ignition_time)
 
-    def _validate_wire_type(self, wire_type, ignition_wire_function):
+    def _validate_wire_type(self, wire_type, ignition_wire_function) -> None:
         """
         Check and defines the attributes related to the type of wire.
         """
@@ -109,7 +109,10 @@ class Wire:
         else:
             raise ValueError("Wire type must be a string.")
 
-    def _validate_numbers(self, current, extra_ignition_time):
+    def _validate_numbers(self, current, extra_ignition_time) -> None:
+        """
+        Checks and defines the attributes related to the wire physical characteristics.
+        """
         if not isinstance(current, (float, int)):
             raise ValueError("Current must be a float or int.")
         else:
@@ -132,7 +135,7 @@ class Wire:
         ----------
         position_vector: list, tuple or Vector
             position vector of the point in which the magnetic field
-            is going to be measured in the user defined coordinate system.
+            is going to be measured in the body axis coordinate system.
 
         Returns
         -------
@@ -190,10 +193,10 @@ class Wire:
 
         Parameters
         ----------
-        position_vector: list, tuple
+        position_vector: list, tuple, Vector
             position vector of the point where the magnetic field is
             defined in the body axis coordinate system.
-        magnetic_field: int, float, list, tuple
+        magnetic_field: int, float, list, tuple, Vector
             Magnetic influence on the position given by position_vector in T:
 
             - If a float, it assumes that the wire generates the same magnetic field
@@ -201,6 +204,7 @@ class Wire:
 
             - If a tuple, list or Vector, it assumes that the wire generates the given magnetic
               field.
+
         Returns
         -------
         None
@@ -211,27 +215,26 @@ class Wire:
         self._magnetic_field[position_vector_t] = Vector(magnetic_field)
         self.magnetic_field[position_vector_t] = magnetic_field
 
-    def _set_wire_edges_from_bacs(
-        self, rocket, _wire_edges_from_user_coordinate_system: list[Vector, Vector]
+    def _set_wire_edges_from_ucs(
+        self,
+        rocket,
+        _wire_edges_from_user_coordinate_system: list[Vector] | tuple[Vector, Vector],
     ) -> None:
-        """
-        Save as an attribute the position of the wire edges in the body axis
-        coordinate system from the edges given as a vector in the user
-        defined coordinate system.
+        """Transforms wire edge coordinates from the User Coordinate System (UCS)
+        to the Body Axis Coordinate System (BACS) and stores them.
 
         Parameters
         ----------
-        _wire_edges_from_user_coordinate_system: list[Vector, Vector]
-            Containing the edges position relative to the the user defined
-            coordinate system as a Vector instances.
         rocket : Rocket
-            Rocket instance to which it belongs.
+            Rocket instance to which the wire belongs.
+        _wire_edges_from_user_coordinate_system : list[Vector] or tuple[Vector, Vector]
+            Position vectors of the wire endpoints relative to the User
+            Coordinate System (UCS) as Vector instances.
 
         Returns
         -------
         None
         """
-
         self._wire_edges_bacs = []
         cdm_user_frame = Vector([0, 0, rocket.center_of_dry_mass_position])
         for edge_from_user in _wire_edges_from_user_coordinate_system:
@@ -328,4 +331,5 @@ class Wire:
             # Optional Parameters
             ignition_wire_function=data.get("ignition_wire_function", None),
             extra_ignition_time=data.get("extra_ignition_time", 0),
+            name=data.get("name", "wire"),
         )

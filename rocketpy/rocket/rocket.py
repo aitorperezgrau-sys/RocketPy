@@ -1951,7 +1951,7 @@ class Rocket:
                     f"{name} with coordinates {edge} is outside the rocket since the radius {r_edge} is bigger than the radius of the rocket at that z: {z}, which is: {r_rocket}"
                 )
 
-        wire._set_wire_edges_from_bacs(self, edges)
+        wire._set_wire_edges_to_bacs(self, edges)
         wire._rocket_belonging(self)
 
         if wire.wire_type == "communications":
@@ -1962,7 +1962,7 @@ class Rocket:
 
     def _define_3d_edges(
         self, position_edges: list | tuple[tuple | list | float | int]
-    ) -> list[Vector, Vector]:
+    ) -> list[Vector]:
         """Creates the 3D position vectors of the edges from the input values.
 
         Parameters
@@ -2039,6 +2039,10 @@ class Rocket:
         height : float, int, optional
             Z-axis height relative to user-defined coordinate system in meters (m).
             Required if plate shape is 'circular' or 'squared'.
+
+        Returns
+        -------
+        None
         """
         if not isinstance(plate, Plate):
             raise ValueError("The plate parameter must be a Plate object")
@@ -2408,8 +2412,7 @@ class Rocket:
         self.plots.draw(vis_args, plane, filename=filename)
 
     def general_radius(self, z: float, frame: str = "bacs") -> float:
-        """
-        Function return the radius of the rocket, including the
+        """Returns the radius of the rocket, including the
         nose cone and the radius variations in the body, as a function of
         the distance along the z axis from the body axes coordinate system
         or the user defined coordinate system.
@@ -2418,7 +2421,6 @@ class Rocket:
         some tail, if defined, is present. Then, the radius of the body will be
         the top radius of the following tail, or if it is the last tail, the
         radius will be the radius of the bottom of the tail.
-
 
         Parameters
         ----------
@@ -2429,11 +2431,11 @@ class Rocket:
             Frame in which the z component is given. It can either be 'bacs'
             (body axis coordinate sytem) or 'ucs' (user defined coordiante
             system).
+
         Returns
         -------
         r: float
             Radius for the z value in the whole rocket.
-
         """
         if not isinstance(z, (float, int)):
             raise ValueError("Z must be a float or int")
@@ -2463,8 +2465,7 @@ class Rocket:
             return r
 
     def _calculate_radius_z_intermediate(self, z: float) -> float:
-        """
-        This is an auxiliary function returning the radius of the rocket,
+        """This is an auxiliary function returning the radius of the rocket,
         below the nose cone as a function of the distance along the z
         axis from the body axes coordinate system.
 
@@ -2493,9 +2494,8 @@ class Rocket:
         r = self._calculate_radius_z_tubes(z, tails_bacs)
         return r
 
-    def _calculate_radius_z_tubes(self, z: float, tails_bacs: list):
-        """
-        This is an auxiliary function returning the radius of the rocket,
+    def _calculate_radius_z_tubes(self, z: float, tails_bacs: list) -> float:
+        """This is an auxiliary function returning the radius of the rocket,
         when it is not in the nose cone or tails as a function of the
         distance along the z axis from the body axes coordinate system.
 
@@ -2528,8 +2528,7 @@ class Rocket:
     def z_bounds_check(
         self, z: float, frame: str = "bacs"
     ) -> tuple[bool, tuple[float, float]]:
-        """
-        This function is used to check if a given z is inside or outside
+        """This function is used to check if a given z is inside or outside
         the defined rocket.
 
         Parameters

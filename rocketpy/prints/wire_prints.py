@@ -7,7 +7,7 @@ class _WirePrints:
         Wire object that will be used for the prints.
     """
 
-    def __init__(self, wire):
+    def __init__(self, wire) -> None:
         """Initializes _WirePrints class.
 
         Parameters
@@ -21,7 +21,7 @@ class _WirePrints:
         """
         self.wire = wire
 
-    def current(self):
+    def current(self) -> None:
         """Prints the current flowing through the wire.
 
         Returns
@@ -30,7 +30,7 @@ class _WirePrints:
         """
         print(f"Current: {self.wire.current} A")
 
-    def edges(self):
+    def edges(self) -> None:
         """Prints the wire edges coordinates in the body axis coordinate system.
 
         Returns
@@ -41,7 +41,7 @@ class _WirePrints:
             f"Edge A is {self.wire._wire_edges_bacs[0]}, Edge B is {self.wire._wire_edges_bacs[1]} in the body axis coordinate system"
         )
 
-    def wire_type(self):
+    def wire_type(self) -> None:
         """Prints the wire type and, if applicable, the ignition wire function.
 
         Returns

@@ -5,8 +5,7 @@ from rocketpy.plots.plot_helpers import show_or_save_plot
 
 
 class _WirePlots:
-    """
-    Class that holds plot methods for the Wire class.
+    """Class that holds plot methods for the Wire class.
 
     Attributes
     ----------
@@ -14,8 +13,9 @@ class _WirePlots:
         Wire object that will be used for the plots.
     """
 
-    def __init__(self, wire, rocket):
-        """
+    def __init__(self, wire, rocket) -> None:
+        """Initializes _WirePlots class.
+
         Parameters
         ----------
         wire: Wire
@@ -23,6 +23,10 @@ class _WirePlots:
         rocket: Rocket
             Rocket instance to which the wire
             is attached.
+
+        Returns
+        -------
+        None
         """
         self.wire = wire
         self.rocket = rocket
@@ -37,8 +41,7 @@ class _WirePlots:
         edges_names: bool = True,
         filename: str | None = None,
     ) -> None:
-        """
-        Plots the wire and the rocket together. 
+        """Plots the wire and the rocket together. 
 
         Parameters
         ----------
@@ -89,7 +92,6 @@ class _WirePlots:
             eps, jpg, jpeg, pdf, pgf, png, ps, raw, rgba, svg, svgz, tif, tiff
             and webp (these are the formats supported by matplotlib). 
 
-
         Returns
         -------
         None
@@ -127,8 +129,7 @@ class _WirePlots:
         linestyle: str = "-",
         edges_names: bool = True,
     ) -> None:
-        """
-        Plot the edges and the wire in the rocket on the axes 'ax'.
+        """Plots the edges and the wire in the rocket on the axes 'ax'.
 
         Parameters
         ----------
@@ -209,8 +210,7 @@ class _WirePlots:
             ax.scatter(z, r, marker=marker, color=color, zorder=5)
 
     def all(self) -> None:
-        """
-        Prints out all graphs available about the Wire. It simply calls
+        """Plots all graphs available about the Wire. It simply calls
         all the other plotter methods in this class with all the
         default parameters.
 

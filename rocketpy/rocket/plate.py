@@ -40,7 +40,7 @@ class Plate:
         within the vertices.
     Plate.volume : float, int
         Volume of the plate in cubic meters (m^3).
-    Plate._magnetic_distortion_matrixes : dict
+    Plate._magnetic_distortion_matrices : dict
         Dictionary formed by the magnetic distortion matrix caused by
         the plate. The keys are the position vector tuples of the point
         relative to the coordinate system origin, and the value is the
@@ -61,7 +61,7 @@ class Plate:
     def __init__(
         self,
         shape: str,
-        dimensions: int | float,
+        dimensions: int | float | list,
         material: str,
         thickness: int | float,
         absolute_magnetic_permeability: int | float | None = None,
@@ -70,7 +70,7 @@ class Plate:
         z_points: float | int = 40,
         angular_points: float | int = 70,
         name: str = "Plate",
-    ):
+    ) -> None:
         """Initializes the Plate.
 
         Parameters
@@ -116,7 +116,7 @@ class Plate:
         name : str, optional
             Name of the plate. Default is 'Plate'.
         """
-        self._magnetic_distortion_matrixes = {}
+        self._magnetic_distortion_matrices = {}
         self.points = []
         self.plots = None
         self.prints = _PlatePrints(self)
@@ -143,9 +143,12 @@ class Plate:
         z_points,
         angular_points,
         grid_spacing,
-    ):
-        """
-        Validates input parameters and defines attributes
+    ) -> None:
+        """Validates input parameters and defines attributes. 
+
+        Returns
+        -------
+        None
         """
         self._validate_material(
             material, absolute_magnetic_permeability, relative_magnetic_permeability
@@ -154,10 +157,13 @@ class Plate:
 
     def _validate_material(
         self, material, absolute_magnetic_permeability, relative_magnetic_permeability
-    ):
-        """
-        Validates and defines the input parameters related to the material
+    ) -> None:
+        """Validates and defines the input parameters related to the material
         and magnetic permeability.
+
+        Returns
+        -------
+        None
         """
         if not isinstance(material, str):
             raise ValueError("material argument can only be a string.")
@@ -210,9 +216,12 @@ class Plate:
 
     def _validate_shape(
         self, shape, dimensions, z_points, angular_points, grid_spacing
-    ):
-        """
-        Validates and defines the input parameters related to the shape.
+    ) -> None:
+        """ Validates and defines the input parameters related to the shape.
+
+        Returns
+        -------
+        None
         """
         if isinstance(shape, str):
             if shape in ("circular", "squared"):
@@ -336,11 +345,8 @@ class Plate:
 
     def _circular_angle_calculation(
         self, z, center_z, geometric_center_angle, r
-    ) -> list:
-        """
-        Returns the initial and final angle for the point generation
-        when the shape is circular.
-        """
+    ) -> tuple[float, float]:
+        """Calculates angular span for circular plate discretization."""
         dz = z - center_z
         inside_sqrt = max(self.dimensions**2 - dz**2, 0)
         extension_angle = m.sqrt(inside_sqrt) / r
@@ -348,11 +354,10 @@ class Plate:
         beta = geometric_center_angle + extension_angle / 2
         return alpha, beta
 
-    def _squared_angle_calculation(self, geometric_center_angle, r) -> list:
-        """
-        Returns the initial and final angle for the point generation
-        when the shape is squared.
-        """
+    def _squared_angle_calculation(
+        self, geometric_center_angle, r
+    ) -> tuple[float, float]:
+        """Calculates angular span for squared plate discretization."""
         extension_angle = self.dimensions / r
         alpha = geometric_center_angle - extension_angle / 2
         beta = geometric_center_angle + extension_angle / 2
@@ -441,7 +446,7 @@ class Plate:
             else:
                 vertices.append([sensor_vec[0], sensor_vec[1], sensor_vec[2]])
         colinear = all(
-            Vector(vertices[i]) @ Vector(vertices[i + 1]) == 0
+            (Vector(vertices[i]) ^ Vector(vertices[i + 1])) == 0
             for i in range(len(vertices) - 1)
         )
         if colinear:
@@ -472,10 +477,8 @@ class Plate:
         if m.hypot(pt[0], pt[1]) > rocket.general_radius(pt[2], frame="ucs"):
             raise ValueError(f"Point {pt} is outside the rocket radius at z={pt[2]}.")
 
-    def _calculate_uv_frame(self, vertices):
-        """
-        Calculate the 2D local coordinate system vectors.
-        """
+    def _calculate_uv_frame(self, vertices) -> tuple[float]:
+        """Calculate the 2D local coordinate system vectors."""
         v0, v1, v2 = vertices[:3]
         nx = (v1[1] - v0[1]) * (v2[2] - v0[2]) - (v1[2] - v0[2]) * (v2[1] - v0[1])
         ny = (v1[2] - v0[2]) * (v2[0] - v0[0]) - (v1[0] - v0[0]) * (v2[2] - v0[2])
@@ -502,9 +505,10 @@ class Plate:
 
         return ux, uy, uz, vx, vy, vz
 
-    def calculate_soft_iron_distortion_matrix(self, position_vector: Vector) -> None:
-        """
-        Calculates the soft iron distortion matrix from the position of the points
+    def calculate_soft_iron_distortion_matrix(
+        self, position_vector: Vector | list | tuple
+    ) -> None:
+        """Calculates the soft iron distortion matrix from the position of the points
         relative to the body axis coordinate system of the plate and the parameters
         defined for the surface.
 
@@ -555,7 +559,7 @@ class Plate:
 
                     induced_matrix = induced_matrix + (dipole_scalar * dipole_kernel)
 
-                self._magnetic_distortion_matrixes[tuple(position_vector)] = (
+                self._magnetic_distortion_matrices[tuple(position_vector)] = (
                     induced_matrix
                 )
             else:
@@ -566,8 +570,7 @@ class Plate:
             raise ValueError("The points defining the plate must be a list")
 
     def draw_3d(self, color: str = "teal", marker: str = "h", filename=None) -> None:
-        """
-        Draws the plate in a matplotlib figure
+        """Draws the plate in a matplotlib figure
 
         Parameters
         ----------
@@ -608,8 +611,7 @@ class Plate:
         self.plots = _PlatePlots(self, rocket)
 
     def info(self) -> None:
-        """
-        Prints a summary of the information stored in the plate object.
+        """Prints a summary of the information stored in the plate object.
 
         Returns
         -------
@@ -618,8 +620,7 @@ class Plate:
         self.prints.all()
 
     def all_info(self) -> None:
-        """
-        Prints out all data and graphs available about the Plate.
+        """Prints out all data and graphs available about the Plate.
 
         Returns
         -------
@@ -653,7 +654,7 @@ class Plate:
             thickness=data["thickness"],
             # Optional Parameters
             absolute_magnetic_permeability=data.get(
-                "absolute_magnetic_permeability", 1e-5
+                "absolute_magnetic_permeability", None
             ),
             relative_magnetic_permeability=data.get(
                 "relative_magnetic_permeability", None

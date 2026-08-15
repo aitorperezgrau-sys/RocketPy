@@ -112,7 +112,7 @@ class Magnetometer(InertialSensor):
         cross_axis_sensitivity=0,
         name="Magnetometer",
         seed=None,
-    ):
+    ) -> None:
         """Initializes the Magnetometer sensor:
 
         Parameters
@@ -260,9 +260,12 @@ class Magnetometer(InertialSensor):
             seed=seed,
         )
 
-    def _validate_soft_iron(self, soft_iron_distortion):
-        """
-        Checks and defines the soft_iron_distortion parameter.
+    def _validate_soft_iron(self, soft_iron_distortion) -> None:
+        """Checks and defines the soft_iron_distortion parameter.
+
+        Returns
+        -------
+        None
         """
         # initialize soft_iron_distortion attribute
         if isinstance(soft_iron_distortion, Matrix):
@@ -278,9 +281,12 @@ class Magnetometer(InertialSensor):
             else:
                 raise ValueError("The accepted string must be plates")
 
-    def _validate_hard_iron(self, hard_iron_distortion):
-        """
-        Checks and defines the soft_iron_distortion parameter.
+    def _validate_hard_iron(self, hard_iron_distortion) -> None:
+        """Checks and defines the hard_iron_distortion parameter.
+
+        Returns
+        -------
+        None
         """
         if isinstance(hard_iron_distortion, (float, int)):
             hard_iron_distortion = [hard_iron_distortion] * 3
@@ -291,6 +297,12 @@ class Magnetometer(InertialSensor):
     def _validate_power_personalized_parameters(
         self, activation_signal_interference, communications_interference
     ) -> None:
+        """Checks and defines the parameters related to the power interference.
+
+        Returns
+        -------
+        None
+        """
 
         if (
             activation_signal_interference is None
@@ -304,8 +316,15 @@ class Magnetometer(InertialSensor):
         self._validate_activation_signal_interference(activation_signal_interference)
         self._validate_communications_interference(communications_interference)
 
-    def _validate_activation_signal_interference(self, activation_signal_interference):
-        """Checks activation signal interference and defines the related attributes."""
+    def _validate_activation_signal_interference(
+        self, activation_signal_interference
+    ) -> None:
+        """Checks activation signal interference and defines the related attributes.
+
+        Returns
+        -------
+        None
+        """
 
         if isinstance(activation_signal_interference, str):
             if activation_signal_interference.lower() == "wires":
@@ -322,8 +341,15 @@ class Magnetometer(InertialSensor):
             self.activation_signal_interference
         )
 
-    def _validate_communications_interference(self, communications_interference):
-        """Checks communications interference and defines the related attributes."""
+    def _validate_communications_interference(
+        self, communications_interference
+    ) -> None:
+        """Checks communications interference and defines the related attributes.
+
+        Returns
+        -------
+        None
+        """
 
         if isinstance(communications_interference, str):
             if communications_interference.lower() == "wires":
@@ -350,8 +376,7 @@ class Magnetometer(InertialSensor):
         self.initial_activation_signal_interference = "wires"
 
     def measure(self, time: float, **kwargs) -> None:
-        """
-        obtain the simulated reading of the magnetometer for a given time step
+        """Obtain the simulated reading of the magnetometer for a given time step
 
         Parameters
         ----------
@@ -416,7 +441,7 @@ class Magnetometer(InertialSensor):
                 u[0:3]
             )  # Vector(u[0:3]) is the coordinates center of dry mass in the inertial frame
         )
-        b_north, b_east, b_down = self.obtain_magnetic_field(
+        b_north, b_east, b_down = self._obtain_magnetic_field(
             x_inertial,
             y_inertial,
             z_inertial,
@@ -450,39 +475,52 @@ class Magnetometer(InertialSensor):
 
     def obtain_magnetic_field(
         self,
-        x_inertial,
-        y_inertial,
-        z_inertial,
-        launch_site_elevation,
-        earth_radius,
-        lat0,
-        lon0,
-    ):
-        """
-        Returns from the magnetic model the magnetic field components in the NED
-        frame based on the coordinates in the inertial frame, the launch site elevation
-        and the earth radius and initial longitude and latitude of the launch site.
-        """
-        # z is calculated in meters above the sea level, we must change to WGS84 in km
-        altitude_wgs84_km = (z_inertial + launch_site_elevation) / 1000.0
+        x_inertial: float,
+        y_inertial: float,
+        z_inertial: float,
+        launch_site_elevation: float,
+        earth_radius: float,
+        lat0: float,
+        lon0: float,
+    ) -> tuple[float, float, float]:
+        """Calculates Earth's magnetic field components in the North-East-Down (NED) frame.
 
-        # Convert x and y to current latitude and longitude
+        Parameters
+        ----------
+        x_inertial : float
+            Inertial x-coordinate (East) in meters (m).
+        y_inertial : float
+            Inertial y-coordinate (North) in meters (m).
+        z_inertial : float
+            Inertial z-coordinate (Up) in meters (m).
+        launch_site_elevation : float
+            Launch site elevation above sea level in meters (m).
+        earth_radius : float
+            Radius of Earth at launch location in meters (m).
+        lat0 : float
+            Launch site latitude in degrees.
+        lon0 : float
+            Launch site longitude in degrees.
+
+        Returns
+        -------
+        tuple of float
+            Geomagnetic field components (B_north, B_east, B_down) in Tesla (T).
+        """
+        altitude_wgs84_km = (z_inertial + launch_site_elevation) / 1000.0
         drift = math.hypot(x_inertial, y_inertial)
         bearing = math.atan2(x_inertial, y_inertial) * (180 / math.pi) % 360
         latitude, longitude = inverted_haversine(
             lat0, lon0, drift, bearing, earth_radius
         )
 
-        # --- obtain the magnetic field in the NED (North-East-Down axis) --
-        # Calculate all field components at once
         calculate_geomagnetic(
             self.wmm, latitude, longitude, self.year, altitude_wgs84_km
         )
 
-        # components of the magnetic field
-        b_north = self.wmm.bx / 1e9  # T
-        b_east = self.wmm.by / 1e9  # T
-        b_down = self.wmm.bz / 1e9  # T
+        b_north = self.wmm.bx / 1e9
+        b_east = self.wmm.by / 1e9
+        b_down = self.wmm.bz / 1e9
 
         return b_north, b_east, b_down
 
@@ -563,14 +601,14 @@ class Magnetometer(InertialSensor):
                 for plate, _, _ in rocket.plates:
                     if (
                         self.sensor_from_bacs_t
-                        not in plate._magnetic_distortion_matrixes
+                        not in plate._magnetic_distortion_matrices
                     ):
                         plate.calculate_soft_iron_distortion_matrix(
                             self._sensor_from_bacs
                         )
                         self._soft_iron_distortion_matrix = (
                             self._soft_iron_distortion_matrix
-                            + plate._magnetic_distortion_matrixes[
+                            + plate._magnetic_distortion_matrices[
                                 self.sensor_from_bacs_t
                             ]
                         )
@@ -897,6 +935,11 @@ class Magnetometer(InertialSensor):
         Data is a dictionary that must contain the same keys as the initialization
         parameters of the Magnetometer class. In case some parameter is not
         defined, the default value matches the default initialization of the constructor.
+
+        Parameters
+        ----------
+        data : dict
+            Dictionary containing plate constructor attributes.
 
         Returns
         -------
