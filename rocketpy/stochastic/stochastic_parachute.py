@@ -7,19 +7,29 @@ from .stochastic_model import StochasticModel, _sampler_seed
 
 
 def _is_a_trigger(member):
-    """One of the three forms ``Parachute`` accepts, and no more.
+    """One of the forms ``Parachute`` accepts, and no more.
 
-    The height form defers to ``Parachute``'s own predicate instead of
+    The numeric forms defer to ``Parachute``'s own predicate instead of
     restating it. Both were written out separately before and drifted: this one
     kept ``(int, float)`` while ``Parachute`` widened to ``numbers.Real``, so a
     ``numpy.int64`` height was refused here even though the ``Parachute`` it
     would have built accepts it. Calling the same function is what keeps the
     promise that what this accepts is what a parachute accepts.
+
+    That applies to the delay of a ``("time", t_deploy)`` trigger too, so a
+    string is refused rather than quietly coerced by ``float()``.
     """
     if callable(member):
         return True
     if isinstance(member, str):
         return member.lower() == "apogee"
+    if (
+        isinstance(member, (tuple, list))
+        and len(member) == 2
+        and isinstance(member[0], str)
+        and member[0].lower() == "time"
+    ):
+        return bool(_is_a_height_trigger(member[1]) and member[1] >= 0)
     return _is_a_height_trigger(member)
 
 
@@ -37,7 +47,8 @@ class StochasticParachute(StochasticModel):
     cd_s : tuple, list, int, float
         Drag coefficient of the parachute.
     trigger : list
-        List of callables, string "apogee" or ints/floats.
+        List of callables, string "apogee", ints/floats, or
+        ``("time", t_deploy)`` tuples.
     sampling_rate : tuple, list, int, float
         Sampling rate of the parachute in seconds.
     lag : tuple, list, int, float
@@ -84,7 +95,8 @@ class StochasticParachute(StochasticModel):
         cd_s : tuple, list, int, float
             Drag coefficient of the parachute.
         trigger : list
-            List of callables, string "apogee" or ints/floats.
+            List of callables, string "apogee", ints/floats, or
+            ``("time", t_deploy)`` tuples.
         sampling_rate : tuple, list, int, float
             Sampling rate of the parachute in seconds.
         lag : tuple, list, int, float
@@ -146,8 +158,9 @@ class StochasticParachute(StochasticModel):
 
     def _validate_trigger(self, trigger):
         """Validates the trigger input. If not None, it must be a non-empty
-        list whose members are each a callable, the string "apogee", or a
-        height. One of those is chosen per simulation.
+        list whose members are each a callable, the string "apogee", a height,
+        or a ``("time", t_deploy)`` tuple. One of those is chosen per
+        simulation.
         """
         if trigger is None:
             return
@@ -163,7 +176,7 @@ class StochasticParachute(StochasticModel):
         if not valid:
             raise AssertionError(
                 "`trigger` must be a non-empty list whose members are "
-                "callables, the string 'apogee', or heights"
+                "callables, the string 'apogee', heights, or ('time', t_deploy)"
             )
 
     def _validate_noise(self, noise):

@@ -1497,6 +1497,10 @@ class Flight:
         if expects_udot:
             u_dot = derivative_func(t, y)
 
+        # Expose flight time for built-in ("time", t_deploy) triggers without
+        # changing the public (p, h, y, sensors, u_dot) triggerfunc signature.
+        parachute._eval_time = t
+
         # Call the wrapper with both sensors and u_dot
         # The wrapper will decide which args to pass to the user's function
         return triggerfunc(pressure, height, y, sensors, u_dot)
