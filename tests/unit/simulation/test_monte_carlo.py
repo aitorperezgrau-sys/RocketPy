@@ -614,9 +614,13 @@ def test_a_monte_carlo_flight_keeps_the_configuration_it_was_given(monkeypatch):
         initial_solution=None,
         terminate_on_apogee=True,
         time_overshoot=False,
-        _randomize_rail_length=lambda: 5.0,
-        _randomize_inclination=lambda: 84.0,
-        _randomize_heading=lambda: 133.0,
+        # One draw for all three, as #1090 requires: three separate calls
+        # meant the flight flew one sample and the exported row logged another.
+        _sample_flight_inputs=lambda: {
+            "rail_length": 5.0,
+            "inclination": 84.0,
+            "heading": 133.0,
+        },
     )
     analysis = object.__new__(MonteCarlo)
     analysis.flight = stochastic_flight
@@ -633,6 +637,12 @@ def test_a_monte_carlo_flight_keeps_the_configuration_it_was_given(monkeypatch):
     assert flight.equations_of_motion == "solid_propulsion"
     assert flight.simulation_mode == "native"
     assert flight.name == "named"
+    # and the single draw is what the flight is actually built from
+    assert (flight.rail_length, flight.inclination, flight.heading) == (
+        5.0,
+        84.0,
+        133.0,
+    )
 
 
 @pytest.mark.parametrize(
