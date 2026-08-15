@@ -287,7 +287,12 @@ class Magnetometer(InertialSensor):
     def _validate_power_personalized_parameters(
         self, activation_signal_interference, communications_interference
     ) -> None:
-        """Checks and defines the parameters related to the power interference."""
+        """Checks and defines the parameters related to the power interference.
+
+        Returns
+        -------
+        None
+        """
 
         if (
             activation_signal_interference is None
@@ -304,7 +309,12 @@ class Magnetometer(InertialSensor):
     def _validate_activation_signal_interference(
         self, activation_signal_interference
     ) -> None:
-        """Checks activation signal interference and defines the related attributes."""
+        """Checks activation signal interference and defines the related attributes.
+
+        Returns
+        -------
+        None
+        """
 
         if isinstance(activation_signal_interference, str):
             if activation_signal_interference.lower() == "wires":
@@ -324,7 +334,12 @@ class Magnetometer(InertialSensor):
     def _validate_communications_interference(
         self, communications_interference
     ) -> None:
-        """Checks communications interference and defines the related attributes."""
+        """Checks communications interference and defines the related attributes.
+
+        Returns
+        -------
+        None
+        """
 
         if isinstance(communications_interference, str):
             if communications_interference.lower() == "wires":
@@ -380,6 +395,10 @@ class Magnetometer(InertialSensor):
                 List that stores parachute events triggered during flight.
                 it is a list formed by lists which contain the trigger time
                 as the first element and the parachute object as the second.
+
+        Returns
+        -------
+        None
         """
         # initialization of parameters
         u = kwargs["u"]  # state vector
@@ -516,7 +535,7 @@ class Magnetometer(InertialSensor):
             Current time of the simulation.
         parachute_events : list only required if the ignition_wire_function is 'parachute_deployment'
             List that stores parachute events triggered during flight.
-            it is a list formed by lists which contain the trigger time
+            It is a list formed by lists which contain the trigger time
             as the first element and the parachute object as the second.
 
         Returns
@@ -633,10 +652,10 @@ class Magnetometer(InertialSensor):
         rocket : Rocket
             Rocketpy Rocket class.
         current_time : float, only required if the ignition_wire_function is 'motor_ignition'
-            current time of the simulation.
+            Current time of the simulation.
         parachute_events : list only required if the ignition_wire_function is 'parachute_deployment'
             List that stores parachute events triggered during flight.
-            it is a list formed by lists which contain the trigger time
+            It is a list formed by lists which contain the trigger time
             as the first element and the parachute object as the second.
 
         Returns
@@ -760,13 +779,13 @@ class Magnetometer(InertialSensor):
                 for ignition_wire in rocket._ignition_wires:
                     if ignition_wire.ignition_wire_function == "parachute_deployment":
                         b_field = (
-                            self.calculate_activation_signal_interference_parachute(
+                            self._calculate_activation_signal_interference_parachute(
                                 b_field, current_time, parachute_events, ignition_wire
                             )
                         )
 
                     elif ignition_wire.ignition_wire_function == "motor_ignition":
-                        b_field = self.calculate_activation_signal_interference_motor(
+                        b_field = self._calculate_activation_signal_interference_motor(
                             b_field, rocket, current_time, ignition_wire
                         )
                     else:
@@ -782,11 +801,10 @@ class Magnetometer(InertialSensor):
 
         return b_field
 
-    def calculate_activation_signal_interference_parachute(
+    def _calculate_activation_signal_interference_parachute(
         self, b_field, current_time, parachute_events, ignition_wire
     ):
-        """
-        Applies the activation signal interference due to the parachute.
+        """Applies the activation signal interference due to the parachute.
 
         Parameters
         ----------
@@ -839,10 +857,11 @@ class Magnetometer(InertialSensor):
 
         return b_field
 
-    def calculate_activation_signal_interference_motor(
+    def _calculate_activation_signal_interference_motor(
         self, b_field, rocket, current_time, ignition_wire
     ):
-        """
+        """Applies the activation signal interference due to the motor.
+
         Parameters
         ----------
         b_field : Vector
@@ -878,8 +897,7 @@ class Magnetometer(InertialSensor):
         return b_field
 
     def export_measured_data(self, filename, file_format="csv"):
-        """
-        Exports the measured values to a file.
+        """Exports the measured values to a file.
 
         Parameters
         ----------
