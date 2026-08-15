@@ -14,7 +14,7 @@ This reference manual details functions, modules, methods and attributes include
    classes/Components
    classes/Rocket
    classes/Parachute
-   classes/sensors/index.rst
+   Sensor Classes <classes/sensors/index>
    classes/Flight
    classes/Wire
    classes/Plate

@@ -19,7 +19,7 @@ def test_circular_plate():
 @pytest.fixture()
 def test_squared_plate():
     return Plate(
-        shape="circular",
+        shape="squared",
         dimensions=0.03,
         material="carbon_steel",
         thickness=0.0002,

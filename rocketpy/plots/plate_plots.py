@@ -182,8 +182,7 @@ class _PlatePlots:
     def _plot_plate_rocket(
         self, ax, plane: str = "xz", color: str = "darkgreen"
     ) -> None:
-        """'
-        Plots the plate on the rocket:
+        """Plots the plate on the rocket:
 
         Parameters
         ----------

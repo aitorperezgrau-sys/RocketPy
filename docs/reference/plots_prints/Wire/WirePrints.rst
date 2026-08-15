@@ -1,5 +1,5 @@
 Wire Prints Class
 -------------------
 
-.. autoclass:: rocketpy.plots.wire_prints._WirePrints
+.. autoclass:: rocketpy.prints.wire_prints._WirePrints
    :members:

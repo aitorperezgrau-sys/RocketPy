@@ -70,19 +70,19 @@ class _WirePlots:
             https://matplotlib.org//gallery/color/named_colors
             Default is 'salmon'. 
         marker : str, optional
-            shape of the points from which the plate is formed. 
+            Shape of the marker representing wire edges.
             A full list of markers can be found at: 
             https://matplotlib.org/stable/api/markers_api.html
             Default is 'o'. 
         linestyle : str, optional
-            type of the line that will represent the wire. 
+            Type of the line that will represent the wire. 
             A full list of linestyles can be found at: 
             https://matplotlib.org/stable/gallery/lines_bars_and_markers/linestyles.html
             Default is '-'. 
         edges_names : bool, optional
-            boolean defining whether the names of the edges are displayed.
-            If False, they will not be displayed
-            If True, the name Edge A, and Edge B will be show.
+            Boolean defining whether the names of the edges are displayed.
+            If False, they will not be displayed.
+            If True, the names Edge A and Edge B will be shown.
         filename : str, optional
             The path the plot should be saved to. By default None, in which case
             the plot will be shown instead of saved. Supported file endings are:

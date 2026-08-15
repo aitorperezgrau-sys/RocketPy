@@ -1,10 +1,9 @@
 class _WirePrints:
-    """
-    Class that holds prints methods for Wire class.
+    """Class that holds print methods for the Wire class.
 
     Attributes
     ----------
-    _WirePrints.plate : Wire
+    _WirePrints.wire : Wire
         Wire object that will be used for the prints.
     """
 
@@ -22,7 +21,7 @@ class _WirePrints:
 
     def edges(self):
         print(
-            f"Edge A is {self.wire._wire_edges_bacs[0]}, Edge B is {self.wire._wire_edges_bacs[1]} in the body axis coordinates sytem"
+            f"Edge A is {self.wire._wire_edges_bacs[0]}, Edge B is {self.wire._wire_edges_bacs[1]} in the body axis coordinate system"
         )
 
     def wire_type(self):

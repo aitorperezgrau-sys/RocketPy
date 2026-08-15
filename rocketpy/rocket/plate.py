@@ -9,57 +9,53 @@ from rocketpy.prints.plate_prints import _PlatePrints
 
 
 class Plate:
-    """
-    This class allows to define surfaces on the rocket. It is used
+    """This class allows defining surfaces on the rocket. It is used
     to account for the soft iron distortion on the rocket that
     affects the magnetometer reading.
 
     Attributes
     ----------
-    Plate.shape: str
+    Plate.shape : str
         Shape of the plate. It can be 'circular', 'squared'
         or 'personalized'.
-    Plate.dimensions: float, int or list[list]
+    Plate.dimensions : float, int or list[list]
         Dimensions of the plate. When the shape is squared or
-        circular it has a float or int, whereas it is a list when
-        the shape is 'personalized'.
-    Plate.material: str
+        circular it has a float or int, whereas it is a list of vertices
+        when the shape is 'personalized'.
+    Plate.material : str
         Material from which the plate is composed. Allowed strings
-        are 'iron', 'carbon steel', or 'personalized' if we want to
+        are 'iron', 'carbon_steel', or 'personalized' if we want to
         define the material based on the magnetic permeability.
-    Plate.absolute_magnetic_permeability: float
-        Magnetic permeability of the material,
-    Plate.relative_magnetic_permeability: float
+    Plate.absolute_magnetic_permeability : float
+        Magnetic permeability of the material in H/m (or N/A^2).
+    Plate.relative_magnetic_permeability : float
         Ratio of the magnetic permeability to the magnetic permeability
-        of vacuum.
-    Plate.thickness: float or int
-        Thickness of the plate.
-    Plate.area: float or int
-        Area of the plate. When the parameter is circular or squared,
-        then the common expression is used, while with personalized,
-        the area is the minimal area of the region contained within the
-        points.
-    Plate.volume: float or int
-        Volume of the plate.
-    Plate._magnetic_distortion_matrixes: dict
+        of vacuum (dimensionless).
+    Plate.thickness : float, int
+        Thickness of the plate in meters (m).
+    Plate.area : float, int
+        Area of the plate in square meters (m^2). When the parameter is
+        circular or squared, the standard formula is used, while with
+        personalized, the area is the minimal area of the region contained
+        within the vertices.
+    Plate.volume : float, int
+        Volume of the plate in cubic meters (m^3).
+    Plate._magnetic_distortion_matrixes : dict
         Dictionary formed by the magnetic distortion matrix caused by
-        the plate. The keys are the position vector of the point relative
-        to the cso given as a tuple, and the value is the magnetic
-        distortion Matrix.
-    Plate.points: list[list]
-        List formed by the vectors representing the
-        components of each points of the surface in the body axis coordinate
-        system.
-    Plate.grid_spacing: float or int
-        Space between points when it is 'personalized'
-    Plate.z_points: int
-        Number of points when it is 'circular' or 'squared'
-        along the z axis.
-    Plate.angular_points: int
-        Number of angles when it is 'circular' or 'squared'
-    Plate.name: str
+        the plate. The keys are the position vector tuples of the point
+        relative to the coordinate system origin, and the value is the
+        magnetic distortion Matrix.
+    Plate.points : list[list]
+        List formed by the vectors representing the components of each point
+        of the surface in the body axis coordinate system (BACS).
+    Plate.grid_spacing : float, int
+        Space between points in meters (m) when shape is 'personalized'.
+    Plate.z_points : int
+        Number of points along the z-axis when shape is 'circular' or 'squared'.
+    Plate.angular_points : int
+        Number of angular points when shape is 'circular' or 'squared'.
+    Plate.name : str
         Name of the plate.
-
     """
 
     def __init__(
@@ -75,69 +71,50 @@ class Plate:
         angular_points: float | int = 70,
         name: str = "Plate",
     ):
-        """
-        Initializes the Plate.
+        """Initializes the Plate.
 
         Parameters
         ----------
-        shape: str, optional
-            The shape of the plate, allowed parameters are:
+        shape : str
+            The shape of the plate. Allowed parameters are:
 
-            If 'circular': then the plate is assumed to be
-            a circle, and the input 'dimension' refers to
-            the radius. The plate will be located in the
-            rocket body or nose cone.
+            - If 'circular': the plate is assumed to be a circle, and the input
+              'dimensions' refers to the radius in meters.
+            - If 'squared': the plate is assumed to be a square, and the input
+              'dimensions' refers to the side length in meters.
+            - If 'personalized': the plate has the shape specified by the
+              vertices defined in 'dimensions'.
+        dimensions : float, int, list
+            Dimensions of the plate, which depend on 'shape':
 
-            If 'squared': then the plate is assumed to be a
-            square and the input 'dimensions' refers to the
-            side. The plate will be located in the
-            rocket body or nose cone.
-
-            If 'personalized': then the plate will have the shape
-            specified by the vertexes defined in 'dimensions'
-        dimensions: float, int
-            Dimensions of the plate, which depend on 'shape'
-            definition, if it is 'circular' or 'squared' it is
-            a mandatory parameter:
-
-            - If shape is 'circular', the dimension is a float or int,
-            which represents the radius when the shape is flat.
-
-            - If shape is 'squared', the dimension is a float or int,
-            which represents the side length when the shape is flat.
-
-            - If shape is 'personalized', position must be a list
-            with lists as the vertixes that form the shape. They must be
-            in sequential order (clockwise or counter-clockwise) and
-            at least 3 non-collinear vertices must be defined in the user
-            defined coordinate system.
-        material: str
-            Material from which the plate is composed Allowed strings
-            are 'iron', 'carbon_steel', or 'personalized' if we want
-            to define the material based on the magnetic permeability.
-        thickness: float or int
-            Thickness of the plate in m.
-        absolute_magnetic_permeability: float, int, optional
-            Magnetic permeability of the material, which is the measure
-            of a material ability to allow magnetic field lines to pass
-            through it. Default is 1e-5.
-        relative_magnetic_permeability: float, int, optional
-            Ratio of the absolute magnetic permeability and the permeability
-            of vacuum. If defined it overwrittes the value of the
+            - If shape is 'circular', float or int representing radius in m.
+            - If shape is 'squared', float or int representing side length in m.
+            - If shape is 'personalized', list of 3D vertices [x, y, z] in sequential
+              order (clockwise or counter-clockwise) with at least 3 non-collinear
+              vertices defined in the user-defined coordinate system (UCS).
+        material : str
+            Material from which the plate is composed. Allowed strings are
+            'iron', 'carbon_steel', or 'personalized' if defining the material
+            based on magnetic permeability.
+        thickness : float, int
+            Thickness of the plate in meters (m).
+        absolute_magnetic_permeability : float, int, optional
+            Magnetic permeability of the material in H/m. Default is None.
+        relative_magnetic_permeability : float, int, optional
+            Ratio of the absolute magnetic permeability to the permeability
+            of vacuum (dimensionless). If defined, it overwrites
             absolute_magnetic_permeability. Default is None.
-        grid_spacing: float, optional,
-            Only used when the shape is personalized and it determines
-            the space between the points of the approximated shape defined
-            by the vertices. Default is 0.001.
-        z_points: int, optional
-            Number of points that will be taken in the z axis to create the
-            plate  when it is 'circular' or 'squared'. Default is 40.
-        angular_points: int, optional
-            Number of angles that will be taken to create the plate when it
-            is 'circular' or 'squared'. Default is 70.
-        name: str, optional
-            Name of the plate. Default value is 'Plate'
-
+        grid_spacing : float, optional
+            Used when shape is 'personalized'; determines the spacing between
+            discretization grid points in meters (m). Default is 0.001.
+        z_points : int, optional
+            Number of points taken along the z-axis for 'circular' or 'squared'
+            shapes. Default is 40.
+        angular_points : int, optional
+            Number of angular discretization points for 'circular' or 'squared'
+            shapes. Default is 70.
+        name : str, optional
+            Name of the plate. Default is 'Plate'.
         """
         self._magnetic_distortion_matrixes = {}
         self.points = []
@@ -261,29 +238,26 @@ class Plate:
     def define_plate_position(
         self,
         rocket,
-        position: str | None = None,
+        position: float | int | None = None,
         height: float | int | None = None,
     ) -> None:
-        """
-        Defines the geometry of the plate from the
-        shape, position, dimensions and height defined in the add_plate()
-        rocket class method.
+        """Defines the geometry of the plate from the shape, position,
+        dimensions and height defined in the add_plate() rocket class method.
 
         Parameters
         ----------
-        position: float, int, optional
-            Position of the plate,
-            - If the shape is 'squared' or 'circular': It is the angle between
-            the y axis of the user defined coordinate system and the geometric
-            center of the plate in degrees. The positive direction is defined
-            as the direciton in which the right hand rule coincides with the
-            z direction based on the coordinate system orientation.
-        height: float, int, optional
-            Position of the geometric center of plate when the shape is not
-            'personalized' along the z axis relative to the user defined coordiante
-            system.
-        rocket: Rocket
-            RocketPy class.
+        rocket : Rocket
+            RocketPy Rocket instance.
+        position : float, int, optional
+            Position of the plate:
+
+            - If shape is 'squared' or 'circular': the angle between the y-axis
+              of the user-defined coordinate system and the geometric center of
+              the plate in degrees. Positive direction follows the right-hand rule
+              along the z-axis.
+        height : float, int, optional
+            Position of the geometric center of the plate along the z-axis
+            relative to the user-defined coordinate system in meters (m).
 
         Returns
         -------
@@ -302,38 +276,31 @@ class Plate:
     def generate_points(
         self,
         rocket,
-        position: str | None = None,
+        position: float | int | None = None,
         height: float | int | None = None,
     ) -> None:
-        """
-        Generates the points required to calculate the soft iron distortion
-        matrix relative to the body axis coordinate system:
+        """Generates the points required to calculate the soft iron distortion
+        matrix relative to the body axis coordinate system (BACS).
 
         Parameters
-        ------------
-        rocket: Rocket
-            RocketPy class.
-        height: float, int, optional
-            Position of the geometric center of plate when the shape is 'circular'
-            or 'squared' along the z axis relative to the user defined
-            coordiante system.
-        position: float, int, optional
-            Position of the plate,
-            - If the shape is 'squared' or 'circular': It is the angle between
-            the y axis of the user defined coordinate system and the geometric
-            center of the plate in degrees. The positive direction is defined
-            as the direciton in which the right hand rule coincides with the
-            z direction based on the coordinate system orientation.
+        ----------
+        rocket : Rocket
+            RocketPy Rocket instance.
+        position : float, int, optional
+            Position angle of the geometric center in degrees when shape is
+            'circular' or 'squared'.
+        height : float, int, optional
+            Position of the geometric center along the z-axis relative to the
+            user-defined coordinate system in meters (m).
 
         Returns
         -------
         None
-
         """
         self.points = []
 
         if self.shape == "personalized":
-            self.generate_personalized_internal_plate(rocket)
+            self._generate_personalized_internal_plate(rocket)
         else:
             upper_z = height + self.dimensions / 2
             lower_z = height - self.dimensions / 2
@@ -391,7 +358,7 @@ class Plate:
         beta = geometric_center_angle + extension_angle / 2
         return alpha, beta
 
-    def generate_personalized_internal_plate(
+    def _generate_personalized_internal_plate(
         self,
         rocket,
     ) -> None:
@@ -409,7 +376,7 @@ class Plate:
         None
         """
         # Processing of points
-        vertices = self.vertices_definition(rocket)
+        vertices = self._vertices_definition(rocket)
 
         centroid = [sum(col) / len(vertices) for col in zip(*vertices)]
         cx, cy, cz = centroid[0], centroid[1], centroid[2]
@@ -447,7 +414,7 @@ class Plate:
 
         self.points = final_3d_points
 
-    def vertices_definition(self, rocket) -> list:
+    def _vertices_definition(self, rocket) -> list:
         """
         Defines the vertices in the BACS frame.
         Parameters
@@ -465,7 +432,7 @@ class Plate:
         if len(self.dimensions) < 3:
             raise ValueError("The length of the vertices must be at least 3")
         for pt in self.dimensions:
-            self.check_entry_dimensions(pt, rocket)
+            self._check_entry_dimensions(pt, rocket)
 
             # Transform to BACS
             sensor_vec = Vector(pt) - cdm_user_frame
@@ -481,7 +448,7 @@ class Plate:
             raise ValueError("All values cannot be colinear")
         return vertices
 
-    def check_entry_dimensions(self, pt, rocket) -> None:
+    def _check_entry_dimensions(self, pt, rocket) -> None:
         """
         Check whether the points passed when shape is personalized are inside the rocket
         and in the case it is wrong prints why.
@@ -515,6 +482,8 @@ class Plate:
         nz = (v1[0] - v0[0]) * (v2[1] - v0[1]) - (v1[1] - v0[1]) * (v2[0] - v0[0])
 
         n_norm = m.hypot(nx, ny, nz)
+        if n_norm < 1e-12:
+            raise ValueError("The vertices of the plate cannot be collinear.")
         nx, ny, nz = nx / n_norm, ny / n_norm, nz / n_norm
 
         arb_x, arb_y, arb_z = (
@@ -525,6 +494,8 @@ class Plate:
         uy = nz * arb_x - nx * arb_z
         uz = nx * arb_y - ny * arb_x
         u_norm = m.hypot(ux, uy, uz)
+        if u_norm < 1e-12:
+            raise ValueError("Invalid plate orientation or geometry.")
         ux, uy, uz = ux / u_norm, uy / u_norm, uz / u_norm
 
         vx, vy, vz = ny * uz - nz * uy, nz * ux - nx * uz, nx * uy - ny * ux
@@ -600,11 +571,11 @@ class Plate:
 
         Parameters
         ----------
-        color : str
+        color : str, optional
             Color of the points.
             A full list of color names can be found at:
             https://matplotlib.org//gallery/color/named_colors
-            Default is
+            Default is 'teal'.
         marker: str
             shape of the points from which the plate is formed.
             A full list of markers can be found at:
@@ -623,13 +594,12 @@ class Plate:
         self.plots.draw_3d(color, marker, filename)
 
     def _rocket_belonging(self, rocket) -> None:
-        """
-        Initializate _PlatePlot class with the rocket instance to which it belogns.
+        """Initialize _PlatePlots class with the rocket instance to which it belongs.
 
         Parameters
         ----------
-        rocket: Rocket
-            rocket instance to which it belongs
+        rocket : Rocket
+            Rocket instance to which it belongs.
 
         Returns
         -------
@@ -660,12 +630,20 @@ class Plate:
 
     @classmethod
     def from_dict(cls, data: dict) -> "Plate":
-        """
-        Creates an instance of Plate class from a dictionary object, data.
+        """Creates an instance of Plate class from a dictionary object, data.
         Data is a dictionary that must contain the same keys as the initialization
-        parameter of the Plate class. In the case some parameter is not
-        defined, the default value matches the default intializaiton of the constructor
+        parameter of the Plate class. In case some parameter is not defined,
+        the default value matches the default initialization of the constructor.
 
+        Parameters
+        ----------
+        data : dict
+            Dictionary containing plate constructor attributes.
+
+        Returns
+        -------
+        plate : Plate
+            Plate object instance with the provided attributes.
         """
         return cls(
             # Compulsory Parameters

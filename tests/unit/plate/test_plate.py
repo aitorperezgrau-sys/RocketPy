@@ -155,11 +155,17 @@ def test_validate_parameters(
         ],  # wrong vertices: all colinear
     ],
 )
-def test_generate_personalized_points_bounds(
-    vertices, calisto_robust, test_personalized_plate
-):
+def test_generate_personalized_points_bounds(vertices, calisto_robust):
+    test_plate = Plate(
+        shape="personalized",
+        dimensions=vertices,
+        material="carbon_steel",
+        thickness=0.001,
+        grid_spacing=0.002,
+        name="test_personalized_plate",
+    )
     with pytest.raises(ValueError):
-        calisto_robust.add_wire(test_personalized_plate, vertices)
+        calisto_robust.add_plate(test_plate)
 
 
 @pytest.mark.parametrize(
@@ -343,7 +349,7 @@ def test_rocket_belonging(test_circular_plate, calisto_robust):
         ("test_squared_plate", 45, 0.4),
     ],
 )
-def test_wire_prints_and_plots(request, plate, position, height, calisto_robust):
+def test_plate_prints_and_plots(request, plate, position, height, calisto_robust):
     """Test the print methods of the Plate class. Checks if all attributes are
     printed and plotted correctly.
     """

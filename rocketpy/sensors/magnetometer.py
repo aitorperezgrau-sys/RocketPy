@@ -14,15 +14,13 @@ from rocketpy.tools import inverted_haversine
 
 
 class Magnetometer(InertialSensor):
-    """
-    Class for simulating a magnetometer sensor during rocket flight.
+    """Class for simulating a magnetometer sensor during rocket flight.
 
     Inherits from the InertialSensor subclass. Models Earth's geomagnetic
     field using the World Magnetic Model (WMM) and simulates physical sensor
     distortions, including hard iron, soft iron (via plates), power wire
     interferences (via communication & ignition wires), thermal drifts, noise, and
     quantization.
-
 
     Attributes
     ----------
@@ -31,28 +29,26 @@ class Magnetometer(InertialSensor):
     orientation : tuple, list
         Orientation of the sensor in the rocket.
     magnetic_interference : list
-        Magnetic interference on the magnetometer, it is the sum of the
-        hard iron distortion and power interference and soft_iron_distortion_difference.
+        Magnetic interference on the magnetometer in Tesla (T), formed by the sum of
+        hard iron distortion, power interference, and soft iron distortion difference.
     hard_iron_distortion : list
-        Hard iron distortion in T.
+        Hard iron distortion in Tesla (T).
     _soft_iron_distortion_matrix : Matrix
-        Sum of the soft iron distortion matrixes applied to the magnetic
-        reading.
+        Soft iron distortion matrix applied to the magnetic reading (dimensionless).
     soft_iron_distortion_difference : list
-        Difference between the vector after aplication of soft iron distortion
-        and before in T.
+        Difference between the vector after application of soft iron distortion
+        and before in Tesla (T).
     power_interference : list
-        Holds the total magnetic distortion due to the system interference in T
-        regardless of the initialization mode, for a given measurement.
+        Total magnetic distortion due to system interference in Tesla (T).
     communications_interference : list
-        Holds the magnetic distortion due to the communication wires in T.
-    activation_signal_interference: list
-        Holds the magnetic distortion due to the ignition signals in T.
+        Magnetic distortion due to communication wires in Tesla (T).
+    activation_signal_interference : list
+        Magnetic distortion due to ignition/activation signals in Tesla (T).
     measurement_range : float or tuple
-        The measurement range of the sensor in T.
+        The measurement range of the sensor in Tesla (T).
     resolution : float
         The resolution of the sensor in T/LSB.
-    noise_density : float list
+    noise_density : float, list
         The noise density of the sensor in T/√Hz.
     noise_variance : float, list
         The variance of the noise of the sensor in T^2.
@@ -61,28 +57,28 @@ class Magnetometer(InertialSensor):
     random_walk_variance : float, list
         The variance of the random walk of the sensor in T^2.
     constant_bias : float, list
-        The constant bias of the sensor in T.
+        The constant bias of the sensor in Tesla (T).
     operating_temperature : float
-        The operating temperature of the sensor in Kelvin.
+        The operating temperature of the sensor in Kelvin (K).
     temperature_bias : float, list
         The temperature bias of the sensor in T/K.
     temperature_scale_factor : float, list
         The temperature scale factor of the sensor in %/K.
     cross_axis_sensitivity : float
-        The cross axis sensitivity of the sensor in percentage.
+        The cross axis sensitivity of the sensor in percentage (%).
     name : str
         The name of the sensor.
     _random_walk_drift : Vector
-        The random walk drift of the sensor in T.
+        The random walk drift of the sensor in Tesla (T).
     measurement : float
         The measurement of the sensor after quantization, noise, temperature
-        drift and magnetic interference in T.
+        drift and magnetic interference in Tesla (T).
     measured_data : list
         The stored measured data of the sensor after quantization, noise and
         temperature drift.
-    wmm : WMM object from pywmm library
-        More details on the pywmm librayon its github repository:
-          https://github.com/dougc95/pywmm/tree/main
+    wmm : WMM
+        WMM object from pywmm library. Details on its GitHub repository:
+        https://github.com/dougc95/pywmm/tree/main
     year : float
         Current decimal year.
     rotation_sensor_to_body : Matrix
@@ -117,11 +113,10 @@ class Magnetometer(InertialSensor):
         name="Magnetometer",
         seed=None,
     ):
-        """
-        Initializes the Magnetometer sensor:
+        """Initializes the Magnetometer sensor:
 
         Parameters
-        -----------
+        ----------
         sampling_rate : float
             Sample rate of the sensor in Hz.
         orientation : tuple, list, optional
@@ -155,129 +150,65 @@ class Magnetometer(InertialSensor):
             quantization is applied.
         hard_iron_distortion : float, list, optional
             The hard iron distortion desired for the sensor in T.
-            If a float, the same value is applied to each axis
-            If a list or float, the distortion will be taken considering these
-            values.
-        soft_iron_distortion : Matrix, string
-            soft iron distortion is caused by materials with high permeability on
-            the rocket, (circuit board copper traces, nearby metal casing), that do
-            not generate the field, but distort the existing external field lines
-            passing through them. This is because the magnetic permeability measures
-            how easily a material allows magnetic field lines to pass through it.
-            Therefore, because it has lower resistance than air  magnetic field lines
-            will bent, to go through the material.
-
-            If a Matrix,   a direct 3x3
-            transformation matrix to the magnetic field. If string 'plates',
-            computes distortion dynamically based on plates attached to the Rocket object.
+            If a float, the same value is applied to each axis.
+            If a list, the distortion is applied per axis. Default is 0.
+        soft_iron_distortion : Matrix, str, optional
+            Soft iron distortion caused by materials with high permeability on
+            the rocket. If a Matrix, a direct 3x3 transformation matrix applied
+            to the magnetic field. If string 'plates', computes distortion
+            dynamically based on plates attached to the Rocket object.
             Default is Matrix.identity().
         power_interference : int, float, list, str, optional
-            The power interference is the magnetic distortion due to the
-            magnetic field generated by the current flowign through wires in the
-            avionics bay in T. It is formed by the activation signal interference
-            and the communication wires interference
+            The power interference is the magnetic distortion due to current
+            flowing through wires in the avionics bay in T.
 
-            - If an int or float, the same magnetic field will be applied for
-            each axis for the total power interference
-            - If a list, the given magnetic field will be considered as
-            the power interference
+            - If an int or float, the same magnetic field will be applied to each axis.
+            - If a list, the given vector will be considered as power interference.
+            - If 'wires', models total interference dynamically using rocket wires.
+            - If 'personalized', requires passing activation_signal_interference and
+              communications_interference explicitly.
 
-            - If a string, the accepted option are:
-                - If 'wires': models total interference dynamically using rocket wires.
-                  activation_signal_interference and communications_interference.
-                - If 'personalized': requires passing activation_signal_interference and
-                    communications_interference explicitly.
             Default is 0.
         activation_signal_interference : int, float, list, str, optional
-            It is the magnetic field in T generated by the ignition wires,
-            this depend on the conditions.
+            Magnetic field in T generated by ignition wires.
 
-            - If an int or float, the same magnetic field will be applied for
-            each axis for the total activation signal interference, regardless
-            of the ignition wires defined.
-
-            - If a list, the given magnetic field will be considered as
-            the total activation signal interference, regardless of the
-            ignition wires defined
-
-            - If a string, the accepted option is 'wires'. then the
-            activation_signal_interference will be considered using the wires
-            attached to the rocket
+            - If int/float, applied uniformly to each axis.
+            - If list, vector is used.
+            - If 'wires', computed from ignition wires attached to the rocket.
 
             Default is None.
         communications_interference : int, float, list, str, optional
-            It is the magnetic field in T generated by the communication wires,
-            this is a constant value that it is added to the read magnetic field.
+            Magnetic field in T generated by communication wires.
 
-            - If an int or float, the same magnetic field will be applied for
-            each axis for the communications interference, regardless
-            of the ignition wires defined.
-
-            - If a list, the given magnetic field will be considered as
-            the communications interference, regardless of the
-            ignition wires defined.
-
-            - If a string, the accepted option is 'wires'. then the
-            communications interference will be considered using the wires
-            attached to the rocket
+            - If int/float, applied uniformly to each axis.
+            - If list, vector is used.
+            - If 'wires', computed from communication wires attached to the rocket.
 
             Default is None.
         noise_density : float, list, optional
             The noise density of the sensor for a Gaussian white noise in T/√Hz.
-            Sometimes called "white noise drift", "angular random walk" for
-            gyroscopes, "velocity random walk" for accelerometers or
-            "(rate) noise density". Default is 0, meaning no noise is applied.
-            If a float or int is given, the same noise density is applied to all
-            axes. The values of each axis can be set individually by passing a
-            list of length 3.
+            Default is 0, meaning no noise is applied.
         noise_variance : float, list, optional
             The noise variance of the sensor for a Gaussian white noise in T^2.
-            Default is 1, meaning the noise is normally distributed with a
-            standard deviation of 1 T. If a float or int is given, the same
-            variance is applied to all axes. The values of each axis can be set
-            individually by passing a list of length 3.
+            Default is 1.
         random_walk_density : float, list, optional
-            The random walk of the sensor for a Gaussian random walk in T/√Hz.
-            Sometimes called "bias (in)stability" or "bias drift"". Default is 0,
-            meaning no random walk is applied. If a float or int is given, the
-            same random walk is applied to all axes. The values of each axis can
-            be set individually by passing a list of length 3.
+            The random walk density of the sensor in T/√Hz. Default is 0.
         random_walk_variance : float, list, optional
-            The random walk variance of the sensor for a Gaussian random walk in
-            T^2. Default is 1, meaning the noise is normally distributed
-            with a standard deviation of 1 T. If a float or int is given,
-            the same variance is applied to all axes. The values of each axis
-            can be set individually by passing a list of length 3.
+            The random walk variance of the sensor in T^2. Default is 1.
         constant_bias : float, list, optional
-            The constant bias of the sensor in T. Default is 0, meaning no
-            constant bias is applied. If a float or int is given, the same bias
-            is applied to all axes. The values of each axis can be set
-            individually by passing a list of length 3.
+            The constant bias of the sensor in T. Default is 0.
         operating_temperature : float, optional
-            The operating temperature of the sensor in Kelvin.
-            At 298.15 K (25 °C), the sensor is assumed to operate ideally, no
-            temperature related noise is applied. Default is 298.15.
+            The operating temperature of the sensor in Kelvin. Default is 298.
         temperature_bias : float, list, optional
-            The temperature bias of the sensor in T/K. Default is 0,
-            meaning no temperature bias is applied. If a float or int is given,
-            the same temperature bias is applied to all axes. The values of each
-            axis can be set individually by passing a list of length 3.
+            The temperature bias of the sensor in T/K. Default is 0.
         temperature_scale_factor : float, list, optional
-            The temperature scale factor of the sensor in %/K. Default is 0,
-            meaning no temperature scale factor is applied. If a float or int is
-            given, the same temperature scale factor is applied to all axes. The
-            values of each axis can be set individually by passing a list of
-            length 3.
+            The temperature scale factor of the sensor in %/K. Default is 0.
         cross_axis_sensitivity : float, optional
-            Skewness of the sensor's axes in percentage. Default is 0, meaning
-            no cross-axis sensitivity is applied.
+            Skewness of the sensor's axes in percentage. Default is 0.
         name : str, optional
             The name of the sensor. Default is 'Magnetometer'.
         seed : int, optional
-            Seed for the random number generator that draws the measurement
-            noise. If given, the noise becomes reproducible and independent of
-            the process-global NumPy RNG. Default is None, meaning the noise is
-            seeded from fresh entropy per instance.
+            Seed for the random number generator. Default is None.
         """
         self.magnetic_interference = [0, 0, 0]
 
@@ -371,12 +302,10 @@ class Magnetometer(InertialSensor):
             )
 
         self.validate_activation_signal_interference(activation_signal_interference)
-        self.validate_communications_interferemce(communications_interference)
+        self.validate_communications_interference(communications_interference)
 
     def validate_activation_signal_interference(self, activation_signal_interference):
-        """
-        Checks activation signal interference and defines the related attributes
-        """
+        """Checks activation signal interference and defines the related attributes."""
 
         if isinstance(activation_signal_interference, str):
             if activation_signal_interference.lower() == "wires":
@@ -393,10 +322,8 @@ class Magnetometer(InertialSensor):
             self.activation_signal_interference
         )
 
-    def validate_communications_interferemce(self, communications_interference):
-        """
-        Checks communications interference and defines the related attributes.
-        """
+    def validate_communications_interference(self, communications_interference):
+        """Checks communications interference and defines the related attributes."""
 
         if isinstance(communications_interference, str):
             if communications_interference.lower() == "wires":
@@ -638,8 +565,8 @@ class Magnetometer(InertialSensor):
             if not self.total_soft_iron_distortion_matrix_computed:
                 for plate, _, _ in rocket.plates:
                     if (
-                        not self.sensor_from_bacs_t
-                        in plate._magnetic_distortion_matrixes
+                        self.sensor_from_bacs_t
+                        not in plate._magnetic_distortion_matrixes
                     ):
                         plate.calculate_soft_iron_distortion_matrix(
                             self._sensor_from_bacs
@@ -715,7 +642,7 @@ class Magnetometer(InertialSensor):
             interference and communications interference.
 
         """
-        if self.initial_power_interference in ("wires" or "personalized"):
+        if self.initial_power_interference in ("wires", "personalized"):
             self.power_interference = [0, 0, 0]
             b_field = self.apply_communications_interference(b_field, rocket)
             b_field = self.apply_activation_signal_interference(
@@ -822,8 +749,7 @@ class Magnetometer(InertialSensor):
         Returns
         -------
         b_field : Vector
-            Magnetic field after adjustment activation signal interference
-            interference.
+            Magnetic field after adjustment of activation signal interference.
         """
 
         if self.initial_activation_signal_interference == "wires":
@@ -882,7 +808,7 @@ class Magnetometer(InertialSensor):
             checking and calculation of the parachute ignition
             conditions.
         """
-        if not parachute_events is None:
+        if parachute_events is not None:
             for parachute_event in parachute_events:
                 ejection_time = parachute_event[0]
                 parachute = parachute_event[1]
@@ -892,7 +818,7 @@ class Magnetometer(InertialSensor):
                     and current_time
                     <= ejection_time + ignition_wire.extra_ignition_time
                 ):
-                    if not self.sensor_from_bacs_t in ignition_wire._magnetic_field:
+                    if self.sensor_from_bacs_t not in ignition_wire._magnetic_field:
                         ignition_wire.measure_magnetic_field(self._sensor_from_bacs)
                     self.activation_signal_interference = [
                         self.activation_signal_interference[0]
@@ -939,7 +865,7 @@ class Magnetometer(InertialSensor):
             current_time
             <= rocket.motor.burn_start_time + ignition_wire.extra_ignition_time
         ):
-            if not self.sensor_from_bacs_t in ignition_wire._magnetic_field:
+            if self.sensor_from_bacs_t not in ignition_wire._magnetic_field:
                 ignition_wire.measure_magnetic_field(self._sensor_from_bacs)
             self.activation_signal_interference = [
                 self.activation_signal_interference[0]
@@ -977,15 +903,15 @@ class Magnetometer(InertialSensor):
 
     @classmethod
     def from_dict(cls, data: dict) -> "Magnetometer":
-        """
-        Creates an instance of Magnetometer from a dictionary object, data.
+        """Creates an instance of Magnetometer from a dictionary object, data.
         Data is a dictionary that must contain the same keys as the initialization
-        parameter of the Magnetometer class. In the case some parameter is not
-        defined, the default value matches the default intializaiton of the constructor
+        parameters of the Magnetometer class. In case some parameter is not
+        defined, the default value matches the default initialization of the constructor.
 
         Returns
         -------
-            Magnetometer object
+        Magnetometer
+            Magnetometer object instance.
         """
         return cls(
             # Mandatory Parameter

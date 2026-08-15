@@ -1,6 +1,5 @@
 class _PlatePrints:
-    """'
-    Class that holds prints methods for Plate class.
+    """Class that holds print methods for the Plate class.
 
     Attributes
     ----------

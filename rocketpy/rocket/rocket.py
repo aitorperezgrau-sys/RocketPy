@@ -189,10 +189,11 @@ class Rocket:
         RailButtons object containing the rail buttons information.
     Rocket.motor : Motor
         Rocket's motor. See Motor class for more details.
-    Rocket.wires: list[Wire]
-        Collection of all the attached to the rocket.
-    Rocket.plates: list[Plate]
-        Collection of the plates attached to the rocket.
+    Rocket.wires : Components
+        Collection of all the wires attached to the rocket.
+    Rocket.plates : list
+        Collection of all the plates attached to the rocket, stored as
+        lists of [plate, position, height].
     Rocket.motor_position : float
         Position, in meters, of the motor's coordinate system origin
         relative to the user defined rocket coordinate system.
@@ -1900,30 +1901,23 @@ class Rocket:
         position_edges: list | tuple[tuple | list | float | int],
         parachute_name: str | None = None,
     ) -> None:
-        """
-        Adds the wire to the rocket.
-        Wires are used to calculate the magnetic
-        distrubance they can create, thus affecting
-        the magnetometer reading if defined.
+        """Adds the wire to the rocket.
+        Wires are used to calculate the magnetic disturbance they create,
+        affecting the magnetometer reading if defined.
 
         Parameters
         ----------
-        wire: Wire
+        wire : Wire
             Wire object to be added to the rocket.
-        position_edges: list[list], list[tuple], tuple[list], tuple[tuple], list[int/float]
-            list or tuple of lists or tuple with 3 components, x,y,z for the edges
-            of the wire A and B relative to the user based coordiante system. It can
-            also be a list with floats, that will be assumed to be the position along the
-            z axis of each edge.
+        position_edges : list, tuple
+            List or tuple of two elements defining edges A and B:
+            - If numbers: [z_a, z_b] along the z-axis relative to UCS.
+            - If 3D vectors: [[x_a, y_a, z_a], [x_b, y_b, z_b]] relative to UCS.
+            Conventional current flows from Edge A to Edge B.
+        parachute_name : str, optional
+            Mandatory when wire is an ignition wire with function 'parachute_deployment'.
+            Name of the parachute during whose deployment current flows.
 
-            This is: [Edge_A, Edge_B]. Conventional current flows from Edge_A to Edge_B.
-        parachute_name : str, mandatory when it is an ignition wire whose function is parachute
-            In the case ignition_wire_function is parachute:
-                Name of the parachtue in whose deployment we want the wire to have
-                charge flow, it must be the same as the name assigned for the parachute
-                The magnetic disturbance will ocurr during the selected parachute
-                ejection, simulating the signal sent by the avionics. The ejection
-                conditions will be taken from the parachute definition.
         Returns
         -------
         None
@@ -1969,24 +1963,19 @@ class Rocket:
     def _define_3d_edges(
         self, position_edges: list | tuple[tuple | list | float | int]
     ) -> list[Vector, Vector]:
-        """
-        This function creates the 3D position vector of the
-        edges from the input values
+        """Creates the 3D position vectors of the edges from the input values.
 
-
-        Input:
+        Parameters
         ----------
-        position_edges: list[list], list[tuple], tuple[list], tuple[tuple], list[int/float]
-            list or tuple of lists or tuple with 3 components, x,y,z for the edges
-            of the wire A and B relative to the user defiend coordiante system. It can
-            also be a list with floats, that will be assumed to be the position along the
-            z axis of each edge.
-
-            This is: [Edge_A, Edge_B]. Conventional current flows from Edge_A to Edge_B.
+        position_edges : list, tuple
+            List or tuple of 2 numbers (z-coordinates) or two 3D position vectors
+            ([x, y, z]) relative to the user-defined coordinate system (UCS).
+            Conventional current flows from Edge A to Edge B.
 
         Returns
         -------
-        [edge_a, edge_b]: list with the 3D component of each edge in the correct order
+        list[Vector, Vector]
+            List with the 3D Vector components of each edge [edge_a, edge_b].
         """
         if isinstance(position_edges, (list, tuple)):
             if len(position_edges) == 2:
@@ -2034,32 +2023,30 @@ class Rocket:
         position: float | int | None = None,
         height: float | int | None = None,
     ) -> None:
-        """
-        Adds a Plate object to the rocket.
+        """Adds a Plate object to the rocket.
 
         Parameters
         ----------
         plate : Plate
             The Plate instance to be attached to the rocket.
-        position: float, int, optional
-            Position of the plate,
-            - If the shape is 'squared' or 'circular': It is the angle between
-            the y axis of the user defined coordinate system and the geometric
-            center of the plate in degrees. The positive direction is defined
-            as the direciton in which the right hand rule coincides with the
-            z direction based on the coordinate system orientation.
-        height : float or int, optional
-            Z-axis height relative to user defined coordinate sytem.
-            Required if plate shape is 'circular' or 'squared'.
+        position : float, int, optional
+            Position of the plate:
 
+            - If shape is 'squared' or 'circular': angle between the y-axis
+              of the user-defined coordinate system and the geometric center of
+              the plate in degrees. Positive direction follows the right-hand rule
+              along the z-axis.
+        height : float, int, optional
+            Z-axis height relative to user-defined coordinate system in meters (m).
+            Required if plate shape is 'circular' or 'squared'.
         """
         if not isinstance(plate, Plate):
             raise ValueError("The plate parameter must be a Plate object")
 
-        if plate.shape in ("circular" or "squared"):
+        if plate.shape in ("circular", "squared"):
             if position is None:
                 raise ValueError(
-                    "position must be defined when the shape is 'circular' or 'squared"
+                    "position must be defined when the shape is 'circular' or 'squared'"
                 )
             if not isinstance(position, (float, int)):
                 raise ValueError("Position can only be a float or int ")
@@ -2070,7 +2057,7 @@ class Rocket:
             flag, range_z = self.z_bounds_check(height, frame="ucs")
             if not flag:
                 raise ValueError(
-                    f"The defiend height must be inside the rocket which has a range of: {range_z} in the user frame"
+                    f"The defined height must be inside the rocket which has a range of: {range_z} in the user frame"
                 )
         plate.define_plate_position(self, position, height)
         self.plates.append([plate, position, height])
