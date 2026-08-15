@@ -215,10 +215,10 @@ class Magnetometer(InertialSensor):
         if isinstance(power_interference, str):
             if power_interference.lower() == "wires":
                 self.initial_power_interference = "wires"
-                self.validate_power_wires_parameters()
+                self._validate_power_wires_parameters()
             elif power_interference.lower() == "personalized":
                 self.initial_power_interference = "personalized"
-                self.validate_power_personalized_parameters(
+                self._validate_power_personalized_parameters(
                     activation_signal_interference, communications_interference
                 )
             else:
@@ -230,8 +230,8 @@ class Magnetometer(InertialSensor):
             self.power_interference = list(power_interference)
             self._power_interference = Vector(self.power_interference)
 
-        self.validate_soft_iron(soft_iron_distortion)
-        self.validate_hard_iron(hard_iron_distortion)
+        self._validate_soft_iron(soft_iron_distortion)
+        self._validate_hard_iron(hard_iron_distortion)
         self.prints = _InertialSensorPrints(self)
 
         # Get current decimal year
@@ -260,7 +260,7 @@ class Magnetometer(InertialSensor):
             seed=seed,
         )
 
-    def validate_soft_iron(self, soft_iron_distortion):
+    def _validate_soft_iron(self, soft_iron_distortion):
         """
         Checks and defines the soft_iron_distortion parameter.
         """
@@ -278,7 +278,7 @@ class Magnetometer(InertialSensor):
             else:
                 raise ValueError("The accepted string must be plates")
 
-    def validate_hard_iron(self, hard_iron_distortion):
+    def _validate_hard_iron(self, hard_iron_distortion):
         """
         Checks and defines the soft_iron_distortion parameter.
         """
@@ -288,7 +288,7 @@ class Magnetometer(InertialSensor):
         self.hard_iron_distortion = list(hard_iron_distortion)
         self._hard_iron_distortion = Vector(self.hard_iron_distortion)
 
-    def validate_power_personalized_parameters(
+    def _validate_power_personalized_parameters(
         self, activation_signal_interference, communications_interference
     ) -> None:
 
@@ -301,10 +301,10 @@ class Magnetometer(InertialSensor):
                 "activation_signal_interference and communications_interference."
             )
 
-        self.validate_activation_signal_interference(activation_signal_interference)
-        self.validate_communications_interference(communications_interference)
+        self._validate_activation_signal_interference(activation_signal_interference)
+        self._validate_communications_interference(communications_interference)
 
-    def validate_activation_signal_interference(self, activation_signal_interference):
+    def _validate_activation_signal_interference(self, activation_signal_interference):
         """Checks activation signal interference and defines the related attributes."""
 
         if isinstance(activation_signal_interference, str):
@@ -322,7 +322,7 @@ class Magnetometer(InertialSensor):
             self.activation_signal_interference
         )
 
-    def validate_communications_interference(self, communications_interference):
+    def _validate_communications_interference(self, communications_interference):
         """Checks communications interference and defines the related attributes."""
 
         if isinstance(communications_interference, str):
@@ -340,7 +340,7 @@ class Magnetometer(InertialSensor):
 
         self._communications_interference = Vector(self.communications_interference)
 
-    def validate_power_wires_parameters(self):
+    def _validate_power_wires_parameters(self):
         self.power_interference = [0, 0, 0]
         self.communications_interference = [0, 0, 0]
         self.communications_computed = False

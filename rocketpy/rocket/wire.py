@@ -65,7 +65,7 @@ class Wire:
         name : str, optional
             Name of the wire. Default is 'wire'.
         """
-        self.validate_parameters(
+        self._validate_parameters(
             current, extra_ignition_time, wire_type, ignition_wire_function
         )
         self._magnetic_field = {}
@@ -79,7 +79,7 @@ class Wire:
         self.prints = _WirePrints(self)
         self.plots = None
 
-    def validate_parameters(
+    def _validate_parameters(
         self, current, extra_ignition_time, wire_type, ignition_wire_function
     ):
         """

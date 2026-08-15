@@ -120,7 +120,7 @@ class Plate:
         self.points = []
         self.plots = None
         self.prints = _PlatePrints(self)
-        self.validate_parameters(
+        self._validate_parameters(
             material,
             absolute_magnetic_permeability,
             relative_magnetic_permeability,
@@ -133,7 +133,7 @@ class Plate:
         self.thickness = thickness
         self.name = name
 
-    def validate_parameters(
+    def _validate_parameters(
         self,
         material,
         absolute_magnetic_permeability,
