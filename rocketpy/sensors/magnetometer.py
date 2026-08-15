@@ -360,11 +360,11 @@ class Magnetometer(InertialSensor):
         kwargs : dict
             Keyword arguments dictionary containing the following keys:
 
-             - u : np.array
+            - u : np.array
                 State vector of the rocket.
                 u = [x, y, z, vx, vy, vz, e0, e1, e2, e3, wx, wy, wz]
 
-            - rocket: Rocket
+            - rocket : Rocket
                 Rocketpy Rocket class
 
             - u_dot : np.array
@@ -376,8 +376,7 @@ class Magnetometer(InertialSensor):
             - environment : Environment
                 Environment object containing the atmospheric conditions.
 
-            - parachute_events : list only required if the ignition_wire_function
-                is 'parachute_deployment'
+            - parachute_events : list, only required if ignition_wire_function is 'parachute_deployment'
                 List that stores parachute events triggered during flight.
                 it is a list formed by lists which contain the trigger time
                 as the first element and the parachute object as the second.
@@ -410,7 +409,7 @@ class Magnetometer(InertialSensor):
         )  # rotation matrix from cdm to inertial frame
 
         # --- obtain the current longitude, latitude and elevation ---
-        # obtain the sensor coordinates in the inertial frame, by adding the offset to the positon vector
+        # obtain the sensor coordinates in the inertial frame, by adding the offset to the position vector
         x_inertial, y_inertial, z_inertial = (
             rotation_bacs_to_inertial @ self._sensor_from_bacs
             + Vector(
@@ -504,11 +503,9 @@ class Magnetometer(InertialSensor):
             Magnetic field Vector.
         rocket : Rocket
             Rocketpy Rocket class.
-        current_time : float, only required if the ignition_wire_function
-            is 'motor_ignition'
+        current_time : float, only required if the ignition_wire_function is 'motor_ignition'
             Current time of the simulation.
-        parachute_events : list only required if the ignition_wire_function
-            is 'parachute_deployment'
+        parachute_events : list only required if the ignition_wire_function is 'parachute_deployment'
             List that stores parachute events triggered during flight.
             it is a list formed by lists which contain the trigger time
             as the first element and the parachute object as the second.
@@ -626,11 +623,9 @@ class Magnetometer(InertialSensor):
             Magnetic field Vector.
         rocket : Rocket
             Rocketpy Rocket class.
-        current_time : float, only required if the ignition_wire_function
-            is 'motor_ignition'
+        current_time : float, only required if the ignition_wire_function is 'motor_ignition'
             current time of the simulation.
-        parachute_events : list only required if the ignition_wire_function
-            is 'parachute_deployment'
+        parachute_events : list only required if the ignition_wire_function is 'parachute_deployment'
             List that stores parachute events triggered during flight.
             it is a list formed by lists which contain the trigger time
             as the first element and the parachute object as the second.
@@ -737,11 +732,9 @@ class Magnetometer(InertialSensor):
             Magnetic field Vector.
         rocket : Rocket
             Rocketpy Rocket class.
-        current_time : float, only required if the ignition_wire_function
-            is 'motor_ignition'
+        current_time : float, only required if the ignition_wire_function is 'motor_ignition'
             Current time of the simulation.
-        parachute_events : list, only required if the ignition_wire_function
-            is 'parachute_deployment'
+        parachute_events : list, only required if the ignition_wire_function is 'parachute_deployment'
             List that stores parachute events triggered during flight.
             it is a list formed by lists which contain the trigger time
             as the first element and the parachute object as the second.
@@ -790,15 +783,13 @@ class Magnetometer(InertialSensor):
         ----------
         b_field : Vector
             Magnetic field Vector.
-        current_time : float, only required if the ignition_wire_function
-            is 'motor_ignition'
+        current_time : float, only required if the ignition_wire_function is 'motor_ignition'
             Current time of the simulation.
-        parachute_events : list, only required if the ignition_wire_function
-            is 'parachute_deployment'
+        parachute_events : list, only required if the ignition_wire_function is 'parachute_deployment'
             List that stores parachute events triggered during flight.
             it is a list formed by lists which contain the trigger time
             as the first element and the parachute object as the second.
-        igntion_wire : wire
+        ignition_wire : wire
             Wire with wire type ignition and parachute_deployment as a function.
 
         Returns
@@ -849,10 +840,9 @@ class Magnetometer(InertialSensor):
             Magnetic field Vector.
         rocket : Rocket
             Rocketpy Rocket class.
-        current_time : float, only required if the ignition_wire_function
-            is 'motor_ignition'
+        current_time : float, only required if the ignition_wire_function is 'motor_ignition'
             Current time of the simulation.
-        igntion_wire : wire
+        ignition_wire : wire
             Wire with wire type ignition and motor_ignition as a function.
 
         Returns
@@ -880,7 +870,7 @@ class Magnetometer(InertialSensor):
 
     def export_measured_data(self, filename, file_format="csv"):
         """
-        Exports the measured values to a file. 
+        Exports the measured values to a file.
 
         Parameters
         ----------
