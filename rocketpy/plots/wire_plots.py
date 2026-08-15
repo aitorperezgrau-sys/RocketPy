@@ -23,10 +23,6 @@ class _WirePlots:
         rocket: Rocket
             Rocket instance to which the wire
             is attached.
-
-        Returns
-        -------
-        None
         """
         self.wire = wire
         self.rocket = rocket
@@ -91,10 +87,6 @@ class _WirePlots:
             the plot will be shown instead of saved. Supported file endings are:
             eps, jpg, jpeg, pdf, pgf, png, ps, raw, rgba, svg, svgz, tif, tiff
             and webp (these are the formats supported by matplotlib). 
-
-        Returns
-        -------
-        None
         """
         if vis_args is None:
             vis_args = {
@@ -154,10 +146,6 @@ class _WirePlots:
             boolean defining whether the names of the edges are displayed.
             If False, they will not be displayed
             If True, the name Edge A, and Edge B will be show.
-
-        Returns
-        -------
-        None
         """
         # change nose to tail with nose origin
         edge_a_x = self.wire._wire_edges_bacs[0][0] * self.rocket._csys
@@ -213,10 +201,6 @@ class _WirePlots:
         """Plots all graphs available about the Wire. It simply calls
         all the other plotter methods in this class with all the
         default parameters.
-
-        Returns
-        -------
-        None
         """
         print(f"\n{self.wire.name} representation: ")
         self.draw()

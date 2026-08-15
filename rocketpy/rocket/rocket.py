@@ -1917,10 +1917,6 @@ class Rocket:
         parachute_name : str, optional
             Mandatory when wire is an ignition wire with function 'parachute_deployment'.
             Name of the parachute during whose deployment current flows.
-
-        Returns
-        -------
-        None
         """
         if not isinstance(wire, Wire):
             raise ValueError("The wire must be a wire instance")
@@ -2039,10 +2035,6 @@ class Rocket:
         height : float, int, optional
             Z-axis height relative to user-defined coordinate system in meters (m).
             Required if plate shape is 'circular' or 'squared'.
-
-        Returns
-        -------
-        None
         """
         if not isinstance(plate, Plate):
             raise ValueError("The plate parameter must be a Plate object")

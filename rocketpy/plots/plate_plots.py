@@ -23,10 +23,6 @@ class _PlatePlots:
         rocket: Rocket
             Rocket instance to which the plate
             is attached.
-
-        Returns
-        -------
-        None
         """
         self.plate = plate
         self.rocket = rocket
@@ -75,10 +71,6 @@ class _PlatePlots:
             the plot will be shown instead of saved. Supported file endings are:
             eps, jpg, jpeg, pdf, pgf, png, ps, raw, rgba, svg, svgz, tif, tiff
             and webp (these are the formats supported by matplotlib).
-
-        Returns
-        -------
-        None
         """
         # from bacs to usc
         x, y, z = zip(*self.plate.points)
@@ -150,10 +142,6 @@ class _PlatePlots:
             the plot will be shown instead of saved. Supported file endings are:
             eps, jpg, jpeg, pdf, pgf, png, ps, raw, rgba, svg, svgz, tif, tiff
             and webp (these are the formats supported by matplotlib).
-
-        Returns
-        -------
-        None
         """
         if vis_args is None:
             vis_args = {
@@ -195,10 +183,6 @@ class _PlatePlots:
             A full list of color names can be found at:
             https://matplotlib.org//gallery/color/named_colors
             Default is 'darkgreen'.
-
-        Returns
-        -------
-        None
         """
         x, y, z = zip(*self.plate.points)  # in the bacs frame z tail to nose
 
@@ -238,10 +222,6 @@ class _PlatePlots:
         """Plots all graphs available about the Plate. It simply calls
         all the other plotter methods in this class with all the
         default parameters.
-
-        Returns
-        -------
-        None
         """
         self.draw_3d()
         self.draw()

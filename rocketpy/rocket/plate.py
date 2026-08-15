@@ -144,12 +144,7 @@ class Plate:
         angular_points,
         grid_spacing,
     ) -> None:
-        """Validates input parameters and defines attributes. 
-
-        Returns
-        -------
-        None
-        """
+        """Validates input parameters and defines attributes."""
         self._validate_material(
             material, absolute_magnetic_permeability, relative_magnetic_permeability
         )
@@ -160,10 +155,6 @@ class Plate:
     ) -> None:
         """Validates and defines the input parameters related to the material
         and magnetic permeability.
-
-        Returns
-        -------
-        None
         """
         if not isinstance(material, str):
             raise ValueError("material argument can only be a string.")
@@ -217,12 +208,7 @@ class Plate:
     def _validate_shape(
         self, shape, dimensions, z_points, angular_points, grid_spacing
     ) -> None:
-        """ Validates and defines the input parameters related to the shape.
-
-        Returns
-        -------
-        None
-        """
+        """Validates and defines the input parameters related to the shape."""
         if isinstance(shape, str):
             if shape in ("circular", "squared"):
                 self.shape = shape
@@ -267,10 +253,6 @@ class Plate:
         height : float, int, optional
             Position of the geometric center of the plate along the z-axis
             relative to the user-defined coordinate system in meters (m).
-
-        Returns
-        -------
-        None
         """
         self._rocket_belonging(rocket)
         self.generate_points(rocket, position, height)
@@ -301,10 +283,6 @@ class Plate:
         height : float, int, optional
             Position of the geometric center along the z-axis relative to the
             user-defined coordinate system in meters (m).
-
-        Returns
-        -------
-        None
         """
         self.points = []
 
@@ -375,10 +353,6 @@ class Plate:
         ----------
         rocket: Rocket
             Rocket to which the plate belongs.
-
-        Returns
-        -------
-        None
         """
         # Processing of points
         vertices = self._vertices_definition(rocket)
@@ -464,10 +438,6 @@ class Plate:
             Point belonging to the set of vertices defined by the user.
         rocket: Rocket
             Rocket to which the plate belongs.
-
-        Returns
-        -------
-        None
         """
         if not rocket.z_bounds_check(pt[2], frame="ucs")[0]:
             raise ValueError(
@@ -518,10 +488,6 @@ class Plate:
             Vector containing the position in the body axis coordinate system
             of the point in m for which the soft iron distortion matrix will be
             calculated.
-
-        Returns
-        -------
-        None
         """
         if isinstance(self.points, list):
             if self.points:
@@ -589,10 +555,6 @@ class Plate:
             the plot will be shown instead of saved. Supported file endings are:
             eps, jpg, jpeg, pdf, pgf, png, ps, raw, rgba, svg, svgz, tif, tiff
             and webp (these are the formats supported by matplotlib).
-
-        Returns
-        -------
-        None
         """
         self.plots.draw_3d(color, marker, filename)
 
@@ -603,29 +565,15 @@ class Plate:
         ----------
         rocket : Rocket
             Rocket instance to which it belongs.
-
-        Returns
-        -------
-        None
         """
         self.plots = _PlatePlots(self, rocket)
 
     def info(self) -> None:
-        """Prints a summary of the information stored in the plate object.
-
-        Returns
-        -------
-        None
-        """
+        """Prints a summary of the information stored in the plate object."""
         self.prints.all()
 
     def all_info(self) -> None:
-        """Prints out all data and graphs available about the Plate.
-
-        Returns
-        -------
-        None
-        """
+        """Prints out all data and graphs available about the Plate."""
         self.plots.all()
         self.prints.all()
 

@@ -261,12 +261,7 @@ class Magnetometer(InertialSensor):
         )
 
     def _validate_soft_iron(self, soft_iron_distortion) -> None:
-        """Checks and defines the soft_iron_distortion parameter.
-
-        Returns
-        -------
-        None
-        """
+        """Checks and defines the soft_iron_distortion parameter."""
         # initialize soft_iron_distortion attribute
         if isinstance(soft_iron_distortion, Matrix):
             self._soft_iron_distortion_matrix = soft_iron_distortion
@@ -282,12 +277,7 @@ class Magnetometer(InertialSensor):
                 raise ValueError("The accepted string must be plates")
 
     def _validate_hard_iron(self, hard_iron_distortion) -> None:
-        """Checks and defines the hard_iron_distortion parameter.
-
-        Returns
-        -------
-        None
-        """
+        """Checks and defines the hard_iron_distortion parameter."""
         if isinstance(hard_iron_distortion, (float, int)):
             hard_iron_distortion = [hard_iron_distortion] * 3
 
@@ -297,12 +287,7 @@ class Magnetometer(InertialSensor):
     def _validate_power_personalized_parameters(
         self, activation_signal_interference, communications_interference
     ) -> None:
-        """Checks and defines the parameters related to the power interference.
-
-        Returns
-        -------
-        None
-        """
+        """Checks and defines the parameters related to the power interference."""
 
         if (
             activation_signal_interference is None
@@ -319,12 +304,7 @@ class Magnetometer(InertialSensor):
     def _validate_activation_signal_interference(
         self, activation_signal_interference
     ) -> None:
-        """Checks activation signal interference and defines the related attributes.
-
-        Returns
-        -------
-        None
-        """
+        """Checks activation signal interference and defines the related attributes."""
 
         if isinstance(activation_signal_interference, str):
             if activation_signal_interference.lower() == "wires":
@@ -344,12 +324,7 @@ class Magnetometer(InertialSensor):
     def _validate_communications_interference(
         self, communications_interference
     ) -> None:
-        """Checks communications interference and defines the related attributes.
-
-        Returns
-        -------
-        None
-        """
+        """Checks communications interference and defines the related attributes."""
 
         if isinstance(communications_interference, str):
             if communications_interference.lower() == "wires":
@@ -405,10 +380,6 @@ class Magnetometer(InertialSensor):
                 List that stores parachute events triggered during flight.
                 it is a list formed by lists which contain the trigger time
                 as the first element and the parachute object as the second.
-
-        Returns
-        -------
-        None
         """
         # initialization of parameters
         u = kwargs["u"]  # state vector

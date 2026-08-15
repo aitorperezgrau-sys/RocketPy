@@ -777,10 +777,6 @@ class _RocketPlots:
             the plot will be shown instead of saved. Supported file endings are:
             eps, jpg, jpeg, pdf, pgf, png, ps, raw, rgba, svg, svgz, tif, tiff
             and webp (these are the formats supported by matplotlib). 
-
-        Returns
-        -------
-        None
         """
 
         if vis_args is None:
@@ -882,10 +878,6 @@ class _RocketPlots:
             the plot will be shown instead of saved. Supported file endings are:
             eps, jpg, jpeg, pdf, pgf, png, ps, raw, rgba, svg, svgz, tif, tiff
             and webp (these are the formats supported by matplotlib).
-
-        Returns
-        -------
-        None
         """
         if vis_args is None:
             vis_args = {

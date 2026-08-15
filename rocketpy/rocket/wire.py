@@ -136,10 +136,6 @@ class Wire:
         position_vector: list, tuple or Vector
             position vector of the point in which the magnetic field
             is going to be measured in the body axis coordinate system.
-
-        Returns
-        -------
-        None
         """
         r1 = self._wire_edges_bacs[0]  # starting edge
         r2 = self._wire_edges_bacs[1]  # final end
@@ -204,10 +200,6 @@ class Wire:
 
             - If a tuple, list or Vector, it assumes that the wire generates the given magnetic
               field.
-
-        Returns
-        -------
-        None
         """
         position_vector_t = tuple(position_vector)
         if isinstance(magnetic_field, (float, int)):
@@ -230,10 +222,6 @@ class Wire:
         _wire_edges_from_user_coordinate_system : list[Vector] or tuple[Vector, Vector]
             Position vectors of the wire endpoints relative to the User
             Coordinate System (UCS) as Vector instances.
-
-        Returns
-        -------
-        None
         """
         self._wire_edges_bacs = []
         cdm_user_frame = Vector([0, 0, rocket.center_of_dry_mass_position])
@@ -259,29 +247,15 @@ class Wire:
         ----------
         rocket : Rocket
             Rocket instance to which it belongs.
-
-        Returns
-        -------
-        None
         """
         self.plots = _WirePlots(self, rocket)
 
     def info(self) -> None:
-        """Print a summary of the information stored in the wire object.
-
-        Returns
-        -------
-        None
-        """
+        """Print a summary of the information stored in the wire object."""
         self.prints.all()
 
     def all_info(self) -> None:
-        """Prints out all data and graphs available about the Wire.
-
-        Returns
-        -------
-        None
-        """
+        """Prints out all data and graphs available about the Wire."""
         self.plots.all()
         self.prints.all()
 
@@ -294,10 +268,6 @@ class Wire:
             Edge coordinates [x, y, z] in the UCS frame in meters (m).
         rocket : Rocket
             Rocket to which the wire belongs.
-
-        Returns
-        -------
-        None
         """
         if not rocket.z_bounds_check(pt[2], frame="ucs")[0]:
             raise ValueError(
