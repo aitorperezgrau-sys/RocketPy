@@ -1,4 +1,5 @@
 from inspect import Parameter, signature
+from numbers import Real
 
 import numpy as np
 
@@ -6,6 +7,27 @@ from rocketpy.tools import from_hex_decode, to_hex_encode
 
 from ..mathutils.function import Function
 from ..prints.parachute_prints import _ParachutePrints
+
+
+def _is_a_height_trigger(trigger):
+    """Whether ``trigger`` is a number this class will read as a height.
+
+    ``numbers.Real`` rather than ``(int, float)`` so that NumPy scalars are
+    accepted: ``numpy.float64`` happens to subclass ``float``, but
+    ``numpy.int64`` and ``numpy.float32`` subclass neither and were refused
+    even though every arithmetic use of them here works.
+
+    What that spelling leaves out is what should be left out. ``numpy.bool_``
+    and the complex types are not ``Real``, so they still fall through to the
+    error. ``bool`` is excluded by hand because it *is* an ``int``, and ``True``
+    would otherwise be taken as a height of one metre.
+
+    This is the single definition of the height form. ``StochasticParachute``
+    validates the same triggers before a ``Parachute`` is ever built and calls
+    this rather than restating it, because the two spellings drifted apart once
+    already.
+    """
+    return isinstance(trigger, Real) and not isinstance(trigger, bool)
 
 
 class Parachute:
@@ -363,7 +385,7 @@ class Parachute:
             return
 
         # Numeric altitude trigger
-        if isinstance(trigger, (int, float)):
+        if _is_a_height_trigger(trigger):
             self._trigger_falling_only = True
 
             def triggerfunc(p, h, y, sensors, u_dot):  # pylint: disable=unused-argument
