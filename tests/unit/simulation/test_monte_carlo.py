@@ -12,6 +12,9 @@ import numpy as np
 import pytest
 
 from rocketpy.simulation import MonteCarlo
+from rocketpy.simulation.monte_carlo import (
+    _refuse_logs_this_run_cannot_write,
+)
 
 plt.rcParams.update({"figure.max_open_warning": 0})
 
@@ -630,3 +633,149 @@ def test_a_monte_carlo_flight_keeps_the_configuration_it_was_given(monkeypatch):
     assert flight.equations_of_motion == "solid_propulsion"
     assert flight.simulation_mode == "native"
     assert flight.name == "named"
+
+
+@pytest.mark.parametrize(
+    "suffix, payload",
+    [
+        (".csv", "apogee,index\n1234.0,0\n1250.0,1\n"),
+        (".json", '[{"apogee": 1234.0, "index": 0}]\n'),
+    ],
+)
+@pytest.mark.parametrize("append", [False, True])
+def test_simulate_refuses_a_results_file_it_cannot_write(
+    monte_carlo_calisto, tmp_path, suffix, payload, append
+):
+    """Importing CSV or JSON results must not let simulate() write over them.
+
+    ``import_outputs`` accepts both and points ``output_file`` at the file, and
+    its docstring offers continuing a simulation. simulate() only writes JSONL,
+    so ``append=False`` truncated the file before this check existed.
+    """
+    results = tmp_path / f"results{suffix}"
+    results.write_text(payload, encoding="utf-8")
+    monte_carlo_calisto.output_file = str(results)
+    before = results.read_bytes()
+
+    with pytest.raises(ValueError, match="one JSON object per line"):
+        monte_carlo_calisto.simulate(number_of_simulations=1, append=append)
+
+    assert results.read_bytes() == before
+
+
+def _three_logs(tmp_path):
+    """Three distinct, acceptable working logs."""
+    return [
+        str(tmp_path / f"run.{part}.txt") for part in ("inputs", "outputs", "errors")
+    ]
+
+
+def test_simulation_log_check_names_the_file_that_is_wrong(tmp_path):
+    """The message says which of the three paths has to change."""
+    good = _three_logs(tmp_path)
+
+    _refuse_logs_this_run_cannot_write(*good)  # canonical, no raise
+
+    for label, args in (
+        ("input_file", (str(tmp_path / "a.csv"), good[1], good[2])),
+        ("output_file", (good[0], str(tmp_path / "b.json"), good[2])),
+        ("error_file", (good[0], good[1], str(tmp_path / "c.csv"))),
+    ):
+        with pytest.raises(ValueError, match=label):
+            _refuse_logs_this_run_cannot_write(*args)
+
+
+def test_simulation_log_check_accepts_an_uppercase_suffix(tmp_path):
+    """A .TXT log is the same file to the filesystem, so it is accepted."""
+    upper = [str(tmp_path / f"run.{part}.TXT") for part in ("in", "out", "err")]
+    _refuse_logs_this_run_cannot_write(*upper)
+
+
+def _three_logs(tmp_path):
+    """Three distinct, acceptable working logs."""
+    return [
+        str(tmp_path / f"run.{part}.txt") for part in ("inputs", "outputs", "errors")
+    ]
+
+
+def test_working_logs_must_be_three_different_files(tmp_path):
+    """``import_results`` points all three at one path, which cannot work.
+
+    A run appends input rows and output rows separately, so one shared log ends
+    up holding both and neither reader can make sense of it.
+    """
+    shared = str(tmp_path / "result.txt")
+
+    with pytest.raises(ValueError, match="same file"):
+        _refuse_logs_this_run_cannot_write(shared, shared, shared)
+
+
+@pytest.mark.parametrize("alias", ["dotdot", "symlink", "hardlink"])
+def test_a_log_named_two_ways_is_still_one_file(tmp_path, alias):
+    """Text comparison misses every way one file answers to two names."""
+    inputs, _, errors = _three_logs(tmp_path)
+    pathlib.Path(inputs).write_text("", encoding="utf-8")
+    (tmp_path / "sub").mkdir()
+
+    if alias == "dotdot":
+        other = str(tmp_path / "sub" / ".." / "run.inputs.txt")
+    else:
+        other = str(tmp_path / f"run.{alias}.txt")
+        try:
+            if alias == "symlink":
+                pathlib.Path(other).symlink_to(inputs)
+            else:
+                os.link(inputs, other)
+        except (OSError, NotImplementedError):
+            pytest.skip(f"{alias} not available on this filesystem")
+
+    with pytest.raises(ValueError, match="same file"):
+        _refuse_logs_this_run_cannot_write(inputs, other, errors)
+
+
+def test_three_separate_logs_are_accepted(tmp_path):
+    """The control: distinct .txt paths raise nothing."""
+    _refuse_logs_this_run_cannot_write(*_three_logs(tmp_path))
+
+
+@pytest.mark.parametrize("indent", [2, 0, ""])
+def test_an_indented_record_is_refused_before_anything_is_written(tmp_path, indent):
+    """``indent`` splits a record over lines the readers take one at a time.
+
+    Without this the run finished, then the completeness check called the file
+    it had just written damaged.
+    """
+    with pytest.raises(ValueError, match="indent"):
+        _refuse_logs_this_run_cannot_write(*_three_logs(tmp_path), {"indent": indent})
+
+
+def test_a_newline_in_the_separators_is_refused_too(tmp_path):
+    """The same hazard by another name."""
+    with pytest.raises(ValueError, match="separators"):
+        _refuse_logs_this_run_cannot_write(
+            *_three_logs(tmp_path), {"separators": (",\n", ": ")}
+        )
+
+
+@pytest.mark.parametrize(
+    "harmless", [{"indent": None}, {"sort_keys": True}, {"ensure_ascii": False}]
+)
+def test_export_options_that_keep_one_line_are_left_alone(tmp_path, harmless):
+    """Only what puts a newline inside a record is refused."""
+    _refuse_logs_this_run_cannot_write(*_three_logs(tmp_path), harmless)
+
+
+def test_two_names_for_a_file_that_does_not_exist_yet_are_still_one_file(tmp_path):
+    """``samefile`` needs both to exist, and a first run has created neither.
+
+    Every other case here writes the file first, so the resolved-path branch
+    that a first run actually takes was never exercised.
+    """
+    (tmp_path / "sub").mkdir()
+    missing = str(tmp_path / "run.inputs.txt")
+    same_by_another_name = str(tmp_path / "sub" / ".." / "run.inputs.txt")
+    errors = str(tmp_path / "run.errors.txt")
+
+    assert not pathlib.Path(missing).exists()
+    with pytest.raises(ValueError, match="same file"):
+        _refuse_logs_this_run_cannot_write(missing, same_by_another_name, errors)

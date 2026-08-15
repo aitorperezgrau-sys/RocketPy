@@ -39,6 +39,100 @@ from rocketpy.tools import (
 # TODO: Create evolution plots to analyze convergence
 
 
+# simulate() writes one JSON object per line and reads that same shape back, so
+# this is the only format it can both resume from and overwrite safely.
+_SIMULATION_LOG_SUFFIX = ".txt"
+
+
+def _refuse_logs_this_run_cannot_write(
+    input_file, output_file, error_file, export_config=None
+):
+    """Reject a log file ``simulate`` would damage rather than extend.
+
+    A ``.csv`` or ``.json`` is importable for analysis, but this run would
+    truncate it under ``append=False`` and leave it half one format and half
+    another under ``append=True``. Checked before any file is opened.
+    """
+    for label, path in (
+        ("input_file", input_file),
+        ("output_file", output_file),
+        ("error_file", error_file),
+    ):
+        if Path(path).suffix.lower() != _SIMULATION_LOG_SUFFIX:
+            raise ValueError(
+                f"Monte Carlo simulation logs must be {_SIMULATION_LOG_SUFFIX} "
+                f"files holding one JSON object per line; {label} is "
+                f"'{path}'. CSV and JSON results can be imported for analysis, "
+                f"but simulate() cannot resume from or overwrite them. Point "
+                f"{label} at a {_SIMULATION_LOG_SUFFIX} file to run."
+            )
+
+    _refuse_logs_that_are_one_file(
+        (
+            ("input_file", input_file),
+            ("output_file", output_file),
+            ("error_file", error_file),
+        )
+    )
+    _refuse_export_options_that_break_a_line(export_config or {})
+
+
+def _points_at_the_same_file(one, other):
+    """Whether two names reach one file, by inode when both already exist.
+
+    ``samefile`` settles symlinks, hard links and a case-insensitive filesystem,
+    none of which text comparison sees. It needs both to exist, so a run that has
+    not created them yet falls back to the resolved paths, which still normalises
+    ``a/../run.txt`` and any symlinked parent.
+    """
+    one, other = Path(one), Path(other)
+    try:
+        return one.samefile(other)
+    except OSError:
+        return one.resolve() == other.resolve()
+
+
+def _refuse_logs_that_are_one_file(labelled_paths):
+    """Each log has to be its own file, however the three were named.
+
+    ``import_results`` points all three at one path, and the run then appends
+    input rows and output rows into it. The completeness check reports the mess
+    afterwards, by which time the file it was given is already gone.
+    """
+    for index, (label, path) in enumerate(labelled_paths):
+        for other_label, other in labelled_paths[index + 1 :]:
+            if _points_at_the_same_file(path, other):
+                raise ValueError(
+                    f"{label} and {other_label} are the same file ('{path}' and "
+                    f"'{other}'). A run appends input rows and output rows "
+                    f"separately, so sharing one log writes both into it and "
+                    f"leaves neither readable. Give each its own file."
+                )
+
+
+def _refuse_export_options_that_break_a_line(export_config):
+    """Reject export options that would split one record over several lines.
+
+    The logs hold one JSON object per line and every reader here assumes it, so
+    ``indent`` of any kind, ``0`` and ``""`` included, leaves a file that the
+    completeness check calls damaged once the run it just finished is over.
+    """
+    if export_config.get("indent") is not None:
+        raise ValueError(
+            f"indent={export_config['indent']!r} cannot be used with a Monte "
+            f"Carlo run: the logs hold one JSON object per line, and an "
+            f"indented record spans several. Export the results with indent "
+            f"after the run instead."
+        )
+    separators = export_config.get("separators")
+    if separators and any("\n" in str(part) for part in separators):
+        raise ValueError(
+            f"separators={separators!r} cannot be used with a Monte Carlo run: "
+            f"a newline inside a record splits it across lines, and the logs "
+            f"hold one JSON object per line."
+        )
+
+
 class MonteCarlo:  # pylint: disable=too-many-public-methods
     """Class to run a Monte Carlo simulation of a rocket flight.
 
@@ -223,6 +317,11 @@ class MonteCarlo:  # pylint: disable=too-many-public-methods
         self._export_config = kwargs
         self.number_of_simulations = number_of_simulations
         self._initial_sim_idx = self.num_of_loaded_sims if append else 0
+
+        # Before anything is opened: __setup_files truncates for append=False.
+        _refuse_logs_this_run_cannot_write(
+            self.input_file, self.output_file, self.error_file, kwargs
+        )
 
         print("Starting Monte Carlo analysis")
 
@@ -1260,7 +1359,9 @@ class MonteCarlo:  # pylint: disable=too-many-public-methods
         -----
         Notice that you can import the outputs, inputs, and errors from a
         file without the need to run simulations. You can use previously saved
-        files to process analyze the results or to continue a simulation.
+        files to process and analyze the results, and a ``.txt`` one to continue
+        a simulation. A ``.csv`` or ``.json`` is read-only here: ``simulate``
+        writes JSONL and refuses to run over a file it could not read back.
         """
         filepath = filename if filename else self.filename.with_suffix(".outputs.txt")
 
