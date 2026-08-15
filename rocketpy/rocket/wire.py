@@ -90,7 +90,7 @@ class Wire:
 
     def _validate_wire_type(self, wire_type, ignition_wire_function):
         """
-        Check and defines the attributes related to the type of wire
+        Check and defines the attributes related to the type of wire.
         """
         if isinstance(wire_type, str):
             if wire_type == "communications":
@@ -100,18 +100,18 @@ class Wire:
                 self.wire_type = "ignition"
                 if ignition_wire_function is None:
                     raise ValueError(
-                        "The ignition type is compulsory when it is an ignition wire"
+                        "The ignition type is compulsory when it is an ignition wire."
                     )
                 elif not isinstance(ignition_wire_function, str):
-                    raise ValueError("Ignition wire function must be a string")
+                    raise ValueError("Ignition wire function must be a string.")
                 else:
                     self.ignition_wire_function = ignition_wire_function
         else:
-            raise ValueError("Wire type must be a string")
+            raise ValueError("Wire type must be a string.")
 
     def _validate_numbers(self, current, extra_ignition_time):
         if not isinstance(current, (float, int)):
-            raise ValueError("Current must be a float or int. ")
+            raise ValueError("Current must be a float or int.")
         else:
             self.current = current
         if not isinstance(extra_ignition_time, (float, int)):
@@ -132,7 +132,7 @@ class Wire:
         ----------
         position_vector: list, tuple or Vector
             position vector of the point in which the magnetic field
-            is going to be measured in the user defined coordinate system
+            is going to be measured in the user defined coordinate system.
 
         Returns
         -------
@@ -161,7 +161,7 @@ class Wire:
         if cross_norm < 1e-12:
             b_v = Vector([0, 0, 0])
             warnings.warn(
-                "The wire is along the same line as the position vector, thus the magnetic field is 0",
+                "The wire is along the same line as the position vector, thus the magnetic field is 0.",
                 UserWarning,
             )
         else:
@@ -217,7 +217,7 @@ class Wire:
         """
         Save as an attribute the position of the wire edges in the body axis
         coordinate system from the edges given as a vector in the user
-        defined coordinate system
+        defined coordinate system.
 
         Parameters
         ----------

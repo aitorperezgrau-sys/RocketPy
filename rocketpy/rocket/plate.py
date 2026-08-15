@@ -160,7 +160,7 @@ class Plate:
         and magnetic permeability.
         """
         if not isinstance(material, str):
-            raise ValueError("material argument can only be a string")
+            raise ValueError("material argument can only be a string.")
 
         mu_0 = 4 * np.pi * 1e-7
         predefined = {"iron": 1.25e-3, "carbon_steel": 1.2e-4}
@@ -175,14 +175,14 @@ class Plate:
         elif material == "personalized":
             if not isinstance(absolute_magnetic_permeability, (float, int, type(None))):
                 raise ValueError(
-                    "The absolute magnetic permeability can only be None, float or int"
+                    "The absolute magnetic permeability can only be None, float or int."
                 )
             if (
                 absolute_magnetic_permeability is None
                 and relative_magnetic_permeability is None
             ):
                 raise ValueError(
-                    "The magnetic permeability or relative magnetic permeability must be defined if 'material' is 'personalized"
+                    "The magnetic permeability or relative magnetic permeability must be defined if 'material' is 'personalized."
                 )
 
             self.material = "personalized"
@@ -201,11 +201,11 @@ class Plate:
 
             else:
                 raise ValueError(
-                    "The relative magnetic permeability can only be None or a float or int"
+                    "The relative magnetic permeability can only be None or a float or int."
                 )
         else:
             raise ValueError(
-                "Material argument can only be iron, carbon_steel or personalized"
+                "Material argument can only be iron, carbon_steel or personalized."
             )
 
     def _validate_shape(
@@ -230,7 +230,7 @@ class Plate:
                 self.angular_points = None
             else:
                 raise ValueError(
-                    "The accepted strings are 'circular', 'squared' or 'personalized'"
+                    "The accepted strings are 'circular', 'squared' or 'personalized'."
                 )
         else:
             raise ValueError("The shape must be defined as a string")
@@ -430,7 +430,7 @@ class Plate:
         vertices = []
         cdm_user_frame = Vector([0, 0, rocket.center_of_dry_mass_position])
         if len(self.dimensions) < 3:
-            raise ValueError("The length of the vertices must be at least 3")
+            raise ValueError("The length of the vertices must be at least 3.")
         for pt in self.dimensions:
             self._check_entry_dimensions(pt, rocket)
 
@@ -445,7 +445,7 @@ class Plate:
             for i in range(len(vertices) - 1)
         )
         if colinear:
-            raise ValueError("All values cannot be colinear")
+            raise ValueError("All values cannot be colinear.")
         return vertices
 
     def _check_entry_dimensions(self, pt, rocket) -> None:
@@ -456,7 +456,7 @@ class Plate:
         Parameters
         ----------
         pt: list
-            Point belonging to the set of vertices defined by the user
+            Point belonging to the set of vertices defined by the user.
         rocket: Rocket
             Rocket to which the plate belongs.
 

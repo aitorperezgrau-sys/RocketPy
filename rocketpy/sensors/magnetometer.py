@@ -461,7 +461,7 @@ class Magnetometer(InertialSensor):
     ):
         """
         Returns from the magnetic model the magnetic field components in the NED
-        frame based on the coordinates in the intertial frame, the launch site elevation
+        frame based on the coordinates in the inertial frame, the launch site elevation
         and the earth radius and initial longitude and latitude of the launch site.
         """
         # z is calculated in meters above the sea level, we must change to WGS84 in km
@@ -543,7 +543,7 @@ class Magnetometer(InertialSensor):
 
     def apply_soft_iron(self, b_field: Vector, rocket: Rocket) -> Vector:
         """
-        Applies the soft iron distortion which is the distoriton
+        Applies the soft iron distortion which is the distortion
         of the magnetic field due to the higher magnetic permeability of
         some materials relative to the permeability of vacuum. This entails,
         that they have smaller magnetic resistance resulting in a bending of
@@ -590,7 +590,7 @@ class Magnetometer(InertialSensor):
         Applies the hard iron distortion. This magnetic distortion is
         caused by permanent magnets or magnetized materials on the
         rocket itself that move along with the sensor (from steel screws,
-        battery casing, feerromagnetic components), thus it is a constant
+        battery casing, ferromagnetic components), thus it is a constant
         value. It shifts the center of the magnetic data.
 
         Parameters
@@ -713,7 +713,7 @@ class Magnetometer(InertialSensor):
                     b_field = b_field + self._communications_interference
             else:
                 raise ValueError(
-                    "You must define first some communication wires, to be able to consider the magnetic distrubance created by them"
+                    "You must define first some communication wires, to be able to consider the magnetic disturbance created by them"
                 )
         else:
             b_field = b_field + self._communications_interference
@@ -740,7 +740,7 @@ class Magnetometer(InertialSensor):
         current_time : float, only required if the ignition_wire_function
             is 'motor_ignition'
             Current time of the simulation.
-        parachute_events : list only required if the ignition_wire_function
+        parachute_events : list, only required if the ignition_wire_function
             is 'parachute_deployment'
             List that stores parachute events triggered during flight.
             it is a list formed by lists which contain the trigger time
@@ -793,7 +793,7 @@ class Magnetometer(InertialSensor):
         current_time : float, only required if the ignition_wire_function
             is 'motor_ignition'
             Current time of the simulation.
-        parachute_events : list only required if the ignition_wire_function
+        parachute_events : list, only required if the ignition_wire_function
             is 'parachute_deployment'
             List that stores parachute events triggered during flight.
             it is a list formed by lists which contain the trigger time
@@ -834,7 +834,7 @@ class Magnetometer(InertialSensor):
                     )
         else:
             raise ValueError(
-                "The parachute events should be passed if a wire has ignition_wire_function == parachute_deployment"
+                "The parachute events should be passed if a wire has ignition_wire_function == parachute_deployment."
             )
 
         return b_field
@@ -880,7 +880,7 @@ class Magnetometer(InertialSensor):
 
     def export_measured_data(self, filename, file_format="csv"):
         """
-        Exports the measured values to a file
+        Exports the measured values to a file. 
 
         Parameters
         ----------
