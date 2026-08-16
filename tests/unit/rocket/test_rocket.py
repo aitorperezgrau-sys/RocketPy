@@ -1097,7 +1097,7 @@ def test_evaluate_reduced_mass_with_motor(calisto):
 
 
 @pytest.mark.parametrize(
-    "wire, position_edges, parachute_name",
+    "wire, position_endpoints, parachute_name",
     [
         (
             "test_circular_plate",
@@ -1113,12 +1113,12 @@ def test_evaluate_reduced_mass_with_motor(calisto):
             "test_communications_wire",
             [[0.001, 0.001, 0], [0.001, -0.001, 0], []],
             None,
-        ),  # wrong dimensions: only 2 position edges
+        ),  # wrong dimensions: only 2 position endpoints
         (
             "test_communications_wire",
             [[0.001, 0.001, 0], [0.001, -0.001, 0, 10]],
             None,
-        ),  # wrong dimensions: only 3 coodinates in edge position
+        ),  # wrong dimensions: only 3 coodinates in endpoint position
         (
             "test_communications_wire",
             [[0.001, 0.001, 0], 9],
@@ -1128,12 +1128,12 @@ def test_evaluate_reduced_mass_with_motor(calisto):
             "test_communications_wire",
             [[0.001, 0.001, 0], [0.001, -0.001, 10]],
             None,
-        ),  # wrong edge: z out of range
+        ),  # wrong endpoint: z out of range
         (
             "test_communications_wire",
             [[0.001, 0.001, 0], [0.001, -1, 0]],
             None,
-        ),  # wrong edge: radius of out range
+        ),  # wrong endpoint: radius of out range
         (
             "test_ignition_wire_parachute",
             [[0.001, 0.001, 0], [0.001, -0.001, 0]],
@@ -1146,10 +1146,10 @@ def test_evaluate_reduced_mass_with_motor(calisto):
         ),  # wrong parachute_name: number
     ],
 )
-def test_add_wire(request, wire, position_edges, parachute_name, calisto_robust):
+def test_add_wire(request, wire, position_endpoints, parachute_name, calisto_robust):
     wire_object = request.getfixturevalue(wire)
     with pytest.raises(InvalidParameterError):
-        calisto_robust.add_wire(wire_object, position_edges, parachute_name)
+        calisto_robust.add_wire(wire_object, position_endpoints, parachute_name)
 
 
 @pytest.mark.parametrize(
