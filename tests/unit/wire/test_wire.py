@@ -131,7 +131,7 @@ def test_from_dict():
 def test_rocket_belonging(test_communications_wire, calisto_robust):
     calisto_robust.add_wire(
         test_communications_wire,
-        position_edges=[[0.001, 0.002, -0.3], [0.001, 0.002, 0.3]],
+        position_endpoints=[[0.001, 0.002, -0.3], [0.001, 0.002, 0.3]],
     )
     assert isinstance(test_communications_wire.plots, _WirePlots)
 

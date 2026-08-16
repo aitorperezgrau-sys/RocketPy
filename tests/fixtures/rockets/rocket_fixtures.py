@@ -433,15 +433,15 @@ def calisto_robust_with_magnetometer_wires_and_plates(
     calisto_robust.add_sensor(noisy_rotated_magnetometer, position=[0, 0, 0.5])
     calisto_robust.add_wire(
         test_ignition_wire_motor,
-        position_edges=[[0.002, 0.004, -0.3], [0.003, 0.001, -1.3]],
+        position_endpoints=[[0.002, 0.004, -0.3], [0.003, 0.001, -1.3]],
     )
     calisto_robust.add_wire(
         test_communications_wire,
-        position_edges=[[0.002, 0.004, -0.3], [0.003, 0.001, -1.3]],
+        position_endpoints=[[0.002, 0.004, -0.3], [0.003, 0.001, -1.3]],
     )
     calisto_robust.add_wire(
         test_ignition_wire_parachute,
-        position_edges=[[0.002, 0.004, 0.3], [0.003, 0.001, 0.5]],
+        position_endpoints=[[0.002, 0.004, 0.3], [0.003, 0.001, 0.5]],
         parachute_name="calisto_main_chute",
     )
     calisto_robust.add_plate(test_circular_plate, position=30, height=0.2)
