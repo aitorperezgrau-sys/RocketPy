@@ -72,11 +72,11 @@ class Plate:
             Shape of the plate. Options are:
 
             - If "circular": the plate is will be built as a circle, and the parameter
-            ``dimensions`` refers to the radius in meters.
+              ``dimensions`` refers to the radius in meters.
             - If "rectangular": the plate will be built a rectangle, and the parameter
-            ``dimensions`` refers to the sides length in meters.
+              ``dimensions`` refers to the sides length in meters.
             - If "personalized": the plate is created by the
-          vertices defined in ``dimensions``.
+              vertices defined in ``dimensions``.
         dimensions : float, int, list, tuple
             Dimensions defining the plate geometry depending on ``shape``:
 
