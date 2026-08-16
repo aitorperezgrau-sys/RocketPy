@@ -127,15 +127,14 @@ class Wire:
 
     def measure_magnetic_field(self, position_vector: list | tuple | Vector) -> None:
         """Calculates and stores the magnetic field vector at the point given by
-        ``position_vector``in the Body Axis Coordinate System using the finite
+        ``position_vector`` in the Body Axis Coordinate System using the finite
         straight-wire Biot-Savart formula.
 
         Parameters
         ----------
         position_vector : list, tuple, Vector
-            Coordinates [x, y, z] in meters relative to the
-            Body Axis Coordinate System in which we want to
-            calculate the magnetic field.
+            Coordinates [x, y, z] in meters relative to the Body Axis Coordinate System
+            in which we want to calculate the magnetic field.
         """
         r1 = self._wire_endpoints_bacs[0]  # starting endpoint
         r2 = self._wire_endpoints_bacs[1]  # final end
