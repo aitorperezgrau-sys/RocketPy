@@ -1923,13 +1923,13 @@ class Rocket:
             "parachute_deployment". Default is None.
         """
         if not isinstance(wire, Wire):
-            raise ValueError("The wire parameter must be a Wire instance.")
+            raise InvalidParameterError("The wire parameter must be a Wire instance.")
 
         endpoints = self._define_3d_endpoints(position_endpoints)
 
         if wire.ignition_wire_function == "parachute_deployment":
             if not isinstance(parachute_name, str):
-                raise ValueError(
+                raise InvalidParameterError(
                     "parachute_name must be a string when the wire function is 'parachute_deployment'."
                 )
             wire.parachute_name = parachute_name
@@ -1940,14 +1940,14 @@ class Rocket:
             x, y, z = endpoint
             flag, range_z = self.z_bounds_check(z, frame="ucs")
             if not flag:
-                raise ValueError(
+                raise InvalidParameterError(
                     f"{name} z-coordinate {z} is outside the rocket longitudinal range {range_z}."
                 )
 
             r_endpoint = math.hypot(x, y)
             r_rocket = self.general_radius(z, frame="ucs")
             if r_endpoint > r_rocket:
-                raise ValueError(
+                raise InvalidParameterError(
                     f"{name} with coordinates {endpoint} is outside the rocket radius ({r_endpoint:.4f} m > {r_rocket:.4f} m) at z = {z} m."
                 )
 
@@ -1987,7 +1987,7 @@ class Rocket:
                     for item in position_endpoints
                 ):
                     if any(len(item) != 3 for item in position_endpoints):
-                        raise ValueError(
+                        raise InvalidParameterError(
                             "The coordinate length for each endpoint must be 3."
                         )
 
@@ -2004,15 +2004,15 @@ class Rocket:
 
                     return [endpoint_a, endpoint_b]
                 else:
-                    raise ValueError(
+                    raise InvalidParameterError(
                         "position_endpoints must be a sequence of numbers or 3D coordinate vectors."
                     )
             else:
-                raise ValueError(
+                raise InvalidParameterError(
                     "position_endpoints must contain exactly 2 endpoint positions."
                 )
         else:
-            raise ValueError(
+            raise InvalidParameterError(
                 "position_endpoints must be a list or tuple of two numbers (z-coordinates) or two 3D position vectors ([x, y, z])."
             )
 
@@ -2042,22 +2042,22 @@ class Rocket:
             "rectangular".
         """
         if not isinstance(plate, Plate):
-            raise ValueError("The plate parameter must be a Plate instance.")
+            raise InvalidParameterError("The plate parameter must be a Plate instance.")
 
         if plate.shape in ("circular", "rectangular"):
             if position is None:
-                raise ValueError(
+                raise InvalidParameterError(
                     f"position must be defined when the shape is '{plate.shape}'."
                 )
             if not isinstance(position, (float, int)):
-                raise ValueError("position must be a float or int.")
+                raise InvalidParameterError("position must be a float or int.")
             if height is None:
-                raise ValueError(
+                raise InvalidParameterError(
                     f"height must be defined when the shape is '{plate.shape}'."
                 )
             flag, range_z = self.z_bounds_check(height, frame="ucs")
             if not flag:
-                raise ValueError(
+                raise InvalidParameterError(
                     f"The defined height {height} m must be within the rocket longitudinal range {range_z} in the user frame."
                 )
         plate.define_plate_position(self, position, height)
@@ -2435,11 +2435,11 @@ class Rocket:
             Radius for the z value in the whole rocket.
         """
         if not isinstance(z, (float, int)):
-            raise ValueError("Z must be a float or int")
+            raise InvalidParameterError("Z must be a float or int")
         if not isinstance(self.nose_cone, NoseCone):
-            raise ValueError("Define a nose cone first")
+            raise InvalidParameterError("Define a nose cone first")
         if not isinstance(frame, str):
-            raise ValueError("frame parameter must be a string")
+            raise InvalidParameterError("frame parameter must be a string")
         else:
             if isinstance(frame, str):
                 if frame.lower() == "ucs":
@@ -2454,7 +2454,9 @@ class Rocket:
                     distance_from_nose = nose_tip_bacs - z  # nose cone frame
                     z_bacs = z
                 else:
-                    raise ValueError("Accepted strings for frame are ucs and bacs")
+                    raise InvalidParameterError(
+                        "Accepted strings for frame are ucs and bacs"
+                    )
             if 0 <= distance_from_nose <= self.nose_cone.length:
                 r = self.nose_cone.radius(distance_from_nose)
             else:
@@ -2547,9 +2549,9 @@ class Rocket:
         """
         if isinstance(z, (float, int)):
             if not isinstance(self.nose_cone, NoseCone):
-                raise ValueError("Define a nose cone first")
+                raise InvalidParameterError("Define a nose cone first")
             if not isinstance(self.motor, Motor):
-                raise ValueError("Define a motor first")
+                raise InvalidParameterError("Define a motor first")
 
             # bounds in the ucs frame
             nose_tip_ucs = self._nose_tip_from_ucs
@@ -2571,15 +2573,17 @@ class Rocket:
                     z_min = min(nose_tip_bacs, motor_bacs)
                     z_max = max(nose_tip_bacs, motor_bacs)
                 else:
-                    raise ValueError("Accepted strings for frame are ucs and bacs")
+                    raise InvalidParameterError(
+                        "Accepted strings for frame are ucs and bacs"
+                    )
             else:
-                raise ValueError("Frame parameter must be a string")
+                raise InvalidParameterError("Frame parameter must be a string")
 
             is_inside = z_min <= z <= z_max
             return is_inside, (z_min, z_max)
 
         else:
-            raise ValueError("The z component must be a float or int")
+            raise InvalidParameterError("The z component must be a float or int")
 
     def info(self):
         """Prints out a summary of the data and graphs available about

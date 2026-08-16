@@ -6,6 +6,7 @@ from pywmm import WMMv2
 from pywmm.calculator import calculate_geomagnetic
 from pywmm.date_utils import decimal_year
 
+from rocketpy.exceptions import InvalidParameterError
 from rocketpy.mathutils.vector_matrix import Matrix, Vector
 from rocketpy.prints.sensors_prints import _InertialSensorPrints
 from rocketpy.rocket import Rocket
@@ -229,7 +230,9 @@ class Magnetometer(InertialSensor):
                     activation_signal_interference, communications_interference
                 )
             else:
-                raise ValueError("The accepted strings are 'wires' or 'personalized'")
+                raise InvalidParameterError(
+                    "The accepted strings are 'wires' or 'personalized'"
+                )
         else:
             self.initial_power_interference = "number"
             if isinstance(power_interference, (int, float)):
@@ -280,7 +283,7 @@ class Magnetometer(InertialSensor):
                 self.total_soft_iron_distortion_matrix_computed = False
                 self.soft_iron_distortion_difference = []
             else:
-                raise ValueError("The accepted string must be plates")
+                raise InvalidParameterError("The accepted string must be plates")
 
     def _validate_hard_iron(self, hard_iron_distortion) -> None:
         """Checks and defines the hard_iron_distortion parameter."""
@@ -298,7 +301,7 @@ class Magnetometer(InertialSensor):
             activation_signal_interference is None
             or communications_interference is None
         ):
-            raise ValueError(
+            raise InvalidParameterError(
                 "For 'personalized' interference, you must provide values for both 'activation_signal_interference' and 'communications_interference'."
             )
 
@@ -315,7 +318,7 @@ class Magnetometer(InertialSensor):
                 self.activation_signal_interference = [0, 0, 0]
                 self.initial_activation_signal_interference = "wires"
             else:
-                raise ValueError("The accepted string is wires")
+                raise InvalidParameterError("The accepted string is wires")
         else:
             if isinstance(activation_signal_interference, (int, float)):
                 activation_signal_interference = [activation_signal_interference] * 3
@@ -336,7 +339,7 @@ class Magnetometer(InertialSensor):
                 self.initial_communications_interference = "wires"
                 self.communications_computed = False
             else:
-                raise ValueError("The accepted string is wires")
+                raise InvalidParameterError("The accepted string is wires")
         else:
             if isinstance(communications_interference, (int, float)):
                 communications_interference = [communications_interference] * 3
@@ -720,7 +723,7 @@ class Magnetometer(InertialSensor):
                 else:
                     b_field = b_field + self._communications_interference
             else:
-                raise ValueError(
+                raise InvalidParameterError(
                     "You must define first some communication wires, to be able to consider the magnetic disturbance created by them"
                 )
         else:
@@ -775,11 +778,11 @@ class Magnetometer(InertialSensor):
                             b_field, rocket, current_time, ignition_wire
                         )
                     else:
-                        raise ValueError(
+                        raise InvalidParameterError(
                             "The accepted strings for the ignition_wire_function are motor_ignition and parachute_deployment"
                         )
             else:
-                raise ValueError(
+                raise InvalidParameterError(
                     "You must define some ignition wire to be able to consider its magnetic disturbance."
                 )
         else:
@@ -833,7 +836,7 @@ class Magnetometer(InertialSensor):
                         b_field + ignition_wire._magnetic_field[self.sensor_from_bacs_t]
                     )
         else:
-            raise ValueError(
+            raise InvalidParameterError(
                 "The parachute events should be passed if a wire has ignition_wire_function == parachute_deployment."
             )
 

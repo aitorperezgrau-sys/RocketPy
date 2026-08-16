@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+from rocketpy.exceptions import InvalidParameterError
 from rocketpy.plots.plot_helpers import show_or_save_plot
 
 
@@ -62,7 +63,7 @@ class _PlatePlots:
             raw, rgba, svg, svgz, tif, tiff, and webp. Default is None.
         """
         if self.rocket is None:
-            raise ValueError(
+            raise InvalidParameterError(
                 "Plate points list is empty. Add the plate to a rocket before plotting."
             )
         # from bacs to ucs
@@ -135,7 +136,7 @@ class _PlatePlots:
             pgf, png, ps, raw, rgba, svg, svgz, tif, tiff, and webp. Default is None.
         """
         if self.rocket is None:
-            raise ValueError(
+            raise InvalidParameterError(
                 "Plate points list is empty. Add the plate to a rocket before plotting."
             )
         if vis_args is None:
@@ -190,7 +191,7 @@ class _PlatePlots:
         elif plane == "yz":
             r = y
         else:
-            raise ValueError("Plane value can only be 'xz' or 'yz'.")
+            raise InvalidParameterError("Plane value can only be 'xz' or 'yz'.")
 
         unique_z = np.unique(z)
         r_min = np.array([r[z == uz].min() for uz in unique_z])

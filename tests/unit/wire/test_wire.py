@@ -1,5 +1,6 @@
 import pytest
 
+from rocketpy.exceptions import InvalidParameterError
 from rocketpy.mathutils import Vector
 from rocketpy.plots.wire_plots import _WirePlots
 from rocketpy.rocket import Wire
@@ -42,8 +43,8 @@ from rocketpy.rocket import Wire
     ],
 )
 def validate_wire_type(wire_type, ignition_wire_function, current, extra_ignition_time):
-    """Tests that ValueError are raised with incorrect entry parameters."""
-    with pytest.raises(ValueError):
+    """Tests that InvalidParameterError are raised with incorrect entry parameters."""
+    with pytest.raises(InvalidParameterError):
         Wire(current, wire_type, ignition_wire_function, extra_ignition_time)
 
 
@@ -139,7 +140,7 @@ def test_wire_prints_and_plots(test_communications_wire, calisto_robust):
     """Test the print methods of the Wire class. Checks if all attributes are
     printed and plotted correctly.
     """
-    with pytest.raises(ValueError):
+    with pytest.raises(InvalidParameterError):
         test_communications_wire.plots.draw()
     calisto_robust.add_wire(
         test_communications_wire, [[0.001, 0.002, -0.3], [0.001, 0.002, 0.3]]

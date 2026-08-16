@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 
+from rocketpy.exceptions import InvalidParameterError
 from rocketpy.mathutils import Matrix
 from rocketpy.plots.plate_plots import _PlatePlots
 from rocketpy.rocket.plate import Plate
@@ -143,8 +144,8 @@ def test_validate_parameters(
     relative_magnetic_permeability,
     name,
 ):
-    """Tests that ValueError are raised with incorrect entry parameters."""
-    with pytest.raises(ValueError):
+    """Tests that InvalidParameterError are raised with incorrect entry parameters."""
+    with pytest.raises(InvalidParameterError):
         Plate(
             shape,
             dimensions,
@@ -198,7 +199,7 @@ def test_validate_parameters(
     ],
 )
 def test_generate_personalized_points_bounds(vertices, calisto_robust):
-    """Ensures the raise of ValueError when the vertices are out of the rocket
+    """Ensures the raise of InvalidParameterError when the vertices are out of the rocket
     or when they don't form a 2D surface."""
     test_plate = Plate(
         shape="personalized",
@@ -208,7 +209,7 @@ def test_generate_personalized_points_bounds(vertices, calisto_robust):
         grid_spacing=0.002,
         name="test_personalized_plate",
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(InvalidParameterError):
         calisto_robust.add_plate(test_plate)
 
 
@@ -451,9 +452,9 @@ def test_plate_prints_and_plots(request, plate, position, height, calisto_robust
     printed and plotted correctly.
     """
     plate_obj = request.getfixturevalue(plate)
-    with pytest.raises(ValueError):
+    with pytest.raises(InvalidParameterError):
         plate_obj.plots.draw()
-    with pytest.raises(ValueError):
+    with pytest.raises(InvalidParameterError):
         plate_obj.plots.draw_3d()
     calisto_robust.add_plate(plate_obj, position, height)
     plate_obj.prints.all()

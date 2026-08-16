@@ -1148,7 +1148,7 @@ def test_evaluate_reduced_mass_with_motor(calisto):
 )
 def test_add_wire(request, wire, position_edges, parachute_name, calisto_robust):
     wire_object = request.getfixturevalue(wire)
-    with pytest.raises(ValueError):
+    with pytest.raises(InvalidParameterError):
         calisto_robust.add_wire(wire_object, position_edges, parachute_name)
 
 
@@ -1165,7 +1165,7 @@ def test_add_wire(request, wire, position_edges, parachute_name, calisto_robust)
 )
 def test_add_plate(request, plate, position, height, calisto_robust):
     plate_obj = request.getfixturevalue(plate)
-    with pytest.raises(ValueError):
+    with pytest.raises(InvalidParameterError):
         calisto_robust.add_plate(plate_obj, position, height)
 
 

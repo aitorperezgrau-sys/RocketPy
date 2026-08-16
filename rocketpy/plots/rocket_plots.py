@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.pyplot import Axes
 
+from rocketpy.exceptions import InvalidParameterError
 from rocketpy.mathutils.vector_matrix import Vector
 from rocketpy.motors import HybridMotor, LiquidMotor, SolidMotor
 from rocketpy.rocket.aero_surface import Fin, Fins, NoseCone, Tail
@@ -216,11 +217,13 @@ class _RocketPlots:
 
     def __validate_aerodynamic_surfaces(self, plane):
         if not self.rocket.aerodynamic_surfaces:
-            raise ValueError(
+            raise InvalidParameterError(
                 "The rocket must have at least one aerodynamic surface to be drawn."
             )
         if plane not in ("xz", "yz"):
-            raise ValueError("The plane must be 'xz' or 'yz'. The default is 'xz'.")
+            raise InvalidParameterError(
+                "The plane must be 'xz' or 'yz'. The default is 'xz'."
+            )
 
     def _draw_aerodynamic_surfaces(self, ax, vis_args, plane, surfaces):
         """Draws the aerodynamic surfaces and saves the position of the points
@@ -374,7 +377,7 @@ class _RocketPlots:
             x_rotated = self.rocket._csys * z_fin_rotated + position.z
             y_rotated = y_fin_rotated + position.y
         else:  # pragma: no cover
-            raise ValueError("Plane must be 'xz' or 'yz'.")
+            raise InvalidParameterError("Plane must be 'xz' or 'yz'.")
 
         ax.plot(
             x_rotated,
@@ -410,7 +413,7 @@ class _RocketPlots:
                 # y position of the surface is the y position in the plot
                 y_pos = position[1]
             case _:  # pragma: no cover
-                raise ValueError("Plane must be 'xz' or 'yz'.")
+                raise InvalidParameterError("Plane must be 'xz' or 'yz'.")
 
         ax.scatter(
             x_pos,
@@ -684,7 +687,7 @@ class _RocketPlots:
                     y_pos = pos[1]
                     normal_y = sensor.normal_vector.y
                 case _:  # pragma: no cover
-                    raise ValueError("Plane must be 'xz' or 'yz'.")
+                    raise InvalidParameterError("Plane must be 'xz' or 'yz'.")
 
             # line length is 2/5 of the rocket radius
             line_length = self.rocket.radius / 2.5
@@ -798,7 +801,7 @@ class _RocketPlots:
         elif wires == "ignition_wires":
             wires_list = self.rocket._ignition_wires
         else:
-            raise ValueError(
+            raise InvalidParameterError(
                 "Only 'communication_wires', 'ignition_wires', or 'all' are valid inputs."
             )
 
@@ -811,11 +814,13 @@ class _RocketPlots:
             if len(color) == len(wires_list):
                 color_list = color
             else:
-                raise ValueError(
+                raise InvalidParameterError(
                     "The length of the list of colors must be the same as the number of wires."
                 )
         else:
-            raise ValueError("The accepted entries for color are str, list, or tuple.")
+            raise InvalidParameterError(
+                "The accepted entries for color are str, list, or tuple."
+            )
 
         for wire, color_wire in zip(wires_list, color_list):
             wire.plots._draw_wires(
@@ -905,11 +910,13 @@ class _RocketPlots:
             if len(color) == len(plates_list):
                 color_list = color
             else:
-                raise ValueError(
+                raise InvalidParameterError(
                     "The length of the list of colors must be the same as the number of plates."
                 )
         else:
-            raise ValueError("The accepted entries for color are str, list, or tuple.")
+            raise InvalidParameterError(
+                "The accepted entries for color are str, list, or tuple."
+            )
 
         sorted_plates_list = sorted(plates_list, key=lambda p: p.area, reverse=True)
         for plate, color_plate in zip(sorted_plates_list, color_list):

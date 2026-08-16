@@ -1,6 +1,7 @@
 import math as m
 import warnings
 
+from rocketpy.exceptions import InvalidParameterError
 from rocketpy.mathutils.vector_matrix import Vector
 from rocketpy.plots.wire_plots import _WirePlots
 from rocketpy.prints.wire_prints import _WirePrints
@@ -100,29 +101,33 @@ class Wire:
             elif wire_type == "ignition":
                 self.wire_type = "ignition"
                 if ignition_wire_function is None:
-                    raise ValueError(
+                    raise InvalidParameterError(
                         "The ignition_wire_function parameter is required when wire_type is 'ignition'."
                     )
                 if not isinstance(ignition_wire_function, str):
-                    raise ValueError("ignition_wire_function must be a string.")
+                    raise InvalidParameterError(
+                        "ignition_wire_function must be a string."
+                    )
                 self.ignition_wire_function = ignition_wire_function
             else:
-                raise ValueError(
+                raise InvalidParameterError(
                     "wire_type must be either 'communications' or 'ignition'."
                 )
         else:
-            raise ValueError("wire_type must be a string.")
+            raise InvalidParameterError("wire_type must be a string.")
 
     def _validate_numbers(self, current, extra_ignition_time) -> None:
         """Validates numerical attributes defining wire physical characteristics."""
         if not isinstance(current, (float, int)):
-            raise ValueError("Current must be a float or int.")
+            raise InvalidParameterError("Current must be a float or int.")
         self.current = float(current)
 
         if not isinstance(extra_ignition_time, (float, int)):
-            raise ValueError("extra_ignition_time must be a float or int.")
+            raise InvalidParameterError("extra_ignition_time must be a float or int.")
         if extra_ignition_time < 0:
-            raise ValueError("extra_ignition_time must be greater than or equal to 0.")
+            raise InvalidParameterError(
+                "extra_ignition_time must be greater than or equal to 0."
+            )
         self.extra_ignition_time = float(extra_ignition_time)
 
     def measure_magnetic_field(self, position_vector: list | tuple | Vector) -> None:
@@ -249,12 +254,12 @@ class Wire:
             Rocket instance in which geometry bounds are verified.
         """
         if not rocket.z_bounds_check(pt[2], frame="ucs")[0]:
-            raise ValueError(
+            raise InvalidParameterError(
                 f"The axial coordinate z = {pt[2]} m of endpoint {pt} is outside the rocket longitudinal bounds."
             )
 
         if m.hypot(pt[0], pt[1]) > rocket.general_radius(pt[2], frame="ucs"):
-            raise ValueError(
+            raise InvalidParameterError(
                 f"Endpoint {pt} exceeds the rocket fuselage radius at z = {pt[2]} m."
             )
 

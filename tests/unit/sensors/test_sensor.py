@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 from pytest import approx
 
+from rocketpy.exceptions import InvalidParameterError
 from rocketpy.mathutils.vector_matrix import Matrix, Vector
 from rocketpy.sensors.magnetometer import Magnetometer
 from rocketpy.tools import euler313_to_quaternions
@@ -463,7 +464,7 @@ def test_magnetometer_valid_parameters(
     unique of the magnetometer (not shared with parent classes).
     """
     # common attributes
-    with pytest.raises(ValueError):
+    with pytest.raises(InvalidParameterError):
         Magnetometer(
             sampling_rate=40,
             hard_iron_distortion=hard_iron_distortion,

@@ -3,6 +3,7 @@ import math as m
 import numpy as np
 from matplotlib.path import Path
 
+from rocketpy.exceptions import InvalidParameterError
 from rocketpy.mathutils import Matrix, Vector
 from rocketpy.plots.plate_plots import _PlatePlots
 from rocketpy.prints.plate_prints import _PlatePrints
@@ -71,7 +72,7 @@ class Plate:
         shape : str
             Shape of the plate. Options are:
 
-            - If "circular": the plate is will be built as a circle, and the parameter
+            - If "circular": the plate will be built as a circle, and the parameter
               ``dimensions`` refers to the radius in meters.
             - If "rectangular": the plate will be built a rectangle, and the parameter
               ``dimensions`` refers to the sides length in meters.
@@ -148,7 +149,7 @@ class Plate:
     ) -> None:
         """Validates and sets material magnetic permeability parameters."""
         if not isinstance(material, str):
-            raise ValueError("'Material' argument must be a string.")
+            raise InvalidParameterError("'Material' argument must be a string.")
 
         mu_0 = 4 * np.pi * 1e-7
         predefined = {"iron": 1.25e-3, "carbon_steel": 1.2e-4}
@@ -162,14 +163,14 @@ class Plate:
 
         elif material == "personalized":
             if not isinstance(absolute_magnetic_permeability, (float, int, type(None))):
-                raise ValueError(
+                raise InvalidParameterError(
                     "The 'absolute_magnetic_permeability' must be None, float, or int."
                 )
             if (
                 absolute_magnetic_permeability is None
                 and relative_magnetic_permeability is None
             ):
-                raise ValueError(
+                raise InvalidParameterError(
                     "Either 'absolute_magnetic_permeability' or 'relative_magnetic_permeability' must be specified when 'material' is 'personalized'."
                 )
 
@@ -188,11 +189,11 @@ class Plate:
                 )
 
             else:
-                raise ValueError(
+                raise InvalidParameterError(
                     "The 'relative_magnetic_permeability' must be None, float, or int."
                 )
         else:
-            raise ValueError(
+            raise InvalidParameterError(
                 "'Material' argument must be 'iron', 'carbon_steel', or 'personalized'."
             )
 
@@ -212,11 +213,11 @@ class Plate:
                 self.z_points = None
                 self.angular_points = None
             else:
-                raise ValueError(
+                raise InvalidParameterError(
                     "'Shape' must be 'circular', 'rectangular', or 'personalized'."
                 )
         else:
-            raise ValueError("'Shape' must be defined as a string.")
+            raise InvalidParameterError("'Shape' must be defined as a string.")
 
     def _validate_not_personalized_shape(
         self, shape, dimensions, z_points, angular_points
@@ -224,7 +225,7 @@ class Plate:
         """Validates parameters for standard geometric shapes ('circular' or 'rectangular')."""
         if shape == "circular":
             if not isinstance(dimensions, (float, int)):
-                raise ValueError(
+                raise InvalidParameterError(
                     "For 'circular' shape, dimensions must be a float or int representing radius in meters."
                 )
             self.shape = "circular"
@@ -246,7 +247,7 @@ class Plate:
                 width = float(dimensions[0])
                 height = float(dimensions[1])
             else:
-                raise ValueError(
+                raise InvalidParameterError(
                     "For 'rectangular' shape, dimensions must be a float/int (square) or a 2-element sequence [width, height]."
                 )
             self.dimensions = (width, height)
@@ -494,7 +495,7 @@ class Plate:
         vertices = []
         cdm_user_frame = Vector([0, 0, rocket.center_of_dry_mass_position])
         if len(self.dimensions) < 3:
-            raise ValueError(
+            raise InvalidParameterError(
                 "At least 3 vertices are required for a personalized plate."
             )
         for pt in self.dimensions:
@@ -513,7 +514,9 @@ class Plate:
             collinear.append(abs(e1 ^ e2) <= 1e-12)
 
         if all(collinear):
-            raise ValueError("All vertices of the personalized plate are collinear.")
+            raise InvalidParameterError(
+                "All vertices of the personalized plate are collinear."
+            )
         return vertices
 
     def _check_entry_dimensions(self, pt, rocket) -> None:
@@ -527,12 +530,12 @@ class Plate:
             Rocket instance in which boundaries are checked.
         """
         if not rocket.z_bounds_check(pt[2], frame="ucs")[0]:
-            raise ValueError(
+            raise InvalidParameterError(
                 f"The z coordinate {pt[2]} of point {pt} is outside the rocket longitudinal bounds."
             )
 
         if m.hypot(pt[0], pt[1]) > rocket.general_radius(pt[2], frame="ucs"):
-            raise ValueError(
+            raise InvalidParameterError(
                 f"Point {pt} exceeds the rocket fuselage radius at z = {pt[2]} m."
             )
 
@@ -568,7 +571,9 @@ class Plate:
 
         n_norm = m.hypot(nx, ny, nz)
         if n_norm < 1e-12:
-            raise ValueError("The vertices of the plate cannot be collinear.")
+            raise InvalidParameterError(
+                "The vertices of the plate cannot be collinear."
+            )
         nx, ny, nz = nx / n_norm, ny / n_norm, nz / n_norm
 
         arb_x, arb_y, arb_z = (
@@ -580,7 +585,7 @@ class Plate:
         uz = nx * arb_y - ny * arb_x
         u_norm = m.hypot(ux, uy, uz)
         if u_norm < 1e-12:
-            raise ValueError("Invalid plate orientation or geometry.")
+            raise InvalidParameterError("Invalid plate orientation or geometry.")
         ux, uy, uz = ux / u_norm, uy / u_norm, uz / u_norm
 
         vx, vy, vz = ny * uz - nz * uy, nz * ux - nx * uz, nx * uy - ny * ux
@@ -610,7 +615,7 @@ class Plate:
                 if isinstance(position_vector, (list, tuple)):
                     position_vector = Vector(position_vector)
                 elif not isinstance(position_vector, Vector):
-                    raise ValueError(
+                    raise InvalidParameterError(
                         "position_vector must be a tuple, list, or Vector instance."
                     )
 
@@ -639,11 +644,11 @@ class Plate:
                     induced_matrix
                 )
             else:
-                raise ValueError(
+                raise InvalidParameterError(
                     "The plate points list is empty. Add the plate to a rocket before calculating the distortion matrix."
                 )
         else:
-            raise ValueError("The points attribute must be a list.")
+            raise InvalidParameterError("The points attribute must be a list.")
 
     def draw_3d(
         self,

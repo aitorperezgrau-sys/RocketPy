@@ -885,6 +885,7 @@ class Flight:
                 earth_radius=self.env.earth_radius,
                 initial_coordinates=(self.env.latitude, self.env.longitude),
                 rocket=self,
+                parachute_events=self.parachute_events,
             )
 
     def __check_and_handle_parachute_triggers(

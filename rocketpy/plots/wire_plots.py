@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import Axes
 
+from rocketpy.exceptions import InvalidParameterError
 from rocketpy.plots.plot_helpers import show_or_save_plot
 
 
@@ -85,7 +86,7 @@ class _WirePlots:
             raw, rgba, svg, svgz, tif, tiff, and webp. Default is None.∫
         """
         if self.rocket is None:
-            raise ValueError("Add the wire to a rocket before plotting.")
+            raise InvalidParameterError("Add the wire to a rocket before plotting.")
         if vis_args is None:
             vis_args = {
                 "background": "#EEEEEE",
@@ -165,7 +166,7 @@ class _WirePlots:
             r_a = endpoint_a_y
             r_b = endpoint_b_y
         else:
-            raise ValueError("The plane must be 'xz' or 'yz'.")
+            raise InvalidParameterError("The plane must be 'xz' or 'yz'.")
 
         z = [endpoint_a_z, endpoint_b_z]
         r = [r_a, r_b]
