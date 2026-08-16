@@ -1912,9 +1912,9 @@ class Rocket:
             Sequence of two elements defining Endpoint A and Endpoint B:
 
             - If numeric scalars: [z_a, z_b] coordinates along the centerline
-              in the User-defined Coordinate System (UCS).
+              in the User-defined Coordinate System.
             - If 3D vectors: [[x_a, y_a, z_a], [x_b, y_b, z_b]] coordinates in
-              the User-defined Coordinate System (UCS).
+              the User-defined Coordinate System.
 
             Conventional current flows from Endpoint A to Endpoint B.
         parachute_name : str, optional
@@ -1967,7 +1967,7 @@ class Rocket:
         ----------
         position_endpoints : list, tuple
             Sequence of two numbers (z-coordinates) or two 3D position vectors
-            ([x, y, z]) relative to the User-defined Coordinate System (UCS).
+            ([x, y, z]) relative to the User-defined Coordinate System.
             Conventional current flows from Endpoint A to Endpoint B.
 
         Returns
@@ -2031,13 +2031,13 @@ class Rocket:
         plate : Plate
             The Plate instance to be attached to the rocket.
         position : float, int, optional
-            Angle between the User-defined Coordinate System (UCS) y-axis and the
+            Angle between the User-defined Coordinate System y-axis and the
             geometric center of the plate in degrees. The angle is positive from
             y to -x. See `Rocket Axes Definition <https://docs.rocketpy.org/en/latest/user/rocket/rocket_axes.html>`_
             for more information.
         height : float, int, optional
             Axial coordinate of the geometric center along the rocket
-            longitudinal axis in the User-defined Coordinate System (UCS) in
+            longitudinal axis in the User-defined Coordinate System in
             meters. Required when the ``shape`` of the plate is "circular" or
             "rectangular".
         """

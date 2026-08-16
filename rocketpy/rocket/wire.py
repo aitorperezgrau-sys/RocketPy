@@ -21,7 +21,7 @@ class Wire:
         Intensity of the electric current flowing through the wire in Amperes (A).
     Wire.magnetic_field : dict
         Dictionary of calculated magnetic fields. Keys are position coordinate
-        tuples (x, y, z) in the Body Axis Coordinate System (BACS), and values
+        tuples (x, y, z) in the Body Axis Coordinate System, and values
         are the corresponding magnetic field components in Tesla (T).
     Wire.wire_length : float
         Total length of the wire segment in meters.
@@ -127,14 +127,14 @@ class Wire:
 
     def measure_magnetic_field(self, position_vector: list | tuple | Vector) -> None:
         """Calculates and records the magnetic field vector at a target point in
-        the Body Axis Coordinate System (BACS) using the finite straight-wire
+        the Body Axis Coordinate System using the finite straight-wire
         Biot-Savart formula.
 
         Parameters
         ----------
         position_vector : list, tuple, Vector
             Target position coordinates [x, y, z] in meters relative to the
-            Body Axis Coordinate System (BACS).
+            Body Axis Coordinate System.
         """
         r1 = self._wire_endpoints_bacs[0]  # starting endpoint
         r2 = self._wire_endpoints_bacs[1]  # final end
@@ -189,7 +189,7 @@ class Wire:
         ----------
         position_vector : list, tuple, Vector
             Target position coordinates [x, y, z] in meters defined in the
-            Body Axis Coordinate System (BACS).
+            Body Axis Coordinate System.
         magnetic_field : float, int, list, tuple, Vector
             Magnetic field vector in Tesla (T):
 
@@ -211,7 +211,7 @@ class Wire:
         | tuple[Vector, Vector],
     ) -> None:
         """Transforms wire endpoint coordinates from the User-defined Coordinate
-        System (UCS) to the Body Axis Coordinate System (BACS) and records them.
+        System to the Body Axis Coordinate System and records them.
 
         Parameters
         ----------
@@ -219,7 +219,7 @@ class Wire:
             Rocket instance to which the wire is attached.
         _wire_endpoints_from_user_coordinate_system : list[Vector] or tuple[Vector, Vector]
             Sequence containing the two endpoint position vectors in the
-            User-defined Coordinate System (UCS).
+            User-defined Coordinate System.
         """
         self._wire_endpoints_bacs = []
         cdm_user_frame = Vector([0, 0, rocket.center_of_dry_mass_position])
@@ -244,7 +244,7 @@ class Wire:
         Parameters
         ----------
         pt : list, tuple, Vector
-            Endpoint coordinates [x, y, z] in the User-defined Coordinate System (UCS).
+            Endpoint coordinates [x, y, z] in the User-defined Coordinate System.
         rocket : Rocket
             Rocket instance against which geometry bounds are verified.
         """

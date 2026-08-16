@@ -35,11 +35,11 @@ class Plate:
         Volume of the plate in cubic meters (m^3).
     Plate._magnetic_distortion_matrices : dict
         Dictionary of soft-iron distortion matrices induced by the plate. Keys
-        are position vector tuples (x, y, z) in the Body Axis Coordinate System
-        (BACS), and values are the corresponding 3x3 Matrix instances.
+        are position vector tuples (x, y, z) in the Body Axis Coordinate System,
+        and values are the corresponding 3x3 Matrix instances.
     Plate.points : list[list]
         Discretized points defining the plate surface in the Body Axis
-        Coordinate System (BACS).
+        Coordinate System.
     Plate.grid_spacing : float, optional
         Spacing between grid points in meters for "personalized" plates.
     Plate.z_points : int, optional
@@ -71,11 +71,11 @@ class Plate:
         shape : str
             Shape of the plate. Options are:
 
-        - If "circular": the plate is will be built as a circle, and the parameter
-          ``dimensions`` refers to the radius in meters.
-        - If "rectangular": the plate will be built a rectangle, and the parameter
-          ``dimensions`` refers to the sides length in meters.
-        - If "personalized": the plate is created by the
+            - If "circular": the plate is will be built as a circle, and the parameter
+            ``dimensions`` refers to the radius in meters.
+            - If "rectangular": the plate will be built a rectangle, and the parameter
+            ``dimensions`` refers to the sides length in meters.
+            - If "personalized": the plate is created by the
           vertices defined in ``dimensions``.
         dimensions : float, int, list, tuple
             Dimensions defining the plate geometry depending on ``shape``:
@@ -84,7 +84,7 @@ class Plate:
             - If "rectangular": sequence of [width, height] in meters, or a
               single float/int for a square.
             - If "personalized": sequence of at least 3 non-collinear 3D vertices
-              [x, y, z] defined in the User-defined Coordinate System (UCS).
+              [x, y, z] defined in the User-defined Coordinate System.
         material : str
             Material composing the plate. Allowed values are "iron",
             "carbon_steel", or "personalized".
@@ -265,13 +265,13 @@ class Plate:
         rocket : Rocket
             Rocket instance to which the plate is attached.
         position : float, int, optional
-            Angle between the User-defined Coordinate System (UCS) y-axis and the
+            Angle between the User-defined Coordinate System y-axis and the
             geometric center of the plate in degrees. The angle is positive from
             y to -x. See `Rocket Axes Definition <https://docs.rocketpy.org/en/latest/user/rocket/rocket_axes.html>`_
             for more information.
         height : float, int, optional
             Coordinate of the geometric center along the rocket
-            longitudinal axis in the User-defined Coordinate System (UCS) in
+            longitudinal axis in the User-defined Coordinate System in
             meters.
         """
         self._rocket_belonging(rocket)
@@ -291,7 +291,7 @@ class Plate:
         height: float | int | None = None,
     ) -> None:
         """Generates the points that represent the plate surface in the Body Axis
-        Coordinate System (BACS).
+        Coordinate System.
 
         Parameters
         ----------
@@ -302,7 +302,7 @@ class Plate:
             rectangular plates.
         height : float, int, optional
             Axial position of the geometric center in meters along the
-            longitudinal axis in the User-defined Coordinate System (UCS).
+            longitudinal axis in the User-defined Coordinate System.
         """
         self.points = []
 
@@ -475,7 +475,7 @@ class Plate:
         self.points = final_3d_points
 
     def _vertices_definition(self, rocket) -> list:
-        """Transforms user-defined vertices into the Body Axis Coordinate System (BACS).
+        """Transforms user-defined vertices into the Body Axis Coordinate System.
 
         Parameters
         ----------
@@ -518,7 +518,7 @@ class Plate:
         Parameters
         ----------
         pt : list, tuple, Vector
-            Coordinates [x, y, z] in the User-defined Coordinate System (UCS).
+            Coordinates [x, y, z] in the User-defined Coordinate System.
         rocket : Rocket
             Rocket instance against which boundaries are checked.
         """
@@ -593,7 +593,7 @@ class Plate:
         ----------
         position_vector : Vector, list, tuple
             Coordinates [x, y, z] in meters in the Body Axis Coordinate
-            System (BACS) where the distortion matrix is evaluated.
+            System where the distortion matrix is evaluated.
         """
         if isinstance(self.points, list):
             if self.points:
