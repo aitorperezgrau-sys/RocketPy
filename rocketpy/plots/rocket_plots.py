@@ -773,9 +773,9 @@ class _RocketPlots:
             https://matplotlib.org/stable/gallery/lines_bars_and_markers/linestyles.html
             Default is "-".
         filename : str, optional
-            The path the plot should be saved to. If None, the plot is shown
-            interactively. Supported file formats include: eps, jpg, jpeg, pdf,
-            pgf, png, ps, raw, rgba, svg, svgz, tif, tiff, and webp. Default is None.
+            The path the plot should be saved to. If None, the plot will be shown instead
+            of saved. Supported file formats include: eps, jpg, jpeg, pdf, pgf, png, ps,
+            raw, rgba, svg, svgz, tif, tiff, and webp. Default is None.
         """
         if vis_args is None:
             vis_args = {
@@ -874,9 +874,9 @@ class _RocketPlots:
             Default is "default", meaning a distinct color from the default cycle
             is applied to each plate.
         filename : str, optional
-            The path the plot should be saved to. If None, the plot is shown
-            interactively. Supported file formats include: eps, jpg, jpeg, pdf,
-            pgf, png, ps, raw, rgba, svg, svgz, tif, tiff, and webp. Default is None.
+            The path the plot should be saved to. If None, the plot will be shown instead
+            of saved. Supported file formats include: eps, jpg, jpeg, pdf, pgf, png, ps,
+            raw, rgba, svg, svgz, tif, tiff, and webp. Default is None.
         """
         if vis_args is None:
             vis_args = {

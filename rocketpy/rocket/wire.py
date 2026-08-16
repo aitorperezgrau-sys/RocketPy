@@ -126,15 +126,16 @@ class Wire:
         self.extra_ignition_time = float(extra_ignition_time)
 
     def measure_magnetic_field(self, position_vector: list | tuple | Vector) -> None:
-        """Calculates and records the magnetic field vector at a target point in
-        the Body Axis Coordinate System using the finite straight-wire
-        Biot-Savart formula.
+        """Calculates and records the magnetic field vector at the point given by
+        ``position_vector``in the Body Axis Coordinate System using the finite
+        straight-wire Biot-Savart formula.
 
         Parameters
         ----------
         position_vector : list, tuple, Vector
-            Target position coordinates [x, y, z] in meters relative to the
-            Body Axis Coordinate System.
+            Coordinates [x, y, z] in meters relative to the
+            Body Axis Coordinate System in which we want to
+            calculate the magnetic field.
         """
         r1 = self._wire_endpoints_bacs[0]  # starting endpoint
         r2 = self._wire_endpoints_bacs[1]  # final end
@@ -159,7 +160,7 @@ class Wire:
         if cross_norm < 1e-12:
             b_v = Vector([0, 0, 0])
             warnings.warn(
-                "The target position vector is collinear with the wire segment; magnetic field is zero.",
+                "'position vector' is collinear with the wire segment; magnetic field is zero.",
                 UserWarning,
             )
         else:

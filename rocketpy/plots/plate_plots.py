@@ -57,9 +57,9 @@ class _PlatePlots:
             The azimuthal angle in degrees rotates the camera about the vertical
             axis. If None, the default view is used. Default is None.
         filename : str, optional
-            The path the plot should be saved to. If None, the plot is shown
-            interactively. Supported file formats include: eps, jpg, jpeg, pdf,
-            pgf, png, ps, raw, rgba, svg, svgz, tif, tiff, and webp. Default is None.
+            The path the plot should be saved to. If None, the plot will be shown instead
+            of saved. Supported file formats include: eps, jpg, jpeg, pdf, pgf, png, ps,
+            raw, rgba, svg, svgz, tif, tiff, and webp. Default is None.
         """
         if self.rocket is None:
             raise ValueError(

@@ -80,10 +80,9 @@ class _WirePlots:
             they will not be displayed. If True, the labels "Endpoint A" and
             "Endpoint B" will be shown. Default is True.
         filename : str, optional
-            The path the plot should be saved to. By default None, in which case
-            the plot will be shown instead of saved. Supported file endings are:
-            eps, jpg, jpeg, pdf, pgf, png, ps, raw, rgba, svg, svgz, tif, tiff,
-            and webp.
+            The path the plot should be saved to. If None, the plot will be shown instead
+            of saved. Supported file formats include: eps, jpg, jpeg, pdf, pgf, png, ps,
+            raw, rgba, svg, svgz, tif, tiff, and webp. Default is None.∫
         """
         if self.rocket is None:
             raise ValueError("Add the wire to a rocket before plotting.")

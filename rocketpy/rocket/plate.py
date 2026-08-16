@@ -298,11 +298,15 @@ class Plate:
         rocket : Rocket
             Rocket instance to which the plate is attached.
         position : float, int, optional
-            Angular position of the geometric center in degrees for circular or
-            rectangular plates.
+            Angle between the User-defined Coordinate System y-axis and the
+            geometric center of the plate in degrees. The angle is positive from
+            y to -x. See `Rocket Axes Definition <https://docs.rocketpy.org/en/latest/user/rocket/rocket_axes.html>`_
+            for more information.
         height : float, int, optional
-            Axial position of the geometric center in meters along the
-            longitudinal axis in the User-defined Coordinate System.
+            Axial coordinate of the geometric center along the rocket
+            longitudinal axis in the User-defined Coordinate System in
+            meters. Required when the ``shape`` of the plate is "circular" or
+            "rectangular".
         """
         self.points = []
 
@@ -672,9 +676,9 @@ class Plate:
             The azimuthal angle in degrees rotates the camera about the vertical
             axis. If None, the default view is used. Default is None.
         filename : str, optional
-            The path the plot should be saved to. If None, the plot is shown
-            interactively. Supported file formats include: eps, jpg, jpeg, pdf,
-            pgf, png, ps, raw, rgba, svg, svgz, tif, tiff, and webp. Default is None.
+            The path the plot should be saved to. If None, the plot will be shown instead
+            of saved. Supported file formats include: eps, jpg, jpeg, pdf, pgf, png, ps,
+            raw, rgba, svg, svgz, tif, tiff, and webp. Default is None.
         """
         self.plots.draw_3d(color, marker, elev, azim, filename)
 
