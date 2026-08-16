@@ -340,7 +340,7 @@ class Plate:
     def _define_angles(
         self, z, geometric_center_angle, r, height
     ) -> tuple[float, float]:
-        """Calculates the angular span for the definition of the points 
+        """Calculates the angular span for the definition of the points
         that form the plate at axial position z.
 
         Parameters
@@ -373,7 +373,7 @@ class Plate:
     def _circular_angle_calculation(
         self, z, center_z, geometric_center_angle, r
     ) -> tuple[float, float]:
-        """Calculates the angular span for the definition of the points 
+        """Calculates the angular span for the definition of the points
         that form the plate when it is "circular" at axial position z.
 
         Parameters
@@ -404,7 +404,7 @@ class Plate:
     def _rectangular_angle_calculation(
         self, geometric_center_angle, r
     ) -> tuple[float, float]:
-        """Calculates the angular span for the definition of the points 
+        """Calculates the angular span for the definition of the points
         that form the plate when it is "rectangular" at axial position z.
 
         Parameters
