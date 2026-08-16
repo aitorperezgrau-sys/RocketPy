@@ -467,16 +467,19 @@ class NoseCone(AeroSurface):
         self.fineness_ratio = self.length / (2 * self.base_radius)
 
     def _compute_radius_function(self):
-        """
-        Calculates and returns the radius of the nose cone
+        """Calculates and returns the radius of the nose cone
         at a certain height z, based on the local
         coordinate system.
 
         Local coordinate system:
-            - the origin at the tip of the nose cone and
-            - the Z axis along the longitudinal axis of symmetry, positive downwards (top -> bottom).
-        """
+            - Origin located at the tip of the nose cone.
+            - Z axis along the longitudinal axis of symmetry, positive downwards (top -> bottom).
 
+        Returns
+        -------
+        nose_radius : Function
+            Function instance mapping axial position z in meters to the corresponding nose cone radius.
+        """
         data = np.column_stack(self.shape_vec)
         return Function(data, inputs="z", outputs="nose_radius")
 

@@ -25,7 +25,7 @@ class Magnetometer(InertialSensor):
     Attributes
     ----------
     sampling_rate : float
-        Sample rate of the sensor in Hz.
+        Sampling rate of the sensor in Hz.
     orientation : tuple, list
         Orientation of the sensor in the rocket.
     magnetic_interference : list
@@ -70,14 +70,14 @@ class Magnetometer(InertialSensor):
         The name of the sensor.
     _random_walk_drift : Vector
         The random walk drift of the sensor in Tesla (T).
-    measurement : float
+    measurement : tuple
         The measurement of the sensor after quantization, noise, temperature
-        drift and magnetic interference in Tesla (T).
+        drift, and magnetic interference in Tesla (T).
     measured_data : list
-        The stored measured data of the sensor after quantization, noise and
+        The stored measured data of the sensor after quantization, noise, and
         temperature drift.
     wmm : WMMv2
-        WMMv2 object from pywmm library. Details on its GitHub repository:
+        WMMv2 object from the pywmm library. Details on its GitHub repository:
         https://github.com/dougc95/pywmm/tree/main
     year : float
         Current decimal year.
@@ -118,28 +118,28 @@ class Magnetometer(InertialSensor):
         Parameters
         ----------
         sampling_rate : float
-            Sample rate of the sensor in Hz.
+            Sampling rate of the sensor in Hz.
         orientation : tuple, list, optional
             Orientation of the sensor in the rocket. The orientation can be
             given as either:
 
             - A list of length 3, where the elements are the Euler angles for
-              the rotation yaw (ψ), pitch (θ) and roll (φ) in radians. The
-              standard rotation sequence is z-y-x (3-2-1) is used, meaning the
-              sensor is first rotated by ψ around the x axis, then by θ around
-              the new y axis and finally by φ around the new z axis.
+              the rotation yaw (ψ), pitch (θ), and roll (φ) in radians. The
+              standard rotation sequence z-y-x (3-2-1) is used, meaning the
+              sensor is first rotated by ψ around the z axis, then by θ around
+              the new y axis, and finally by φ around the new x axis.
             - A list of lists (matrix) of shape 3x3, representing the rotation
               matrix from the sensor frame to the rocket frame. The sensor frame
-              of reference is defined as to have z axis along the sensor's normal
-              vector pointing upwards, x and y axes perpendicular to the z axis
-              and each other.
+              of reference is defined as having the z axis along the sensor's normal
+              vector pointing upwards, with x and y axes perpendicular to the z axis
+              and to each other.
 
-            The rocket frame of reference is defined as to have z axis
-            along the rocket's axis of symmetry pointing upwards, x and y axes
-            perpendicular to the z axis and each other. A rotation around the x
-            axis configures a pitch, around the y axis a yaw and around z axis a
+            The rocket frame of reference is defined as having the z axis
+            along the rocket's axis of symmetry pointing upwards, with x and y axes
+            perpendicular to the z axis and to each other. A rotation around the x
+            axis configures a pitch, around the y axis a yaw, and around the z axis a
             roll. Default is (0, 0, 0), meaning the sensor is aligned with all
-            of the rocket's axis.
+            rocket axes.
         measurement_range : float, tuple, optional
             The measurement range of the sensor in T. If a float, the
             same range is applied both for positive and negative values. If a
@@ -150,46 +150,53 @@ class Magnetometer(InertialSensor):
             quantization is applied.
         hard_iron_distortion : float, list, optional
             The hard iron distortion desired for the sensor in T.
-            If a float, the same value is applied to each axis.
-            If a list, the distortion is applied per axis. Default is 0.
+
+            - If a float, the same value is applied to each axis.
+            - If a list, the distortion is applied per axis.
+
+            Default is 0.
         soft_iron_distortion : Matrix, str, optional
             Soft iron distortion caused by materials with high permeability on
-            the rocket. If a Matrix, a direct 3x3 transformation matrix applied
-            to the magnetic field. If string 'plates', computes distortion
-            dynamically based on plates attached to the Rocket object.
+            the rocket. 
+
+            - If a Matrix, a direct 3x3 transformation matrix applied
+            to the magnetic field. 
+            - If the string "plates", computes distortion
+            based on plates attached to the Rocket object. 
+            
             Default is Matrix.identity().
         power_interference : int, float, list, str, optional
             The power interference is the magnetic distortion due to current
-            flowing through wires in the avionics bay in T.
+            flowing through wires in the avionics bay in T:
 
             - If an int or float, the same magnetic field will be applied to each axis.
             - If a list, the given vector will be considered as power interference.
-            - If 'wires', models total interference dynamically using rocket wires.
-            - If 'personalized', requires passing activation_signal_interference and
+            - If "wires", models total interference using rocket wires.
+            - If "personalized", requires passing activation_signal_interference and
               communications_interference explicitly.
 
             Default is 0.
         activation_signal_interference : int, float, list, str, optional
-            Magnetic field in T generated by ignition wires.
+            Magnetic field in T generated by ignition wires:
 
             - If int/float, applied uniformly to each axis.
-            - If list, vector is used.
-            - If 'wires', computed from ignition wires attached to the rocket.
+            - If list, the given vector is used.
+            - If "wires", computed from ignition wires attached to the rocket.
 
             Default is None.
         communications_interference : int, float, list, str, optional
-            Magnetic field in T generated by communication wires.
+            Magnetic field in T generated by communication wires:
 
             - If int/float, applied uniformly to each axis.
-            - If list, vector is used.
-            - If 'wires', computed from communication wires attached to the rocket.
+            - If list, the given vector is used.
+            - If "wires", computed from communication wires attached to the rocket.
 
             Default is None.
         noise_density : float, list, optional
-            The noise density of the sensor for a Gaussian white noise in T/√Hz.
+            The noise density of the sensor for Gaussian white noise in T/√Hz.
             Default is 0, meaning no noise is applied.
         noise_variance : float, list, optional
-            The noise variance of the sensor for a Gaussian white noise in T^2.
+            The noise variance of the sensor for Gaussian white noise in T^2.
             Default is 1.
         random_walk_density : float, list, optional
             The random walk density of the sensor in T/√Hz. Default is 0.
@@ -206,7 +213,7 @@ class Magnetometer(InertialSensor):
         cross_axis_sensitivity : float, optional
             Skewness of the sensor's axes in percentage. Default is 0.
         name : str, optional
-            The name of the sensor. Default is 'Magnetometer'.
+            Name of the sensor. Default is "Magnetometer".
         seed : int, optional
             Seed for the random number generator. Default is None.
         """
@@ -339,6 +346,7 @@ class Magnetometer(InertialSensor):
         self._communications_interference = Vector(self.communications_interference)
 
     def _validate_power_wires_parameters(self):
+        """Defines the power related attributes when the power_interference parmeter is "wires"."""
         self.power_interference = [0, 0, 0]
         self.communications_interference = [0, 0, 0]
         self.communications_computed = False
@@ -348,7 +356,7 @@ class Magnetometer(InertialSensor):
         self.initial_activation_signal_interference = "wires"
 
     def measure(self, time: float, **kwargs) -> None:
-        """Obtain the simulated reading of the magnetometer for a given time step
+        """Obtains the simulated reading of the magnetometer for a given time step.
 
         Parameters
         ----------
@@ -357,32 +365,33 @@ class Magnetometer(InertialSensor):
         kwargs : dict
             Keyword arguments dictionary containing the following keys:
 
-            - u : np.array
+            - u : np.ndarray
                 State vector of the rocket.
                 u = [x, y, z, vx, vy, vz, e0, e1, e2, e3, wx, wy, wz]
 
             - rocket : Rocket, optional
-                Rocketpy Rocket class. It is necessary when the magnetic distortion is modelled
-                using wires or plates. If there is no magnetic distortion, or it is defined using the
-                distortion directly is not necessary.
+                RocketPy Rocket class. It is necessary when the magnetic distortion is modeled
+                using wires or plates. If there is no magnetic distortion, or if it is defined directly,
+                it is not necessary.
 
-            - u_dot : np.array
+            - u_dot : np.ndarray
                 Derivative of the state vector of the rocket.
 
-            - relative_position: Vector
+            - relative_position : Vector
                 Position of the sensor relative to the rocket center of dry mass in m.
 
             - environment : Environment
-                Environment object containing the atmospheric conditions.
+                Environment object containing atmospheric conditions.
 
-            - parachute_events : list, only required if ignition_wire_function is 'parachute_deployment'
-                List that stores parachute events triggered during flight.
-                it is a list formed by lists which contain the trigger time
-                as the first element and the parachute object as the second.
+            - parachute_events : list, optional
+                List storing parachute events triggered during flight (only required if
+                ``ignition_wire_function`` is "parachute_deployment"). Each element is a list
+                containing the trigger time as the first element and the parachute object
+                as the second.
         """
         # initialization of parameters
         u = kwargs["u"]  # state vector
-        parachute_events = kwargs.get("parachute_events", None)
+        parachute_events = kwargs.get("parachute_events")
         self._sensor_from_bacs = kwargs[
             "relative_position"
         ]  # sensor position from body axis coordinate system
@@ -458,15 +467,15 @@ class Magnetometer(InertialSensor):
         Parameters
         ----------
         x_inertial : float
-            Inertial x-coordinate (East) in meters (m).
+            Inertial x-coordinate (East) in meters.
         y_inertial : float
-            Inertial y-coordinate (North) in meters (m).
+            Inertial y-coordinate (North) in meters.
         z_inertial : float
-            Inertial z-coordinate (Up) in meters (m).
+            Inertial z-coordinate (Up) in meters.
         launch_site_elevation : float
-            Launch site elevation above sea level in meters (m).
+            Launch site elevation above sea level in meters.
         earth_radius : float
-            Radius of Earth at launch location in meters (m).
+            Radius of Earth at launch location in meters.
         lat0 : float
             Launch site latitude in degrees.
         lon0 : float
@@ -474,8 +483,12 @@ class Magnetometer(InertialSensor):
 
         Returns
         -------
-        tuple of float
-            Geomagnetic field components (B_north, B_east, B_down) in Tesla (T).
+        b_north : float
+            Geomagnetic field North component in Tesla (T).
+        b_east : float
+            Geomagnetic field East component in Tesla (T).
+        b_down : float
+            Geomagnetic field Down component in Tesla (T).
         """
         altitude_wgs84_km = (z_inertial + launch_site_elevation) / 1000.0
         drift = math.hypot(x_inertial, y_inertial)
@@ -501,28 +514,29 @@ class Magnetometer(InertialSensor):
         current_time: float | int,
         parachute_events: list | None = None,
     ) -> Vector:
-        """Applies the magnetic distortion due to the power interference,
-        hard iron and soft iron.
+        """Applies magnetic distortion due to power interference,
+        hard iron, and soft iron.
 
         Parameters
         ----------
         b_field : Vector
             Magnetic field Vector.
         rocket : Rocket
-            Rocketpy Rocket class.
-        current_time : float, only required if the ignition_wire_function is 'motor_ignition'
-            Current time of the simulation.
-        parachute_events : list only required if the ignition_wire_function is 'parachute_deployment'
-            List that stores parachute events triggered during flight.
-            It is a list formed by lists which contain the trigger time
-            as the first element and the parachute object as the second.
+            RocketPy Rocket class.
+        current_time : float, optional
+            Current time of the simulation (required if ``ignition_wire_function``
+            is "motor_ignition").
+        parachute_events : list, optional
+            List storing parachute events triggered during flight (required if
+            ``ignition_wire_function`` is "parachute_deployment"). Each element is a
+            list containing the trigger time as the first element and the parachute
+            object as the second.
 
         Returns
         -------
         b_field : Vector
-            Magnetic field after adjustment of the hard iron,
+            Magnetic field vector after adjustment for hard iron, soft iron,
             and power interference.
-
         """
         self.magnetic_interference = [0, 0, 0]
 
@@ -546,23 +560,22 @@ class Magnetometer(InertialSensor):
         return b_field
 
     def apply_soft_iron(self, b_field: Vector, rocket: Rocket) -> Vector:
-        """Applies the soft iron distortion which is the distortion
-        of the magnetic field due to the higher magnetic permeability of
-        some materials relative to the permeability of vacuum. This entails,
-        that they have smaller magnetic resistance resulting in a bending of
-        the magnetic field lines, that are forced to pass through them.
+        """Applies soft iron distortion, which is the distortion of the
+        magnetic field caused by materials with high magnetic permeability relative
+        to the permeability of free space. These materials have lower magnetic resistance,
+        bending magnetic field lines through them.
 
         Parameters
         ----------
         b_field : Vector
-            Vector reading of the magnetic field of the earth.
+            Vector reading of the Earth's magnetic field.
         rocket : Rocket
-            Rocketpy Rocket class.
+            RocketPy Rocket class.
 
         Returns
         -------
         b_field_distorted : Vector
-            Magnetic field vector after the soft iron distortion.
+            Magnetic field vector after soft iron distortion.
         """
         if self.initial_soft_iron_distortion_matrix == "plates":
             if not self.total_soft_iron_distortion_matrix_computed:
@@ -589,11 +602,10 @@ class Magnetometer(InertialSensor):
         return b_field_distorted
 
     def apply_hard_iron(self, b_field: Vector) -> Vector:
-        """Applies the hard iron distortion. This magnetic distortion is
-        caused by permanent magnets or magnetized materials on the
-        rocket itself that move along with the sensor (from steel screws,
-        battery casing, ferromagnetic components), thus it is a constant
-        value. It shifts the center of the magnetic data.
+        """Applies hard iron distortion. This magnetic distortion is caused by
+        permanent magnets or magnetized materials on the rocket that move along with
+        the sensor (e.g., steel screws, battery casing, ferromagnetic components),
+        producing a constant offset that shifts the center of the magnetic data.
 
         Parameters
         ----------
@@ -603,7 +615,7 @@ class Magnetometer(InertialSensor):
         Returns
         -------
         b_field : Vector
-            Magnetic field after hard_iron_distortion.
+            Magnetic field vector after applying hard iron distortion.
         """
         b_field = b_field + self._hard_iron_distortion
         return b_field
@@ -615,31 +627,30 @@ class Magnetometer(InertialSensor):
         current_time: float,
         parachute_events: list | None = None,
     ) -> Vector:
-        """Applies the electromagnetic interference to the magnetic field vector,
-        when a signal is triggered. It considers that there is electron flow,
-        thus, a generation of magnetic field, when the conditions for the trigger
-        are fulfilled if it is a ignition wire, or always when it is a
-        communication wire.
+        """Applies electromagnetic interference to the magnetic field vector.
+        Considers current flow when trigger conditions are fulfilled for ignition wires,
+        or continuously for communication wires.
 
         Parameters
         ----------
         b_field : Vector
             Magnetic field Vector.
         rocket : Rocket
-            Rocketpy Rocket class.
-        current_time : float, only required if the ignition_wire_function is 'motor_ignition'
-            Current time of the simulation.
-        parachute_events : list only required if the ignition_wire_function is 'parachute_deployment'
-            List that stores parachute events triggered during flight.
-            It is a list formed by lists which contain the trigger time
-            as the first element and the parachute object as the second.
+            RocketPy Rocket class.
+        current_time : float, optional
+            Current time of the simulation (required if ``ignition_wire_function``
+            is "motor_ignition").
+        parachute_events : list, optional
+            List storing parachute events triggered during flight (required if
+            ``ignition_wire_function`` is "parachute_deployment"). Each element is a
+            list containing the trigger time as the first element and the parachute
+            object as the second.
 
         Returns
         -------
         b_field : Vector
-            Magnetic field after adjustment of both the activation signal
+            Magnetic field vector after adjustment for both activation signal
             interference and communications interference.
-
         """
         if self.initial_power_interference in ("wires", "personalized"):
             self.power_interference = [0, 0, 0]
@@ -664,20 +675,19 @@ class Magnetometer(InertialSensor):
     def apply_communications_interference(
         self, b_field: Vector, rocket: Rocket
     ) -> Vector:
-        """Applies the interference caused due to the current flowing
-        through the communication wires.
+        """Applies interference caused by current flowing through communication wires.
 
         Parameters
         ----------
         b_field : Vector
             Magnetic field Vector.
         rocket : Rocket
-            Rocketpy Rocket class.
+            RocketPy Rocket class.
 
         Returns
         -------
         b_field : Vector
-            Magnetic field after adjustment of communications magnetic
+            Magnetic field vector after adjustment for communications magnetic
             interference.
         """
         if self.initial_communications_interference == "wires":
@@ -725,26 +735,28 @@ class Magnetometer(InertialSensor):
         current_time: float,
         parachute_events: list | None = None,
     ) -> Vector:
-        """Applies the magnetic interference caused due to the current
-        flowing through the ignition wires, during an activation signal.
+        """Applies magnetic interference caused by current flowing through
+        ignition wires during an activation signal.
 
         Parameters
         ----------
         b_field : Vector
             Magnetic field Vector.
         rocket : Rocket
-            Rocketpy Rocket class.
-        current_time : float, only required if the ignition_wire_function is 'motor_ignition'
-            Current time of the simulation.
-        parachute_events : list, only required if the ignition_wire_function is 'parachute_deployment'
-            List that stores parachute events triggered during flight.
-            it is a list formed by lists which contain the trigger time
-            as the first element and the parachute object as the second.
+            RocketPy Rocket class.
+        current_time : float, optional
+            Current time of the simulation (required if ``ignition_wire_function``
+            is "motor_ignition").
+        parachute_events : list, optional
+            List storing parachute events triggered during flight (required if
+            ``ignition_wire_function`` is "parachute_deployment"). Each element is a
+            list containing the trigger time as the first element and the parachute
+            object as the second.
 
         Returns
         -------
         b_field : Vector
-            Magnetic field after adjustment of activation signal interference.
+            Magnetic field vector after adjustment for activation signal interference.
         """
 
         if self.initial_activation_signal_interference == "wires":
@@ -778,27 +790,23 @@ class Magnetometer(InertialSensor):
     def _calculate_activation_signal_interference_parachute(
         self, b_field, current_time, parachute_events, ignition_wire
     ):
-        """Applies the activation signal interference due to the parachute.
+        """Applies activation signal interference generated during parachute deployment.
 
         Parameters
         ----------
         b_field : Vector
             Magnetic field Vector.
-        current_time : float, only required if the ignition_wire_function is 'motor_ignition'
+        current_time : float
             Current time of the simulation.
-        parachute_events : list, only required if the ignition_wire_function is 'parachute_deployment'
-            List that stores parachute events triggered during flight.
-            it is a list formed by lists which contain the trigger time
-            as the first element and the parachute object as the second.
-        ignition_wire : wire
-            Wire with wire type ignition and parachute_deployment as a function.
+        parachute_events : list
+            List storing parachute events triggered during flight.
+        ignition_wire : Wire
+            Wire instance with ``wire_type`` "ignition" and function "parachute_deployment".
 
         Returns
         -------
         b_field : Vector
-            Vector containing the magnetic field after the
-            checking and calculation of the parachute ignition
-            conditions.
+            Magnetic field vector after calculating parachute ignition interference.
         """
         if parachute_events is not None:
             for parachute_event in parachute_events:
@@ -834,24 +842,23 @@ class Magnetometer(InertialSensor):
     def _calculate_activation_signal_interference_motor(
         self, b_field, rocket, current_time, ignition_wire
     ):
-        """Applies the activation signal interference due to the motor.
+        """Applies activation signal interference generated during motor ignition.
 
         Parameters
         ----------
         b_field : Vector
             Magnetic field Vector.
         rocket : Rocket
-            Rocketpy Rocket class.
-        current_time : float, only required if the ignition_wire_function is 'motor_ignition'
+            RocketPy Rocket class.
+        current_time : float
             Current time of the simulation.
-        ignition_wire : wire
-            Wire with wire type ignition and motor_ignition as a function.
+        ignition_wire : Wire
+            Wire instance with ``wire_type`` "ignition" and function "motor_ignition".
 
         Returns
         -------
         b_field : Vector
-            Magnetic field after adjustment activation signal interference
-            interference.
+            Magnetic field vector after calculating motor ignition interference.
         """
         if (
             current_time
@@ -889,20 +896,18 @@ class Magnetometer(InertialSensor):
 
     @classmethod
     def from_dict(cls, data: dict) -> "Magnetometer":
-        """Creates an instance of Magnetometer from a dictionary object, data.
-        Data is a dictionary that must contain the same keys as the initialization
-        parameters of the Magnetometer class. In case some parameter is not
-        defined, the default value matches the default initialization of the constructor.
+        """Creates a Magnetometer instance from a dictionary containing the
+        initialization parameters.
 
         Parameters
         ----------
         data : dict
-            Dictionary containing plate constructor attributes.
+            Dictionary containing magnetometer initialization parameters.
 
         Returns
         -------
-        Magnetometer
-            Magnetometer object instance.
+        magnetometer : Magnetometer
+            Magnetometer instance initialized with the specified parameters.
         """
         return cls(
             # Mandatory Parameter

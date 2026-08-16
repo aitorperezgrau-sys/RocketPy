@@ -13,7 +13,7 @@ class _PlatePrints:
         Parameters
         ----------
         plate: Plate
-            Instance of the Plate class.
+            Plate instance.
         """
         self.plate = plate
 

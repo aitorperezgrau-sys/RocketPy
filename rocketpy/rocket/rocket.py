@@ -1898,119 +1898,122 @@ class Rocket:
     def add_wire(
         self,
         wire: Wire,
-        position_edges: list | tuple[tuple | list | float | int],
+        position_endpoints: list | tuple,
         parachute_name: str | None = None,
     ) -> None:
-        """Adds the wire to the rocket.
-        Wires are used to calculate the magnetic disturbance they create,
-        affecting the magnetometer reading if defined.
+        """Adds a wire to the rocket. Wires generate magnetic disturbances that
+        affect magnetometer sensor readings during flight simulation.
 
         Parameters
         ----------
         wire : Wire
             Wire object to be added to the rocket.
-        position_edges : list, tuple
-            List or tuple of two elements defining edges A and B:
-            - If numbers: [z_a, z_b] along the z-axis relative to UCS.
-            - If 3D vectors: [[x_a, y_a, z_a], [x_b, y_b, z_b]] relative to UCS.
-            Conventional current flows from Edge A to Edge B.
+        position_endpoints : list, tuple
+            Sequence of two elements defining Endpoint A and Endpoint B:
+
+            - If numeric scalars: [z_a, z_b] coordinates along the centerline
+              in the User-defined Coordinate System (UCS).
+            - If 3D vectors: [[x_a, y_a, z_a], [x_b, y_b, z_b]] coordinates in
+              the User-defined Coordinate System (UCS).
+
+            Conventional current flows from Endpoint A to Endpoint B.
         parachute_name : str, optional
-            Mandatory when wire is an ignition wire with function 'parachute_deployment'.
             Name of the parachute during whose deployment current flows.
+            Mandatory when the wire is an ignition wire with function
+            'parachute_deployment'. Default is None.
         """
         if not isinstance(wire, Wire):
-            raise ValueError("The wire must be a wire instance")
+            raise ValueError("The wire parameter must be a Wire instance.")
 
-        edges = self._define_3d_edges(position_edges)
+        endpoints = self._define_3d_endpoints(position_endpoints)
 
         if wire.ignition_wire_function == "parachute_deployment":
             if not isinstance(parachute_name, str):
                 raise ValueError(
-                    "The parachute_name must be a string when the wire function is parachute_deployment"
+                    "parachute_name must be a string when the wire function is 'parachute_deployment'."
                 )
             wire.parachute_name = parachute_name
         else:
             wire.parachute_name = None
 
-        for edge, name in zip(edges, ("Edge_a", "Edge_b")):
-            x, y, z = edge
+        for endpoint, name in zip(endpoints, ("Endpoint A", "Endpoint B")):
+            x, y, z = endpoint
             flag, range_z = self.z_bounds_check(z, frame="ucs")
             if not flag:
                 raise ValueError(
-                    f"{name} z-coordinate {z} is outside rocket range {range_z}"
+                    f"{name} z-coordinate {z} is outside the rocket longitudinal range {range_z}."
                 )
 
-            r_edge = math.hypot(x, y)
+            r_endpoint = math.hypot(x, y)
             r_rocket = self.general_radius(z, frame="ucs")
-            if r_edge > r_rocket:
+            if r_endpoint > r_rocket:
                 raise ValueError(
-                    f"{name} with coordinates {edge} is outside the rocket since the radius {r_edge} is bigger than the radius of the rocket at that z: {z}, which is: {r_rocket}"
+                    f"{name} with coordinates {endpoint} is outside the rocket radius ({r_endpoint:.4f} m > {r_rocket:.4f} m) at z = {z} m."
                 )
 
-        wire._set_wire_edges_to_bacs(self, edges)
+        wire._set_wire_endpoints_to_bacs(self, endpoints)
         wire._rocket_belonging(self)
 
         if wire.wire_type == "communications":
             self._communication_wires.append(wire)
         elif wire.wire_type == "ignition":
             self._ignition_wires.append(wire)
-        self.wires.add(wire, position_edges)
+        self.wires.add(wire, position_endpoints)
 
-    def _define_3d_edges(
-        self, position_edges: list | tuple[tuple | list | float | int]
-    ) -> list[Vector]:
-        """Creates the 3D position vectors of the edges from the input values.
+    def _define_3d_endpoints(self, position_endpoints: list | tuple) -> list[Vector]:
+        """Creates the 3D position vectors of the wire endpoints from the user inputs.
 
         Parameters
         ----------
-        position_edges : list, tuple
-            List or tuple of 2 numbers (z-coordinates) or two 3D position vectors
-            ([x, y, z]) relative to the user-defined coordinate system (UCS).
-            Conventional current flows from Edge A to Edge B.
+        position_endpoints : list, tuple
+            Sequence of two numbers (z-coordinates) or two 3D position vectors
+            ([x, y, z]) relative to the User-defined Coordinate System (UCS).
+            Conventional current flows from Endpoint A to Endpoint B.
 
         Returns
         -------
-        list[Vector, Vector]
-            List with the 3D Vector components of each edge [edge_a, edge_b].
+        list of Vector
+            List containing the 3D Vector components of each endpoint [endpoint_a, endpoint_b].
         """
-        if isinstance(position_edges, (list, tuple)):
-            if len(position_edges) == 2:
-                if all(isinstance(val, (int, float)) for val in position_edges):
-                    edge_a = Vector([0, 0, float(position_edges[0])])
-                    edge_b = Vector([0, 0, float(position_edges[1])])
-                    return [edge_a, edge_b]
+        if isinstance(position_endpoints, (list, tuple)):
+            if len(position_endpoints) == 2:
+                if all(isinstance(val, (int, float)) for val in position_endpoints):
+                    endpoint_a = Vector([0, 0, float(position_endpoints[0])])
+                    endpoint_b = Vector([0, 0, float(position_endpoints[1])])
+                    return [endpoint_a, endpoint_b]
 
                 elif all(
-                    isinstance(item, (list, tuple, Vector)) for item in position_edges
+                    isinstance(item, (list, tuple, Vector))
+                    for item in position_endpoints
                 ):
-                    if any(len(item) != 3 for item in position_edges):
+                    if any(len(item) != 3 for item in position_endpoints):
                         raise ValueError(
-                            "The length of the coordinates of the edges must be 3"
+                            "The coordinate length for each endpoint must be 3."
                         )
 
-                    edge_a = (
-                        position_edges[0]
-                        if isinstance(position_edges[0], Vector)
-                        else Vector(position_edges[0])
+                    endpoint_a = (
+                        position_endpoints[0]
+                        if isinstance(position_endpoints[0], Vector)
+                        else Vector(position_endpoints[0])
                     )
-                    edge_b = (
-                        position_edges[1]
-                        if isinstance(position_edges[1], Vector)
-                        else Vector(position_edges[1])
+                    endpoint_b = (
+                        position_endpoints[1]
+                        if isinstance(position_endpoints[1], Vector)
+                        else Vector(position_endpoints[1])
                     )
 
-                    return [edge_a, edge_b]
+                    return [endpoint_a, endpoint_b]
                 else:
                     raise ValueError(
-                        "The input position can only be a nested list, or a list with float or integers."
+                        "position_endpoints must be a sequence of numbers or 3D coordinate vectors."
                     )
             else:
                 raise ValueError(
-                    "Position_edges must contain exactly 2 edge positions."
+                    "position_endpoints must contain exactly 2 endpoint positions."
                 )
         else:
             raise ValueError(
-                "Position_edges must be a list of two numbers (z-coordinates) or two 3D position vectors ([x, y, z])."
+                "position_endpoints must be a list or tuple of two numbers (z-coordinates) or two 3D position vectors ([x, y, z])."
             )
 
     def add_plate(
@@ -2019,41 +2022,43 @@ class Rocket:
         position: float | int | None = None,
         height: float | int | None = None,
     ) -> None:
-        """Adds a Plate object to the rocket.
+        """Adds a Plate object to the rocket. Plates are used to measure
+        soft-iron magnetic distortion, that affects magnetometer sensor
+        readings during flight simulation.
 
         Parameters
         ----------
         plate : Plate
             The Plate instance to be attached to the rocket.
         position : float, int, optional
-            Position of the plate:
-
-            - If shape is 'squared' or 'circular': angle between the y-axis
-              of the user-defined coordinate system and the geometric center of
-              the plate in degrees. Positive direction follows the right-hand rule
-              along the z-axis.
+            Angle between the User-defined Coordinate System (UCS) y-axis and the
+            geometric center of the plate in degrees. For detailed coordinate axis
+            conventions, refer to `Rocket Axes Definition
+            <https://docs.rocketpy.org/en/latest/user/rocket/rocket_axes.html>`_.
         height : float, int, optional
-            Z-axis height relative to user-defined coordinate system in meters (m).
-            Required if plate shape is 'circular' or 'squared'.
+            Axial coordinate of the geometric center along the rocket
+            longitudinal axis in the User-defined Coordinate System (UCS) in
+            meters (m). Required when the ``shape`` of the plate is 'circular' or
+            'rectangular'.
         """
         if not isinstance(plate, Plate):
-            raise ValueError("The plate parameter must be a Plate object")
+            raise ValueError("The plate parameter must be a Plate instance.")
 
-        if plate.shape in ("circular", "squared"):
+        if plate.shape in ("circular", "rectangular"):
             if position is None:
                 raise ValueError(
-                    "position must be defined when the shape is 'circular' or 'squared'"
+                    f"position must be defined when the shape is '{plate.shape}'."
                 )
             if not isinstance(position, (float, int)):
-                raise ValueError("Position can only be a float or int ")
+                raise ValueError("position must be a float or int.")
             if height is None:
                 raise ValueError(
-                    "The height when the shape is circular or squared must be defined"
+                    f"height must be defined when the shape is '{plate.shape}'."
                 )
             flag, range_z = self.z_bounds_check(height, frame="ucs")
             if not flag:
                 raise ValueError(
-                    f"The defined height must be inside the rocket which has a range of: {range_z} in the user frame"
+                    f"The defined height {height} m must be within the rocket longitudinal range {range_z} in the user frame."
                 )
         plate.define_plate_position(self, position, height)
         self.plates.append([plate, position, height])
@@ -2767,8 +2772,8 @@ class Rocket:
                         )
             rocket._add_controllers(controller)
 
-        for wire, position_edges in data.get("wires", []):
-            rocket.add_wire(wire, position_edges)
+        for wire, position_endpoints in data.get("wires", []):
+            rocket.add_wire(wire, position_endpoints)
 
         for plate, position, height in data.get("plate", []):
             rocket.add_plate(plate, position, height)

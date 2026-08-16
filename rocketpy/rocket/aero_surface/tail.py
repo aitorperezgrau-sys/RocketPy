@@ -118,10 +118,7 @@ class Tail(AeroSurface):
 
     @property
     def radius(self):
-        # print('inside property')
-        # print(self._radius_function)
         if self._radius_function is None:
-            # print('was none')
             self._radius_function = self._compute_radius_function()
 
         return self._radius_function
@@ -168,14 +165,18 @@ class Tail(AeroSurface):
         ]
 
     def _compute_radius_function(self):
-        """
-        Calculates and returns the radius of the tail
+        """Calculates and returns the radius of the tail
         at a certain height z, based on the local
         coordinate system.
 
         Local coordinate system:
             - Z axis along the longitudinal axis of symmetry, positive downwards (top -> bottom).
-            - Origin located at top of the tail (generally the portion closest to the rocket's nose).
+            - Origin located at the top of the tail (generally the portion closest to the rocket's nose).
+
+        Returns
+        -------
+        tail_radius : Function
+            Function instance mapping axial position z in meters to the corresponding tail radius.
         """
         z = np.linspace(self.shape_vec[0][0], self.shape_vec[0][1], 100)
         r = np.linspace(self.shape_vec[1][0], self.shape_vec[1][1], 100)

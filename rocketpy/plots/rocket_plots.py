@@ -714,25 +714,26 @@ class _RocketPlots:
 
     def draw_wires(
         self,
-        wires="all",
+        wires: str = "all",
         vis_args: dict | None = None,
         plane: str = "xz",
-        color: str = "default",
+        color: str | list[str] | tuple[str, ...] = "default",
         marker: str = "o",
         linestyle: str = "-",
         filename: str | None = None,
     ) -> None:
-        """
-        Plots all the wires that are attached to the rocket. 
+        """Plots all the wires that are attached to the rocket.
 
         Parameters
         ----------
-        wires: str, optional
-            String that determines which wires will be plotted
-            - If 'communication_wires', only communication wires will be shown
-            - If 'ignition_wires', only ignition wires will be shown
-            Default is 'all' meaning all wires are shown. 
+        wires : str, optional
+            String that determines which wires will be plotted:
 
+            - 'communication_wires': only communication wires will be shown.
+            - 'ignition_wires': only ignition wires will be shown.
+            - 'all': all wires are shown.
+
+            Default is 'all'.
         vis_args : dict, optional
             Determines the visual aspects when drawing the rocket. If ``None``,
             default values are used. Default values are:
@@ -746,39 +747,36 @@ class _RocketPlots:
                     "body": "black",
                     "fins": "black",
                     "motor": "black",
-                    "line_width": 2.0,
+                    "buttons": "black",
+                    "line_width": 1.0,
                 }
 
-            A full list of color names can be found at: \
-            https://matplotlib.org/stable/gallery/color/named_colors
-        plane: str, optional
-            Plane that it is wanted to be represented:
-            Accepted options are 'xz' and 'yz'. 
-            Default value is 'xz'. 
-        color : str, list optional
-            Color of the wires. If it is a list, it must contain one
-            color for each wire. 
             A full list of color names can be found at:
-            https://matplotlib.org//gallery/color/named_colors
-            Default is 'default', meaning a different default color
-            will be applied to each wire. 
-        marker: str, optional
-            shape of the points from which the wire is formed. 
-            A full list of markers can be found at: 
+            https://matplotlib.org/stable/gallery/color/named_colors
+        plane : str, optional
+            Cross-sectional projection plane to represent. Accepted options are
+            'xz' and 'yz'. Default is 'xz'.
+        color : str, list of str, tuple of str, optional
+            Color of the wires. If it is a list or tuple, it must contain one
+            color for each wire. A full list of color names can be found at:
+            https://matplotlib.org/stable/gallery/color/named_colors
+            Default is 'default', meaning a distinct color from the default cycle
+            is assigned to each wire.
+        marker : str, optional
+            Shape of the markers representing the wire endpoints. A full list
+            of markers can be found at:
             https://matplotlib.org/stable/api/markers_api.html
-            Default is 'o'. 
-        linestyle: str, optional
-            type of the line that will represent the wire. 
-            A full list of linestyles can be found at: 
+            Default is 'o'.
+        linestyle : str, optional
+            Style of the line that represents the wire. A full list of
+            linestyles can be found at:
             https://matplotlib.org/stable/gallery/lines_bars_and_markers/linestyles.html
-            Default is '-'. 
+            Default is '-'.
         filename : str, optional
-            The path the plot should be saved to. By default None, in which case
-            the plot will be shown instead of saved. Supported file endings are:
-            eps, jpg, jpeg, pdf, pgf, png, ps, raw, rgba, svg, svgz, tif, tiff
-            and webp (these are the formats supported by matplotlib). 
+            The path the plot should be saved to. If None, the plot is shown
+            interactively. Supported file formats include: eps, jpg, jpeg, pdf,
+            pgf, png, ps, raw, rgba, svg, svgz, tif, tiff, and webp. Default is None.
         """
-
         if vis_args is None:
             vis_args = {
                 "background": "#EEEEEE",
@@ -801,7 +799,7 @@ class _RocketPlots:
             wires_list = self.rocket._ignition_wires
         else:
             raise ValueError(
-                "Only communication_wires, ignition_wires or all are valid inputs"
+                "Only 'communication_wires', 'ignition_wires', or 'all' are valid inputs."
             )
 
         if isinstance(color, str):
@@ -814,10 +812,10 @@ class _RocketPlots:
                 color_list = color
             else:
                 raise ValueError(
-                    "The length of the list of colors must be the same as the number of wires"
+                    "The length of the list of colors must be the same as the number of wires."
                 )
         else:
-            raise ValueError("The accepted entries for color are str or list or tuple")
+            raise ValueError("The accepted entries for color are str, list, or tuple.")
 
         for wire, color_wire in zip(wires_list, color_list):
             wire.plots._draw_wires(
@@ -840,10 +838,13 @@ class _RocketPlots:
         self,
         vis_args: dict | None = None,
         plane: str = "xz",
-        color: list | str = "default",
-        filename=None,
+        color: str | list[str] | tuple[str, ...] = "default",
+        filename: str | None = None,
     ) -> None:
-        """
+        """Plots all the plates that are attached to the rocket.
+
+        Parameters
+        ----------
         vis_args : dict, optional
             Determines the visual aspects when drawing the rocket. If ``None``,
             default values are used. Default values are:
@@ -857,27 +858,25 @@ class _RocketPlots:
                     "body": "black",
                     "fins": "black",
                     "motor": "black",
-                    "line_width": 2.0,
+                    "buttons": "black",
+                    "line_width": 1.0,
                 }
 
-            A full list of color names can be found at: \
-            https://matplotlib.org/stable/gallery/color/named_colors
-        plane: str, optional
-            Plane that it is wanted to be represented:
-            Accepted options are 'xz' and 'yz'
-            Default value is 'xz'
-        color : str, list optional
-            Color of the points. If it is a list, it must contain one
-            color for each wire
             A full list of color names can be found at:
-            https://matplotlib.org//gallery/color/named_colors
-            Default is 'default', meaning a different default color
-            will be applied to each wire. 
+            https://matplotlib.org/stable/gallery/color/named_colors
+        plane : str, optional
+            Cross-sectional projection plane to represent. Accepted options are
+            'xz' and 'yz'. Default is 'xz'.
+        color : str, list of str, tuple of str, optional
+            Color of the plates. If it is a list or tuple, it must contain one
+            color for each plate. A full list of color names can be found at:
+            https://matplotlib.org/stable/gallery/color/named_colors
+            Default is 'default', meaning a distinct color from the default cycle
+            is applied to each plate.
         filename : str, optional
-            The path the plot should be saved to. By default None, in which case
-            the plot will be shown instead of saved. Supported file endings are:
-            eps, jpg, jpeg, pdf, pgf, png, ps, raw, rgba, svg, svgz, tif, tiff
-            and webp (these are the formats supported by matplotlib).
+            The path the plot should be saved to. If None, the plot is shown
+            interactively. Supported file formats include: eps, jpg, jpeg, pdf,
+            pgf, png, ps, raw, rgba, svg, svgz, tif, tiff, and webp. Default is None.
         """
         if vis_args is None:
             vis_args = {
@@ -907,10 +906,10 @@ class _RocketPlots:
                 color_list = color
             else:
                 raise ValueError(
-                    "The length of the list of colors must be the same as the number of plates"
+                    "The length of the list of colors must be the same as the number of plates."
                 )
         else:
-            raise ValueError("The accepted entries for color are str or list or tuple")
+            raise ValueError("The accepted entries for color are str, list, or tuple.")
 
         sorted_plates_list = sorted(plates_list, key=lambda p: p.area, reverse=True)
         for plate, color_plate in zip(sorted_plates_list, color_list):
@@ -1012,12 +1011,11 @@ class _RocketPlots:
         Returns
         -------
         ax: Axes 
-            Axes instance in which the rocket outline has been displayed
+            Axes instance in which the rocket outline has been displayed.
         radius: float
-            Last radius of the rocket, (y axis in the plot)
+            Last radius of the rocket, (y axis in the plot).
         last_x: float
-            Last x value of the plot, (z axis value in the rocket frame)
-
+            Last x value of the plot, (z axis value in the rocket frame).
         """
         _, ax = plt.subplots(figsize=(8, 6), facecolor=vis_args["background"])
         ax.set_aspect("equal")

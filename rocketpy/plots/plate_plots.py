@@ -9,8 +9,10 @@ class _PlatePlots:
 
     Attributes
     ----------
-    plate: Plate
+    _PlatePlots.plate : Plate
         Plate object that will be used for the plots.
+    _PlatePlots.rocket : Rocket, optional
+        Rocket object to which the plate belongs. Default is None.
     """
 
     def __init__(self, plate) -> None:
@@ -18,7 +20,7 @@ class _PlatePlots:
 
         Parameters
         ----------
-        plate: Plate
+        plate : Plate
             Plate instance.
         """
         self.plate = plate
@@ -32,48 +34,38 @@ class _PlatePlots:
         azim: float | int | None = None,
         filename: str | None = None,
     ) -> None:
-        """Plots the scatter plot of the plate formed by the points
-        used to model the magnetic distortion in 3d.
+        """Plots the 3D scatter plot of the discretized points forming the plate
+        surface used to model soft-iron magnetic distortion.
 
         Parameters
         ----------
         color : str, optional
-            Color of the points.
-            A full list of color names can be found at:
-            https://matplotlib.org//gallery/color/named_colors
-            Default: 'teal'.
+            Color of the scatter points. A full list of color names can be found
+            at: https://matplotlib.org/stable/gallery/color/named_colors
+            Default is "teal".
         marker : str, optional
-            shape of the points from which the plate is formed.
-            A full list of markers can be found at:
+            Shape of the markers representing the discretization points. A full
+            list of markers can be found at:
             https://matplotlib.org/stable/api/markers_api.html
-            Default is 'h'.
-        elev : float, optional
+            Default is "h".
+        elev : float, int, optional
             The elevation angle in degrees rotates the camera above the plane
             pierced by the vertical axis, with a positive angle corresponding
-            to a location above that plane. For example, with the default
-            vertical axis of 'z', the elevation defines the angle of the camera
-            location above the x-y plane.
-            If None, then the initial value as specified in the `Axes3D`
-            constructor is used. Default is None.
-        azim : float, optional
-            The azimuthal angle in degrees rotates the camera about the
-            vertical axis, with a positive angle corresponding to a
-            right-handed rotation. For example, with the default vertical axis
-            of 'z', a positive azimuth rotates the camera about the origin from
-            its location along the +x axis towards the +y axis.
-            If None, then the initial value as specified in the `Axes3D`
-            constructor is used. Default is None.
+            to a location above that plane. If None, the default view is used.
+            Default is None.
+        azim : float, int, optional
+            The azimuthal angle in degrees rotates the camera about the vertical
+            axis. If None, the default view is used. Default is None.
         filename : str, optional
-            The path the plot should be saved to. By default None, in which case
-            the plot will be shown instead of saved. Supported file endings are:
-            eps, jpg, jpeg, pdf, pgf, png, ps, raw, rgba, svg, svgz, tif, tiff
-            and webp (these are the formats supported by matplotlib).
+            The path the plot should be saved to. If None, the plot is shown
+            interactively. Supported file formats include: eps, jpg, jpeg, pdf,
+            pgf, png, ps, raw, rgba, svg, svgz, tif, tiff, and webp. Default is None.
         """
         if self.rocket is None:
             raise ValueError(
                 "Plate points list is empty. Add the plate to a rocket before plotting."
             )
-        # from bacs to usc
+        # from bacs to ucs
         x, y, z = zip(*self.plate.points)
         if self.rocket._csys == -1:
             x = -np.array(x)
@@ -90,7 +82,7 @@ class _PlatePlots:
         if self.rocket._csys == 1:
             ax.invert_xaxis()
 
-        # Labels & formatting
+        # Labels
         ax.set_xlabel("X (m)")
         ax.set_ylabel("Y (m)")
         ax.set_zlabel("Z (m)")
@@ -104,16 +96,16 @@ class _PlatePlots:
         vis_args: dict | None = None,
         plane: str = "xz",
         color: str = "darkgreen",
-        filename=None,
+        filename: str | None = None,
     ) -> None:
-        """Plots the plate together with the outline of the rocket
-        in 2D. 
+        """Plots the plate along with the 2D cross-sectional outline of the
+        rocket body.
 
         Parameters
         ----------
         vis_args : dict, optional
-            Determines the visual aspects when drawing the rocket. If ``None``,
-            default values are used. Default values are:
+            Determines the visual appearance when drawing the rocket body. If
+            None, default parameters are used:
 
             .. code-block:: python
 
@@ -124,24 +116,23 @@ class _PlatePlots:
                     "body": "black",
                     "fins": "black",
                     "motor": "black",
-                    "line_width": 2.0,
+                    "buttons": "black",
+                    "line_width": 1.0,
                 }
 
-            A full list of color names can be found at: \
+            A full list of color names can be found at:
             https://matplotlib.org/stable/gallery/color/named_colors
         plane : str, optional
-            Plane that it is wanted to be represented:
-            Accepted options are 'xz' and 'yz'.
-            Default value is 'xz'. 
+            Cross-sectional projection plane to represent. Accepted options are
+            "xz" and "yz". Default is "xz".
         color : str, optional
-            A full list of color names can be found at:
-            https://matplotlib.org//gallery/color/named_colors
-            Default is 'darkgreen'. 
+            Fill color of the plate. A full list of color names can be found at:
+            https://matplotlib.org/stable/gallery/color/named_colors
+            Default is "darkgreen".
         filename : str, optional
-            The path the plot should be saved to. By default None, in which case
-            the plot will be shown instead of saved. Supported file endings are:
-            eps, jpg, jpeg, pdf, pgf, png, ps, raw, rgba, svg, svgz, tif, tiff
-            and webp (these are the formats supported by matplotlib).
+            The path the plot should be saved to. If None, the plot is shown
+            interactively. Supported file formats include: eps, jpg, jpeg, pdf,
+            pgf, png, ps, raw, rgba, svg, svgz, tif, tiff, and webp. Default is None.
         """
         if self.rocket is None:
             raise ValueError(
@@ -177,7 +168,17 @@ class _PlatePlots:
     def _plot_plate_rocket(
         self, ax, plane: str = "xz", color: str = "darkgreen"
     ) -> None:
+        """Draws the filled 2D projection of the plate onto the rocket axes.
 
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes
+            Matplotlib Axes instance where the plate will be drawn.
+        plane : str, optional
+            Cross-sectional projection plane ("xz" or "yz"). Default is "xz".
+        color : str, optional
+            Fill color of the plate projection. Default is "darkgreen".
+        """
         x, y, z = zip(*self.plate.points)
 
         x = self.rocket._csys * np.array(x)
@@ -189,7 +190,7 @@ class _PlatePlots:
         elif plane == "yz":
             r = y
         else:
-            raise ValueError("Plane value can only be xz or yz")
+            raise ValueError("Plane value can only be 'xz' or 'yz'.")
 
         unique_z = np.unique(z)
         r_min = np.array([r[z == uz].min() for uz in unique_z])
@@ -200,9 +201,8 @@ class _PlatePlots:
         )
 
     def all(self) -> None:
-        """Plots all graphs available about the Plate. It simply calls
-        all the other plotter methods in this class with all the
-        default parameters.
+        """Plots all available graphs for the Plate instance using default
+        parameters.
         """
         self.draw_3d()
         self.draw()

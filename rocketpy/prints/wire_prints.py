@@ -12,8 +12,8 @@ class _WirePrints:
 
         Parameters
         ----------
-        wire: Wire
-            Instance of the Wire class.
+        wire : Wire
+            Wire instance.
         """
         self.wire = wire
 
@@ -21,17 +21,17 @@ class _WirePrints:
         """Prints the current flowing through the wire."""
         print(f"Current: {self.wire.current} A")
 
-    def edges(self) -> None:
-        """Prints the wire edges coordinates in the body axis coordinate system."""
+    def endpoints(self) -> None:
+        """Prints the wire endpoints coordinates in the body axis coordinate system."""
         print(
-            f"Edge A is {self.wire._wire_edges_bacs[0]}, Edge B is {self.wire._wire_edges_bacs[1]} in the body axis coordinate system"
+            f"Endpoint A is {self.wire._wire_endpoints_bacs[0]}, Endpoint B is {self.wire._wire_endpoints_bacs[1]} in the body axis coordinate system"
         )
 
     def wire_type(self) -> None:
         """Prints the wire type and, if applicable, the ignition wire function."""
         if self.wire.wire_type == "communications":
             print("Wire type: communications type")
-        elif self.wire.wire_type == "ignition":
+        else:
             print("Wire type: ignition type")
             print(f"Ignition wire function: {self.wire.ignition_wire_function}")
 
@@ -43,10 +43,10 @@ class _WirePrints:
                     f"Magnetic field vector at position {position} due to the wire is {b_field} T"
                 )
 
-    def all(self):
+    def all(self) -> None:
         """Prints all print methods about the Wire."""
         print(f"\n{self.wire.name} information: ")
         self.wire_type()
         self.current()
         self.magnetic_field_vectors()
-        self.edges()
+        self.endpoints()
