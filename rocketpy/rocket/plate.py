@@ -524,7 +524,7 @@ class Plate:
         pt : list, tuple, Vector
             Coordinates [x, y, z] in the User-defined Coordinate System.
         rocket : Rocket
-            Rocket instance against which boundaries are checked.
+            Rocket instance in which boundaries are checked.
         """
         if not rocket.z_bounds_check(pt[2], frame="ucs")[0]:
             raise ValueError(

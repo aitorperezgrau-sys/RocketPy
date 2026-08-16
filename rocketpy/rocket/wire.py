@@ -126,7 +126,7 @@ class Wire:
         self.extra_ignition_time = float(extra_ignition_time)
 
     def measure_magnetic_field(self, position_vector: list | tuple | Vector) -> None:
-        """Calculates and records the magnetic field vector at the point given by
+        """Calculates and stores the magnetic field vector at the point given by
         ``position_vector``in the Body Axis Coordinate System using the finite
         straight-wire Biot-Savart formula.
 
@@ -212,7 +212,7 @@ class Wire:
         | tuple[Vector, Vector],
     ) -> None:
         """Transforms wire endpoint coordinates from the User-defined Coordinate
-        System to the Body Axis Coordinate System and records them.
+        System to the Body Axis Coordinate System and stores them.
 
         Parameters
         ----------
@@ -247,7 +247,7 @@ class Wire:
         pt : list, tuple, Vector
             Endpoint coordinates [x, y, z] in the User-defined Coordinate System.
         rocket : Rocket
-            Rocket instance against which geometry bounds are verified.
+            Rocket instance in which geometry bounds are verified.
         """
         if not rocket.z_bounds_check(pt[2], frame="ucs")[0]:
             raise ValueError(
