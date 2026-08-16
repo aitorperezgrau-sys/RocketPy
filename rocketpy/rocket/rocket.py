@@ -1920,7 +1920,7 @@ class Rocket:
         parachute_name : str, optional
             Name of the parachute during whose deployment current flows.
             Mandatory when the wire is an ignition wire with function
-            'parachute_deployment'. Default is None.
+            "parachute_deployment". Default is None.
         """
         if not isinstance(wire, Wire):
             raise ValueError("The wire parameter must be a Wire instance.")
@@ -2032,14 +2032,14 @@ class Rocket:
             The Plate instance to be attached to the rocket.
         position : float, int, optional
             Angle between the User-defined Coordinate System (UCS) y-axis and the
-            geometric center of the plate in degrees. For detailed coordinate axis
-            conventions, refer to `Rocket Axes Definition
-            <https://docs.rocketpy.org/en/latest/user/rocket/rocket_axes.html>`_.
+            geometric center of the plate in degrees. The angle is positive from
+            y to -x. See `Rocket Axes Definition <https://docs.rocketpy.org/en/latest/user/rocket/rocket_axes.html>`_
+            for more information.
         height : float, int, optional
             Axial coordinate of the geometric center along the rocket
             longitudinal axis in the User-defined Coordinate System (UCS) in
-            meters (m). Required when the ``shape`` of the plate is 'circular' or
-            'rectangular'.
+            meters. Required when the ``shape`` of the plate is "circular" or
+            "rectangular".
         """
         if not isinstance(plate, Plate):
             raise ValueError("The plate parameter must be a Plate instance.")
@@ -2398,8 +2398,8 @@ class Rocket:
             A full list of color names can be found at:
             https://matplotlib.org/stable/gallery/color/named_colors
         plane : str, optional
-            Plane in which the rocket will be drawn. Default is 'xz'. Other
-            options is 'yz'. Used only for sensors representation.
+            Plane in which the rocket will be drawn. Default is "xz". Other
+            options is "yz". Used only for sensors representation.
         filename : str | None, optional
             The path the plot should be saved to. By default None, in which case
             the plot will be shown instead of saved. Supported file endings are:
@@ -2425,8 +2425,8 @@ class Rocket:
             Position along the z axis relative to the bacs
             in which we want to calculate the radius.
         frame : str, optional
-            Frame in which the z component is given. It can either be 'bacs'
-            (body axis coordinate sytem) or 'ucs' (user defined coordiante
+            Frame in which the z component is given. It can either be "bacs"
+            (body axis coordinate sytem) or "ucs" (user defined coordiante
             system).
 
         Returns
@@ -2542,7 +2542,7 @@ class Rocket:
         -------
         is_inside: bool
             False if it is outside, True if it is inside.
-        bounds:
+        bounds: tuple
             Tuple formed by the range of the z relative to the specified frame.
         """
         if isinstance(z, (float, int)):

@@ -176,8 +176,8 @@ class _RocketPlots:
             A full list of color names can be found at: \
             https://matplotlib.org/stable/gallery/color/named_colors
         plane : str, optional
-            Plane in which the rocket will be drawn. Default is 'xz'. Other
-            options is 'yz'. Used only for sensors representation.
+            Plane in which the rocket will be drawn. Default is "xz". Other
+            options is "yz". Used only for sensors representation.
         filename : str | None, optional
             The path the plot should be saved to. By default None, in which case
             the plot will be shown instead of saved. Supported file endings are:
@@ -729,11 +729,11 @@ class _RocketPlots:
         wires : str, optional
             String that determines which wires will be plotted:
 
-            - 'communication_wires': only communication wires will be shown.
-            - 'ignition_wires': only ignition wires will be shown.
-            - 'all': all wires are shown.
+            - "communication_wires": only communication wires will be shown.
+            - "ignition_wires": only ignition wires will be shown.
+            - "all": all wires are shown.
 
-            Default is 'all'.
+            Default is "all".
         vis_args : dict, optional
             Determines the visual aspects when drawing the rocket. If ``None``,
             default values are used. Default values are:
@@ -755,23 +755,23 @@ class _RocketPlots:
             https://matplotlib.org/stable/gallery/color/named_colors
         plane : str, optional
             Cross-sectional projection plane to represent. Accepted options are
-            'xz' and 'yz'. Default is 'xz'.
+            "xz" and "yz". Default is "xz".
         color : str, list of str, tuple of str, optional
             Color of the wires. If it is a list or tuple, it must contain one
             color for each wire. A full list of color names can be found at:
             https://matplotlib.org/stable/gallery/color/named_colors
-            Default is 'default', meaning a distinct color from the default cycle
+            Default is "default", meaning a distinct color from the default cycle
             is assigned to each wire.
         marker : str, optional
             Shape of the markers representing the wire endpoints. A full list
             of markers can be found at:
             https://matplotlib.org/stable/api/markers_api.html
-            Default is 'o'.
+            Default is "o".
         linestyle : str, optional
             Style of the line that represents the wire. A full list of
             linestyles can be found at:
             https://matplotlib.org/stable/gallery/lines_bars_and_markers/linestyles.html
-            Default is '-'.
+            Default is "-".
         filename : str, optional
             The path the plot should be saved to. If None, the plot is shown
             interactively. Supported file formats include: eps, jpg, jpeg, pdf,
@@ -866,12 +866,12 @@ class _RocketPlots:
             https://matplotlib.org/stable/gallery/color/named_colors
         plane : str, optional
             Cross-sectional projection plane to represent. Accepted options are
-            'xz' and 'yz'. Default is 'xz'.
+            "xz" and "yz". Default is "xz".
         color : str, list of str, tuple of str, optional
             Color of the plates. If it is a list or tuple, it must contain one
             color for each plate. A full list of color names can be found at:
             https://matplotlib.org/stable/gallery/color/named_colors
-            Default is 'default', meaning a distinct color from the default cycle
+            Default is "default", meaning a distinct color from the default cycle
             is applied to each plate.
         filename : str, optional
             The path the plot should be saved to. If None, the plot is shown
@@ -1005,8 +1005,8 @@ class _RocketPlots:
             https://matplotlib.org/stable/gallery/color/named_colors
         plane: str, optional
             Plane that it is wanted to be represented:
-            Accepted options are 'xz' and 'yz'
-            Default value is 'xz'
+            Accepted options are "xz" and "yz"
+            Default value is "xz"
 
         Returns
         -------

@@ -201,7 +201,7 @@ class _PlatePlots:
         )
 
     def all(self) -> None:
-        """Plots all available graphs for the Plate instance using default
+        """Plots all available graphs for the _PlatePlots instance using default
         parameters.
         """
         self.draw_3d()

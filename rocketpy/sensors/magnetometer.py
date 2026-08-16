@@ -160,9 +160,9 @@ class Magnetometer(InertialSensor):
             the rocket.
 
             - If a Matrix, a direct 3x3 transformation matrix applied
-            to the magnetic field.
+              to the magnetic field.
             - If the string "plates", computes distortion
-            based on plates attached to the Rocket object.
+              based on plates attached to the Rocket object.
 
             Default is Matrix.identity().
         power_interference : int, float, list, str, optional

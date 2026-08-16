@@ -31,7 +31,7 @@ class Wire:
         Function sub-type when ``wire_type`` is "ignition" ("motor_ignition" or
         "parachute_deployment").
     Wire.extra_ignition_time : float
-        Additional duration in seconds (s) for which the ignition current remains
+        Additional duration in seconds for which the ignition current remains
         active after the event trigger.
     Wire.name : str
         Name identifier of the wire.
@@ -56,16 +56,16 @@ class Wire:
         wire_type : str
             Type of wire:
 
-            - "communications": Represents continuous data or power transmission,
-              generating a steady magnetic field.
-            - "ignition": Represents transient current active only during
-              specific deployment or ignition events.
+            - "communications": Continuous current, represents continuous data
+              or power transmission, generating a steady magnetic field.
+            - "ignition": Current is active only during specific deployment or
+              ignition events.
         ignition_wire_function : str, optional
-            Functional role of the ignition wire (mandatory if ``wire_type`` is
+            Function of the ignition wire (mandatory if ``wire_type`` is
             "ignition"). Valid options are "motor_ignition" or
             "parachute_deployment". Default is None.
         extra_ignition_time : float, optional
-            Additional duration in seconds (s) the ignition current persists
+            Additional duration in seconds the ignition current persists
             after event actuation. Default is 0.
         name : str, optional
             Name of the wire. Default is "wire".
@@ -128,7 +128,7 @@ class Wire:
     def measure_magnetic_field(self, position_vector: list | tuple | Vector) -> None:
         """Calculates and records the magnetic field vector at a target point in
         the Body Axis Coordinate System (BACS) using the finite straight-wire
-        Biot-Savart formulation.
+        Biot-Savart formula.
 
         Parameters
         ----------

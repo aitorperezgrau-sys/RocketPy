@@ -198,8 +198,8 @@ class _WirePlots:
             ax.scatter(z, r, marker=marker, color=color, zorder=5)
 
     def all(self) -> None:
-        """Plots all available graphs for the Wire instance. It calls
-        the draw method using default parameters.
+        """Plots all available graphs for the _WirePlots instance using default
+        parameters.
         """
         print(f"\n{self.wire.name} representation: ")
         self.draw()

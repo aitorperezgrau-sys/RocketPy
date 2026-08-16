@@ -41,14 +41,12 @@ class Plate:
         Discretized points defining the plate surface in the Body Axis
         Coordinate System (BACS).
     Plate.grid_spacing : float, optional
-        Spacing between discretization grid points in meters for
-        "personalized" plates.
+        Spacing between grid points in meters for "personalized" plates.
     Plate.z_points : int, optional
-        Number of discretization points along the longitudinal axis for
-        "circular" or "rectangular" plates.
+        Number of points along the longitudinal axis for "circular" or
+        "rectangular" plates.
     Plate.angular_points : int, optional
-        Number of angular discretization points for "circular" or "rectangular"
-        plates.
+        Number of angular points for "circular" or "rectangular" plates.
     Plate.name : str
         Name of the plate.
     """
@@ -74,11 +72,11 @@ class Plate:
             Shape of the plate. Options are:
 
         - If "circular": the plate is will be built as a circle, and the parameter
-        ``dimensions`` refers to the radius in meters.
+          ``dimensions`` refers to the radius in meters.
         - If "rectangular": the plate will be built a rectangle, and the parameter
-        ``dimensions`` refers to the sides length in meters.
+          ``dimensions`` refers to the sides length in meters.
         - If "personalized": the plate is created by the
-        vertices defined in ``dimensions``.
+          vertices defined in ``dimensions``.
         dimensions : float, int, list, tuple
             Dimensions defining the plate geometry depending on ``shape``:
 
@@ -96,7 +94,7 @@ class Plate:
             Absolute magnetic permeability of the ``material`` in H/m. Default is
             None.
         relative_magnetic_permeability : float, int, optional
-            Dimensionless ratio of ``material`` permeability to free space
+            Dimensionless ratio of material permeability to free space
             permeability. If defined, it overrides
             ``absolute_magnetic_permeability``. Default is None.
         grid_spacing : float, optional
@@ -268,11 +266,11 @@ class Plate:
             Rocket instance to which the plate is attached.
         position : float, int, optional
             Angle between the User-defined Coordinate System (UCS) y-axis and the
-            geometric center of the plate in degrees. For detailed coordinate axis
-            conventions, refer to `Rocket Axes Definition
-            <https://docs.rocketpy.org/en/latest/user/rocket/rocket_axes.html>`_.
+            geometric center of the plate in degrees. The angle is positive from
+            y to -x. See `Rocket Axes Definition <https://docs.rocketpy.org/en/latest/user/rocket/rocket_axes.html>`_
+            for more information.
         height : float, int, optional
-            Axial coordinate of the geometric center along the rocket
+            Coordinate of the geometric center along the rocket
             longitudinal axis in the User-defined Coordinate System (UCS) in
             meters.
         """
@@ -292,7 +290,7 @@ class Plate:
         position: float | int | None = None,
         height: float | int | None = None,
     ) -> None:
-        """Discretizes the plate surface into 3D points in the Body Axis
+        """Generates the points that represent the plate surface in the Body Axis
         Coordinate System (BACS).
 
         Parameters
@@ -589,7 +587,7 @@ class Plate:
         self, position_vector: Vector | list | tuple
     ) -> None:
         """Calculates and stores the 3x3 soft-iron magnetic distortion matrix
-        induced by the plate at the position indicated position_vector.
+        induced by the plate at the position indicated by ``position_vector``.
 
         Parameters
         ----------
@@ -661,7 +659,7 @@ class Plate:
             at: https://matplotlib.org/stable/gallery/color/named_colors
             Default is "teal".
         marker : str, optional
-            Shape of the markers representing the discretization points. A full
+            Shape of the markers representing the points. A full
             list of markers can be found at:
             https://matplotlib.org/stable/api/markers_api.html
             Default is "h".
