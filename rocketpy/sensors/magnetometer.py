@@ -698,7 +698,7 @@ class Magnetometer(InertialSensor):
                 if not self.communications_computed:
                     for communication_wire in rocket._communication_wires:
                         communication_wire.measure_magnetic_field(
-                            self._sensor_from_bacs
+                            self._sensor_from_bacs, frame = 'bacs'
                         )
                         self.communications_interference = [
                             self.communications_interference[0]
@@ -822,7 +822,7 @@ class Magnetometer(InertialSensor):
                     <= ejection_time + ignition_wire.extra_ignition_time
                 ):
                     if self.sensor_from_bacs_t not in ignition_wire._magnetic_field:
-                        ignition_wire.measure_magnetic_field(self._sensor_from_bacs)
+                        ignition_wire.measure_magnetic_field(self._sensor_from_bacs, frame = 'bacs')
                     self.activation_signal_interference = [
                         self.activation_signal_interference[0]
                         + ignition_wire.magnetic_field[self.sensor_from_bacs_t][0],
@@ -868,7 +868,7 @@ class Magnetometer(InertialSensor):
             <= rocket.motor.burn_start_time + ignition_wire.extra_ignition_time
         ):
             if self.sensor_from_bacs_t not in ignition_wire._magnetic_field:
-                ignition_wire.measure_magnetic_field(self._sensor_from_bacs)
+                ignition_wire.measure_magnetic_field(self._sensor_from_bacs, frame = 'bacs')
             self.activation_signal_interference = [
                 self.activation_signal_interference[0]
                 + ignition_wire.magnetic_field[self.sensor_from_bacs_t][0],

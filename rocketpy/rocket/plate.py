@@ -10,7 +10,7 @@ from rocketpy.prints.plate_prints import _PlatePrints
 
 
 class Plate:
-    """Defines surfaces on the rocket fuselage or interior to account for
+    """Defines a surface on the rocket fuselage or interior to account for
     soft-iron magnetic distortion affecting magnetometer readings.
 
     Attributes
@@ -31,9 +31,9 @@ class Plate:
     Plate.thickness : float, int
         Thickness of the plate in meters.
     Plate.area : float
-        Surface area of the plate in square meters (m^2).
+        Surface area of the plate in square meters.
     Plate.volume : float
-        Volume of the plate in cubic meters (m^3).
+        Volume of the plate in cubic meters.
     Plate._magnetic_distortion_matrices : dict
         Dictionary of soft-iron distortion matrices induced by the plate. Keys
         are position vector tuples (x, y, z) in the Body Axis Coordinate System,
@@ -149,14 +149,14 @@ class Plate:
     ) -> None:
         """Validates and sets material magnetic permeability parameters."""
         if not isinstance(material, str):
-            raise InvalidParameterError("'Material' argument must be a string.")
+            raise InvalidParameterError("'material' argument must be a string.")
 
         mu_0 = 4 * np.pi * 1e-7
-        predefined = {"iron": 1.25e-3, "carbon_steel": 1.2e-4}
+        predefined_materials = {"iron": 1.25e-3, "carbon_steel": 1.2e-4}
 
-        if material in predefined:
+        if material in predefined_materials:
             self.material = material
-            self.absolute_magnetic_permeability = predefined[material]
+            self.absolute_magnetic_permeability = predefined_materials[material]
             self.relative_magnetic_permeability = (
                 self.absolute_magnetic_permeability / mu_0
             )
@@ -194,7 +194,7 @@ class Plate:
                 )
         else:
             raise InvalidParameterError(
-                "'Material' argument must be 'iron', 'carbon_steel', or 'personalized'."
+                "'material' argument must be 'iron', 'carbon_steel', or 'personalized'."
             )
 
     def _validate_shape(
@@ -214,10 +214,10 @@ class Plate:
                 self.angular_points = None
             else:
                 raise InvalidParameterError(
-                    "'Shape' must be 'circular', 'rectangular', or 'personalized'."
+                    "'shape' must be 'circular', 'rectangular', or 'personalized'."
                 )
         else:
-            raise InvalidParameterError("'Shape' must be defined as a string.")
+            raise InvalidParameterError("'shape' must be defined as a string.")
 
     def _validate_not_personalized_shape(
         self, shape, dimensions, z_points, angular_points
@@ -275,7 +275,6 @@ class Plate:
             longitudinal axis in the User-defined Coordinate System in
             meters.
         """
-        self._rocket_belonging(rocket)
         self.generate_points(rocket, position, height)
         if self.shape == "rectangular":
             self.area = self.dimensions[0] * self.dimensions[1]
@@ -334,8 +333,8 @@ class Plate:
                     y = r * np.cos(theta)
 
                     # Transform to Body Axis Coordinate System (BACS)
-                    z_bacs = (z - rocket.center_of_dry_mass_position) * rocket._csys
-                    if rocket._csys == -1:  # nose_to_tail
+                    z_bacs = (z - self.center_of_dry_mass_position) * self._csys
+                    if self._csys == -1:  # nose_to_tail
                         self.points.append([-x, y, z_bacs])
                     else:  # tail_to_nose
                         self.points.append([x, y, z_bacs])
@@ -480,7 +479,8 @@ class Plate:
         self.points = final_3d_points
 
     def _vertices_definition(self, rocket) -> list:
-        """Transforms user-defined vertices into the Body Axis Coordinate System.
+        """Transforms vertices in user-defined coordinate system into
+        the Body Axis Coordinate System.
 
         Parameters
         ----------
@@ -493,7 +493,7 @@ class Plate:
             List of 3D vertices transformed into the BACS frame.
         """
         vertices = []
-        cdm_user_frame = Vector([0, 0, rocket.center_of_dry_mass_position])
+        cdm_user_frame = Vector([0, 0, self.center_of_dry_mass_position])
         if len(self.dimensions) < 3:
             raise InvalidParameterError(
                 "At least 3 vertices are required for a personalized plate."
@@ -503,7 +503,7 @@ class Plate:
 
             # Transform to BACS
             sensor_vec = Vector(pt) - cdm_user_frame
-            if rocket._csys == -1:
+            if self._csys == -1:
                 vertices.append([-sensor_vec[0], sensor_vec[1], -sensor_vec[2]])
             else:
                 vertices.append([sensor_vec[0], sensor_vec[1], sensor_vec[2]])
@@ -570,10 +570,6 @@ class Plate:
         nz = (v1[0] - v0[0]) * (v2[1] - v0[1]) - (v1[1] - v0[1]) * (v2[0] - v0[0])
 
         n_norm = m.hypot(nx, ny, nz)
-        if n_norm < 1e-12:
-            raise InvalidParameterError(
-                "The vertices of the plate cannot be collinear."
-            )
         nx, ny, nz = nx / n_norm, ny / n_norm, nz / n_norm
 
         arb_x, arb_y, arb_z = (
@@ -593,7 +589,7 @@ class Plate:
         return ux, uy, uz, vx, vy, vz
 
     def calculate_soft_iron_distortion_matrix(
-        self, position_vector: Vector | list | tuple
+        self, position_vector: Vector | list | tuple, frame: str = 'ucs'
     ) -> None:
         """Calculates and stores the 3x3 soft-iron magnetic distortion matrix
         induced by the plate at the position indicated by ``position_vector``.
@@ -611,14 +607,7 @@ class Plate:
                 num_points = len(self.points)
                 dv = self.volume / num_points
                 dipole_scalar = (diff_magnetic * dv) / (4.0 * np.pi)
-
-                if isinstance(position_vector, (list, tuple)):
-                    position_vector = Vector(position_vector)
-                elif not isinstance(position_vector, Vector):
-                    raise InvalidParameterError(
-                        "position_vector must be a tuple, list, or Vector instance."
-                    )
-
+                position_vector = self._position_vector_to_bacs(position_vector, frame)
                 for point in self.points:
                     r_v = position_vector - Vector(point)
                     r = abs(r_v)
@@ -649,7 +638,55 @@ class Plate:
                 )
         else:
             raise InvalidParameterError("The points attribute must be a list.")
+        
+    def _position_vector_to_bacs(
+        self,
+        position_vector: list | tuple | Vector,
+        frame: str = "bacs",
+    ) -> Vector:
+        """Transforms, if necessary, the position_vector to the BACS frame.
 
+        Parameters
+        ----------
+        position_vector : list, tuple, Vector
+            Coordinates [x, y, z] in meters in the specified ``frame``
+            in which we want to calculate the soft iron distortion.
+        frame : str, optional
+            Frame in which the ``position_vector`` is given. It can either be "bacs"
+            (body axis coordinate system) or "ucs" (user defined coordinate
+            system). Default is "ucs".
+
+        Returns
+        -------
+        position_vector_bacs : Vector
+            Vector coordinates [x, y, z] in meters in the BACS frame.
+        """
+        if not isinstance(frame, str):
+            raise InvalidParameterError("'frame' must be a string.")
+
+        frame_lower = frame.lower()
+        if frame_lower not in ("ucs", "bacs"):
+            raise InvalidParameterError(
+                f"Invalid frame '{frame}'. Must be 'ucs' or 'bacs'."
+            )
+        if isinstance(position_vector, (list, tuple, Vector)):
+            pos_v = Vector(position_vector)
+        else:
+            raise InvalidParameterError(
+                "'position_vector' must be a tuple, list, or Vector instance."
+            )
+        if frame_lower == "bacs":
+            position_vector_bacs = pos_v
+        else:
+            cdm_user_frame = Vector([0, 0, self.center_of_dry_mass_position])
+            delta = pos_v - cdm_user_frame
+            if self._csys == -1:  # nose to tail
+                position_vector_bacs = Vector([-delta[0], delta[1], -delta[2]])
+            else:  # tail to nose
+                position_vector_bacs = delta    
+
+        return position_vector_bacs
+    
     def draw_3d(
         self,
         color: str = "teal",
@@ -696,6 +733,8 @@ class Plate:
         rocket : Rocket
             Rocket instance to which the plate belongs.
         """
+        self._csys = rocket._csys
+        self.center_of_dry_mass_position = rocket.center_of_dry_mass_position
         self.plots.rocket = rocket
 
     def info(self) -> None:

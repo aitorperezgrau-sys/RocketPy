@@ -1950,9 +1950,8 @@ class Rocket:
                 raise InvalidParameterError(
                     f"{name} with coordinates {endpoint} is outside the rocket radius ({r_endpoint:.4f} m > {r_rocket:.4f} m) at z = {z} m."
                 )
-
-        wire._set_wire_endpoints_to_bacs(self, endpoints)
         wire._rocket_belonging(self)
+        wire._set_wire_endpoints_to_bacs(self, endpoints)
 
         if wire.wire_type == "communications":
             self._communication_wires.append(wire)
@@ -2060,6 +2059,7 @@ class Rocket:
                 raise InvalidParameterError(
                     f"The defined height {height} m must be within the rocket longitudinal range {range_z} in the user frame."
                 )
+        plate._rocket_belonging(self)
         plate.define_plate_position(self, position, height)
         self.plates.append([plate, position, height])
 

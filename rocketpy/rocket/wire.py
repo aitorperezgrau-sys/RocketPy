@@ -80,6 +80,8 @@ class Wire:
         self.wire_length = 0.0
         self.parachute_name = None
         self.name = name
+        self._csys = None
+        self.center_of_dry_mass_position = None
 
         # prints and plots
         self.prints = _WirePrints(self)
@@ -102,19 +104,19 @@ class Wire:
                 self.wire_type = "ignition"
                 if ignition_wire_function is None:
                     raise InvalidParameterError(
-                        "The ignition_wire_function parameter is required when wire_type is 'ignition'."
+                        "The 'ignition_wire_function' parameter is required when 'wire_type' is 'ignition'."
                     )
                 if not isinstance(ignition_wire_function, str):
                     raise InvalidParameterError(
-                        "ignition_wire_function must be a string."
+                        "'ignition_wire_function' must be a string."
                     )
                 self.ignition_wire_function = ignition_wire_function
             else:
                 raise InvalidParameterError(
-                    "wire_type must be either 'communications' or 'ignition'."
+                    "'wire_type' must be either 'communications' or 'ignition'."
                 )
         else:
-            raise InvalidParameterError("wire_type must be a string.")
+            raise InvalidParameterError("'wire_type' must be a string.")
 
     def _validate_numbers(self, current, extra_ignition_time) -> None:
         """Validates numerical attributes defining wire physical characteristics."""
@@ -123,14 +125,14 @@ class Wire:
         self.current = float(current)
 
         if not isinstance(extra_ignition_time, (float, int)):
-            raise InvalidParameterError("extra_ignition_time must be a float or int.")
+            raise InvalidParameterError("'extra_ignition_time' must be a float or int.")
         if extra_ignition_time < 0:
             raise InvalidParameterError(
-                "extra_ignition_time must be greater than or equal to 0."
+                "'extra_ignition_time' must be greater than or equal to 0."
             )
         self.extra_ignition_time = float(extra_ignition_time)
 
-    def measure_magnetic_field(self, position_vector: list | tuple | Vector) -> None:
+    def measure_magnetic_field(self, position_vector: list | tuple | Vector, frame: str = 'ucs') -> None:
         """Calculates and stores the magnetic field vector at the point given by
         ``position_vector`` in the Body Axis Coordinate System using the finite
         straight-wire Biot-Savart formula.
@@ -138,17 +140,20 @@ class Wire:
         Parameters
         ----------
         position_vector : list, tuple, Vector
-            Coordinates [x, y, z] in meters relative to the Body Axis Coordinate System
+            Coordinates [x, y, z] in meters in the specified ``frame`` 
             in which we want to calculate the magnetic field.
+        frame : str, optional
+            Frame in which the ``position_vector`` is given. It can either be "bacs"
+            (body axis coordinate sytem) or "ucs" (user defined coordiante
+            system).
         """
         r1 = self._wire_endpoints_bacs[0]  # starting endpoint
         r2 = self._wire_endpoints_bacs[1]  # final end
-
-        r_v = Vector(position_vector)
-        r_t = tuple(position_vector)
-
         l = r2 - r1  # Vector along the wire pointing in direction of current
         self.wire_length = abs(l)
+
+        r_v = self._position_vector_to_bacs(position_vector, frame)
+        r_t = tuple(r_v)
 
         if self.wire_length < 1e-12:
             self.magnetic_field[r_t] = [0.0, 0.0, 0.0]
@@ -161,6 +166,7 @@ class Wire:
         cross_l_r1 = l ^ r1_v
         cross_norm = abs(cross_l_r1)
 
+        print(cross_norm)
         if cross_norm < 1e-12:
             b_v = Vector([0, 0, 0])
             warnings.warn(
@@ -181,6 +187,54 @@ class Wire:
 
         self.magnetic_field[r_t] = list(b_v)
         self._magnetic_field[r_t] = b_v
+
+    def _position_vector_to_bacs(
+        self,
+        position_vector: list | tuple | Vector,
+        frame: str = "bacs",
+    ) -> Vector:
+        """Transforms, if necessary, the position_vector to the BACS frame.
+
+        Parameters
+        ----------
+        position_vector : list, tuple, Vector
+            Coordinates [x, y, z] in meters in the specified ``frame``
+            in which we want to calculate the magnetic field.
+        frame : str, optional
+            Frame in which the ``position_vector`` is given. It can either be "bacs"
+            (body axis coordinate system) or "ucs" (user defined coordinate
+            system). Default is "ucs".
+
+        Returns
+        -------
+        position_vector_bacs : Vector
+            Vector coordinates [x, y, z] in meters in the BACS frame.
+        """
+        if not isinstance(frame, str):
+            raise InvalidParameterError("'frame' must be a string.")
+
+        frame_lower = frame.lower()
+        if frame_lower not in ("ucs", "bacs"):
+            raise InvalidParameterError(
+                f"Invalid frame '{frame}'. Must be 'ucs' or 'bacs'."
+            )
+        if isinstance(position_vector, (list, tuple, Vector)):
+            pos_v = Vector(position_vector)
+        else:
+            raise InvalidParameterError(
+                "'position_vector' must be a tuple, list, or Vector instance."
+            )
+        if frame_lower == "bacs":
+            position_vector_bacs = pos_v
+        else:
+            cdm_user_frame = Vector([0, 0, self.center_of_dry_mass_position])
+            delta = pos_v - cdm_user_frame
+            if self._csys == -1:  # nose to tail
+                position_vector_bacs = Vector([-delta[0], delta[1], -delta[2]])
+            else:  # tail to nose
+                position_vector_bacs = delta    
+
+        return position_vector_bacs
 
     def define_magnetic_field(
         self,
@@ -227,11 +281,11 @@ class Wire:
             User-defined Coordinate System.
         """
         self._wire_endpoints_bacs = []
-        cdm_user_frame = Vector([0, 0, rocket.center_of_dry_mass_position])
+        cdm_user_frame = Vector([0, 0, self.center_of_dry_mass_position])
         for endpoint_from_user in _wire_endpoints_from_user_coordinate_system:
             self._check_entry_dimensions(endpoint_from_user, rocket)
             endpoint_from_cdm_user_frame = endpoint_from_user - cdm_user_frame
-            if rocket._csys == -1:  # nose to tail
+            if self._csys == -1:  # nose to tail
                 endpoint_position_bacs_frame = Vector(
                     [
                         -endpoint_from_cdm_user_frame[0],
@@ -265,13 +319,16 @@ class Wire:
 
     def _rocket_belonging(self, rocket) -> None:
         """Associates the rocket to which the Wire belongs to the
-        _WirePlots instance.
+        _WirePlots instance and defines the center of dry mass
+        and the z orientation as a wire attributes.
 
         Parameters
         ----------
         rocket : Rocket
             Rocket instance to which the wire belongs.
         """
+        self._csys = rocket._csys
+        self.center_of_dry_mass_position = rocket.center_of_dry_mass_position
         self.plots.rocket = rocket
 
     def info(self) -> None:

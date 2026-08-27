@@ -174,11 +174,25 @@ def test_validate_parameters(
             [0.03, 0.004, 0],
         ],  # wrong vertex: radius out of bonds
         [[0.001, 0.003, 0.04], [0.003, -0.004, 0.4]],  # wrong size: at least 3
-        [
-            [0.001, 0.001, 0.04],
-            [0.002, 0.002, 0.04],
-            [0.003, 0.003, 0.04],
-        ],  # wrong vertices: point
+    ],
+)
+def test_generate_personalized_points_bounds_out_of_bonds(vertices, calisto_robust):
+    """Ensures the raise of InvalidParameterError when the vertices are out of the rocket."""
+    test_plate = Plate(
+        shape="personalized",
+        dimensions=vertices,
+        material="carbon_steel",
+        thickness=0.001,
+        grid_spacing=0.002,
+        name="test_personalized_plate",
+    )
+    with pytest.raises(InvalidParameterError):
+        calisto_robust.add_plate(test_plate)
+
+
+@pytest.mark.parametrize(
+    "vertices",
+    [
         [
             [0, 0, 0],
             [0.001, 0.001, 0.001],
@@ -198,9 +212,8 @@ def test_validate_parameters(
         ],  # wrong vertices: 1D (line)
     ],
 )
-def test_generate_personalized_points_bounds(vertices, calisto_robust):
-    """Ensures the raise of InvalidParameterError when the vertices are out of the rocket
-    or when they don't form a 2D surface."""
+def test_generate_personalized_points_bounds_collinear(vertices, calisto_robust):
+    """Ensures the raise of InvalidParameterError when the vertices don't form a 2D surface."""
     test_plate = Plate(
         shape="personalized",
         dimensions=vertices,
@@ -209,7 +222,10 @@ def test_generate_personalized_points_bounds(vertices, calisto_robust):
         grid_spacing=0.002,
         name="test_personalized_plate",
     )
-    with pytest.raises(InvalidParameterError):
+    with pytest.raises(
+        InvalidParameterError,
+        match="All vertices of the personalized plate are collinear.",
+    ):
         calisto_robust.add_plate(test_plate)
 
 
@@ -320,8 +336,8 @@ def test_several_positions_soft_iron_distortion_matrix(
     as a dictionary.
     """
     calisto_robust.add_plate(test_squared_plate, position=45, height=0.2)
-    test_squared_plate.calculate_soft_iron_distortion_matrix((0, 0, 0))
-    test_squared_plate.calculate_soft_iron_distortion_matrix((0.004, 0.003, 0.5))
+    test_squared_plate.calculate_soft_iron_distortion_matrix((0, 0, 0), frame = 'bacs')
+    test_squared_plate.calculate_soft_iron_distortion_matrix((0.004, 0.003, 0.5), frame = 'bacs')
     assert len(test_squared_plate._magnetic_distortion_matrices) == 2
 
     list_keys = list(test_squared_plate._magnetic_distortion_matrices)
@@ -342,7 +358,7 @@ def test_no_soft_iron_distortion_matrix(calisto_robust):
         name="identity_soft_iron",
     )
     calisto_robust.add_plate(test_plate, position=30, height=0.3)
-    test_plate.calculate_soft_iron_distortion_matrix([0, 0, 0])
+    test_plate.calculate_soft_iron_distortion_matrix([0, 0, 0], frame = 'bacs')
     assert test_plate._magnetic_distortion_matrices[(0, 0, 0)] == Matrix.zeros()
 
 
@@ -419,12 +435,12 @@ def test_compare_soft_iron_distortion_matrix(
 
     # big_plate
     calisto_robust.add_plate(big_plate, position=position, height=height)
-    big_plate.calculate_soft_iron_distortion_matrix((0, 0, 0))
+    big_plate.calculate_soft_iron_distortion_matrix((0, 0, 0), frame = 'bacs')
     big_plate_matrix = big_plate._magnetic_distortion_matrices[(0, 0, 0)]
 
     # small_plate
     calisto_robust.add_plate(small_plate, position=position, height=height)
-    small_plate.calculate_soft_iron_distortion_matrix((0, 0, 0))
+    small_plate.calculate_soft_iron_distortion_matrix((0, 0, 0), frame = 'bacs')
     small_plate_matrix = small_plate._magnetic_distortion_matrices[(0, 0, 0)]
 
     for row in range(3):
