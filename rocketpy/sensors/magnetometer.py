@@ -243,6 +243,7 @@ class Magnetometer(InertialSensor):
         self._validate_soft_iron(soft_iron_distortion)
         self._validate_hard_iron(hard_iron_distortion)
         self.prints = _InertialSensorPrints(self)
+        self._sensor_from_bacs, self.sensor_from_bacs_t = [None, None]
 
         # Get current decimal year
         current_date = datetime.now().strftime("%Y-%m-%d")
@@ -588,7 +589,7 @@ class Magnetometer(InertialSensor):
                         not in plate._magnetic_distortion_matrices
                     ):
                         plate.calculate_soft_iron_distortion_matrix(
-                            self._sensor_from_bacs
+                            self._sensor_from_bacs, frame="bacs"
                         )
                         self._soft_iron_distortion_matrix = (
                             self._soft_iron_distortion_matrix

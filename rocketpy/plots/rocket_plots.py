@@ -824,7 +824,7 @@ class _RocketPlots:
 
         for wire, color_wire in zip(wires_list, color_list):
             wire.plots._draw_wires(
-                ax, plane, color_wire, marker, linestyle, edges_names=False
+                ax, plane, color_wire, marker, linestyle, endpoints_names=False
             )
 
         plt.title("Wires representation")
