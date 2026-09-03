@@ -336,8 +336,10 @@ def test_several_positions_soft_iron_distortion_matrix(
     as a dictionary.
     """
     calisto_robust.add_plate(test_squared_plate, position=45, height=0.2)
-    test_squared_plate.calculate_soft_iron_distortion_matrix((0, 0, 0), frame = 'bacs')
-    test_squared_plate.calculate_soft_iron_distortion_matrix((0.004, 0.003, 0.5), frame = 'bacs')
+    test_squared_plate.calculate_soft_iron_distortion_matrix((0, 0, 0), frame="bacs")
+    test_squared_plate.calculate_soft_iron_distortion_matrix(
+        (0.004, 0.003, 0.5), frame="bacs"
+    )
     assert len(test_squared_plate._magnetic_distortion_matrices) == 2
 
     list_keys = list(test_squared_plate._magnetic_distortion_matrices)
@@ -358,7 +360,7 @@ def test_no_soft_iron_distortion_matrix(calisto_robust):
         name="identity_soft_iron",
     )
     calisto_robust.add_plate(test_plate, position=30, height=0.3)
-    test_plate.calculate_soft_iron_distortion_matrix([0, 0, 0], frame = 'bacs')
+    test_plate.calculate_soft_iron_distortion_matrix([0, 0, 0], frame="bacs")
     assert test_plate._magnetic_distortion_matrices[(0, 0, 0)] == Matrix.zeros()
 
 
@@ -435,12 +437,12 @@ def test_compare_soft_iron_distortion_matrix(
 
     # big_plate
     calisto_robust.add_plate(big_plate, position=position, height=height)
-    big_plate.calculate_soft_iron_distortion_matrix((0, 0, 0), frame = 'bacs')
+    big_plate.calculate_soft_iron_distortion_matrix((0, 0, 0), frame="bacs")
     big_plate_matrix = big_plate._magnetic_distortion_matrices[(0, 0, 0)]
 
     # small_plate
     calisto_robust.add_plate(small_plate, position=position, height=height)
-    small_plate.calculate_soft_iron_distortion_matrix((0, 0, 0), frame = 'bacs')
+    small_plate.calculate_soft_iron_distortion_matrix((0, 0, 0), frame="bacs")
     small_plate_matrix = small_plate._magnetic_distortion_matrices[(0, 0, 0)]
 
     for row in range(3):

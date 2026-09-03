@@ -589,7 +589,7 @@ class Plate:
         return ux, uy, uz, vx, vy, vz
 
     def calculate_soft_iron_distortion_matrix(
-        self, position_vector: Vector | list | tuple, frame: str = 'ucs'
+        self, position_vector: Vector | list | tuple, frame: str = "ucs"
     ) -> None:
         """Calculates and stores the 3x3 soft-iron magnetic distortion matrix
         induced by the plate at the position indicated by ``position_vector``.
@@ -638,7 +638,7 @@ class Plate:
                 )
         else:
             raise InvalidParameterError("The points attribute must be a list.")
-        
+
     def _position_vector_to_bacs(
         self,
         position_vector: list | tuple | Vector,
@@ -683,10 +683,10 @@ class Plate:
             if self._csys == -1:  # nose to tail
                 position_vector_bacs = Vector([-delta[0], delta[1], -delta[2]])
             else:  # tail to nose
-                position_vector_bacs = delta    
+                position_vector_bacs = delta
 
         return position_vector_bacs
-    
+
     def draw_3d(
         self,
         color: str = "teal",

@@ -75,8 +75,8 @@ def test_current_directon(calisto_with_sensors):
         horizontal_wire_2, [[0.001, -0.001, 0], [0.001, 0.001, 0]]
     )
 
-    horizontal_wire_1.measure_magnetic_field([0, 0, 0], frame = 'bacs')
-    horizontal_wire_2.measure_magnetic_field([0, 0, 0], frame = 'bacs')
+    horizontal_wire_1.measure_magnetic_field([0, 0, 0], frame="bacs")
+    horizontal_wire_2.measure_magnetic_field([0, 0, 0], frame="bacs")
 
     b_field_1 = horizontal_wire_1._magnetic_field[(0, 0, 0)]
     b_field_2 = horizontal_wire_2._magnetic_field[(0, 0, 0)]
@@ -102,8 +102,8 @@ def test_dimension_increase(calisto_with_sensors):
     calisto_with_sensors.add_wire(closer_wire, [[0.001, 0.001, 0], [0.001, -0.001, 0]])
     calisto_with_sensors.add_wire(farther_wire, [[0.001, 0.001, 0], [0.001, -0.001, 0]])
 
-    closer_wire.measure_magnetic_field([0, 0, 0], frame = 'bacs')
-    farther_wire.measure_magnetic_field([-0.4, 0, 0], frame = 'bacs')
+    closer_wire.measure_magnetic_field([0, 0, 0], frame="bacs")
+    farther_wire.measure_magnetic_field([-0.4, 0, 0], frame="bacs")
 
     b_field_closer = closer_wire._magnetic_field[(0, 0, 0)]
     b_field_farther = farther_wire._magnetic_field[(-0.4, 0, 0)]
@@ -127,7 +127,9 @@ def test_raise_warning(test_communications_wire, calisto_robust, position_vector
         position_endpoints=[[-0.003, -0.003, 0], [0.003, 0.003, 0]],
     )
     with pytest.warns(UserWarning):
-        test_communications_wire.measure_magnetic_field(position_vector=position_vector, frame='ucs')
+        test_communications_wire.measure_magnetic_field(
+            position_vector=position_vector, frame="ucs"
+        )
 
 
 def test_from_dict():

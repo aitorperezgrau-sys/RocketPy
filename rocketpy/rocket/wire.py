@@ -132,7 +132,9 @@ class Wire:
             )
         self.extra_ignition_time = float(extra_ignition_time)
 
-    def measure_magnetic_field(self, position_vector: list | tuple | Vector, frame: str = 'ucs') -> None:
+    def measure_magnetic_field(
+        self, position_vector: list | tuple | Vector, frame: str = "ucs"
+    ) -> None:
         """Calculates and stores the magnetic field vector at the point given by
         ``position_vector`` in the Body Axis Coordinate System using the finite
         straight-wire Biot-Savart formula.
@@ -140,7 +142,7 @@ class Wire:
         Parameters
         ----------
         position_vector : list, tuple, Vector
-            Coordinates [x, y, z] in meters in the specified ``frame`` 
+            Coordinates [x, y, z] in meters in the specified ``frame``
             in which we want to calculate the magnetic field.
         frame : str, optional
             Frame in which the ``position_vector`` is given. It can either be "bacs"
@@ -166,7 +168,6 @@ class Wire:
         cross_l_r1 = l ^ r1_v
         cross_norm = abs(cross_l_r1)
 
-        print(cross_norm)
         if cross_norm < 1e-12:
             b_v = Vector([0, 0, 0])
             warnings.warn(
@@ -232,7 +233,7 @@ class Wire:
             if self._csys == -1:  # nose to tail
                 position_vector_bacs = Vector([-delta[0], delta[1], -delta[2]])
             else:  # tail to nose
-                position_vector_bacs = delta    
+                position_vector_bacs = delta
 
         return position_vector_bacs
 

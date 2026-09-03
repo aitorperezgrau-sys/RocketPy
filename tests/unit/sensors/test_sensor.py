@@ -310,7 +310,7 @@ def test_noisy_rotated_magnetometer(
     # soft iron
     soft_iron_matrix = Matrix.identity()
     for plate in [test_circular_plate, test_personalized_plate]:
-        plate.calculate_soft_iron_distortion_matrix(Vector(sensor_from_bacs_list))
+        plate.calculate_soft_iron_distortion_matrix(Vector(sensor_from_bacs_list), frame = 'bacs')
         soft_iron_matrix += plate._magnetic_distortion_matrices[
             tuple(sensor_from_bacs_list)
         ]
