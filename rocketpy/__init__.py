@@ -55,7 +55,6 @@ from .rocket import (
     TrapezoidalFins,
     TubeFins,
     Wire,
-    Plate,
 )
 from .sensitivity import SensitivityModel
 from .sensors import Accelerometer, Barometer, GnssReceiver, Gyroscope, Magnetometer
