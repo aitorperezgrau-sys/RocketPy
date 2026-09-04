@@ -43,7 +43,7 @@ from rocketpy.rocket import Wire
     ],
 )
 def validate_wire_type(wire_type, ignition_wire_function, current, extra_ignition_time):
-    """Tests that InvalidParameterError are raised with incorrect entry parameters."""
+    """Ensures that InvalidParameterError are raised with incorrect entry parameters."""
     with pytest.raises(InvalidParameterError):
         Wire(current, wire_type, ignition_wire_function, extra_ignition_time)
 
@@ -66,6 +66,9 @@ def test_define_magnetic_field(test_communications_wire):
 
 
 def test_current_directon(calisto_with_sensors):
+    """Ensures that changing direction of the current results in a magnetic field vector
+    of the same magnitude but with opposite components and the magnetic field components
+    have a correct physical meaning."""
     horizontal_wire_1 = Wire(10, wire_type="communications", name="horizontal_wire")
     horizontal_wire_2 = Wire(10, wire_type="communications", name="horizontal_wire")
     calisto_with_sensors.add_wire(
@@ -94,9 +97,11 @@ def test_current_directon(calisto_with_sensors):
     assert b_field_2[2] != 0
     assert b_field_1[2] != 0
     assert b_field_2[2] == -b_field_1[2]
+    assert abs(b_field_2) == abs(b_field_1)
 
 
 def test_dimension_increase(calisto_with_sensors):
+    """Tests that if the wire is closer it has a higher magnitude for the magnetic field"""
     closer_wire = Wire(10, wire_type="communications", name="horizontal_wire")
     farther_wire = Wire(10, wire_type="communications", name="horizontal_wire")
     calisto_with_sensors.add_wire(closer_wire, [[0.001, 0.001, 0], [0.001, -0.001, 0]])
@@ -122,6 +127,8 @@ def test_dimension_increase(calisto_with_sensors):
     ],
 )
 def test_raise_warning(test_communications_wire, calisto_robust, position_vector):
+    """Ensures that a warning is raised when the magnetic field measurement function
+    of the wire has as a parameter a point located along the wire line."""
     calisto_robust.add_wire(
         test_communications_wire,
         position_endpoints=[[-0.003, -0.003, 0], [0.003, 0.003, 0]],
@@ -133,6 +140,8 @@ def test_raise_warning(test_communications_wire, calisto_robust, position_vector
 
 
 def test_from_dict():
+    """Ensures from_dict returns a Wire object, whose attributes
+    are the ones passed in the dict."""
     wire_dict = {
         "current": 3,
         "wire_type": "ignition",
@@ -142,22 +151,27 @@ def test_from_dict():
     wire_from_dict = Wire.from_dict(wire_dict)
 
     assert isinstance(wire_from_dict, Wire)
-    assert wire_from_dict.current == 3
+    assert wire_from_dict.current == pytest.approx(3)
     assert wire_from_dict.wire_type == "ignition"
     assert wire_from_dict.ignition_wire_function == "motor_ignition"
-    assert wire_from_dict.extra_ignition_time == 2
+    assert wire_from_dict.extra_ignition_time == pytest.approx(2)
 
 
 def test_rocket_belonging(test_communications_wire, calisto_robust):
+    """Ensures the belonging method of the wire works as intended."""
     calisto_robust.add_wire(
         test_communications_wire,
         position_endpoints=[[0.001, 0.002, -0.3], [0.001, 0.002, 0.3]],
     )
     assert isinstance(test_communications_wire.plots, _WirePlots)
+    assert not isinstance(test_communications_wire._csys, type(None))
+    assert not isinstance(
+        test_communications_wire.center_of_dry_mass_position, type(None)
+    )
 
 
 def test_wire_prints_and_plots(test_communications_wire, calisto_robust):
-    """Test the print methods of the Wire class. Checks if all attributes are
+    """Ensures the print methods of the Wire class work properly. Checks if all attributes are
     printed and plotted correctly.
     """
     with pytest.raises(InvalidParameterError):

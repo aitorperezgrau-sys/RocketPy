@@ -19,7 +19,7 @@ class Plate:
         Shape of the plate ("circular", "rectangular", or "personalized").
     Plate.dimensions : float, int, tuple or list
         Dimensions of the plate. For "circular", a float/int representing the
-        radius; for "rectangular", a tuple/list (width, height); for
+        radius; for "rectangular", a tuple (width, height); for
         "personalized", a list of 3D vertices [x, y, z].
     Plate.material : str
         Material composing the plate ("iron", "carbon_steel", or "personalized").

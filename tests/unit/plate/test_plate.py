@@ -177,7 +177,7 @@ def test_validate_parameters(
     ],
 )
 def test_generate_personalized_points_bounds_out_of_bonds(vertices, calisto_robust):
-    """Ensures the raise of InvalidParameterError when the vertices are out of the rocket."""
+    """Tests the raise of InvalidParameterError when the vertices are out of the rocket."""
     test_plate = Plate(
         shape="personalized",
         dimensions=vertices,
@@ -213,7 +213,7 @@ def test_generate_personalized_points_bounds_out_of_bonds(vertices, calisto_robu
     ],
 )
 def test_generate_personalized_points_bounds_collinear(vertices, calisto_robust):
-    """Ensures the raise of InvalidParameterError when the vertices don't form a 2D surface."""
+    """Tests the raise of InvalidParameterError when the vertices don't form a 2D surface."""
     test_plate = Plate(
         shape="personalized",
         dimensions=vertices,
@@ -239,7 +239,7 @@ def test_generate_personalized_points_bounds_collinear(vertices, calisto_robust)
     ],
 )
 def test_generate_angular_plate_position(angle, expected_x, calisto_robust):
-    """Ensures proper position vector generation in the BACS frame
+    """Tests proper position vector generation in the BACS frame
     based on the angular position.
     """
     small_plate = Plate(
@@ -267,8 +267,8 @@ def test_generate_angular_plate_position(angle, expected_x, calisto_robust):
     ],
 )
 def test_plate_dimensions(request, plate, calisto_robust):
-    """Ensures proper position vector generation in the BACS frame
-    based dimensions.
+    """Tests proper position vector generation in the BACS frame
+    based on dimensions.
     """
     plate_object = request.getfixturevalue(plate)
     height = 0.0
@@ -311,7 +311,7 @@ def test_plate_dimensions(request, plate, calisto_robust):
     ],
 )
 def test_less_points_plate(height_ucs, calisto_robust):
-    """Ensures that when the dimensions, or the point generated are out of the rocket
+    """Tests that when the dimensions, or the point generated are out of the rocket
     no error is raised and some points have been dismissed.
     """
     z_points = 50
@@ -348,9 +348,7 @@ def test_several_positions_soft_iron_distortion_matrix(
 
 
 def test_no_soft_iron_distortion_matrix(calisto_robust):
-    """Ensures that when the relative magnetic permeability is 1
-    there is no distortion added.
-    """
+    """Tests that when the relative magnetic permeability is 1, no distortion is added."""
     test_plate = Plate(
         shape="circular",
         dimensions=0.04,
@@ -403,10 +401,11 @@ def test_compare_soft_iron_distortion_matrix(
     calisto_robust,
 ):
     """
-    The plate class is able to handle wrapped plates, and this is
-    reflected in the magnitude of the distortion of the
-    soft iron distortion matrix. Also bigger magnetic permeability
-    causes bigger magnetic distortion.
+    Tests that
+    - The plate class is able to handle wrapped plates, which is also
+      reflected in the magnitude of the distortion of the soft iron
+      distortion matrix.
+    - Bigger magnetic permeability causes bigger magnetic distortion.
     """
     z_points = 150
     angular_points = 200
@@ -453,8 +452,11 @@ def test_compare_soft_iron_distortion_matrix(
 
 
 def test_rocket_belonging(test_circular_plate, calisto_robust):
+    """Tests if the belonging attribute works as intended"""
     calisto_robust.add_plate(test_circular_plate, position=-0.3, height=0.3)
     assert isinstance(test_circular_plate.plots, _PlatePlots)
+    assert not isinstance(test_circular_plate._csys, type(None))
+    assert not isinstance(test_circular_plate.center_of_dry_mass_position, type(None))
 
 
 @pytest.mark.parametrize(
@@ -481,6 +483,7 @@ def test_plate_prints_and_plots(request, plate, position, height, calisto_robust
 
 
 def test_from_dict():
+    """Tests if from_dict returns a Plate object."""
     plate_dict = {
         "shape": "rectangular",
         "dimensions": 0.003,
@@ -494,3 +497,8 @@ def test_from_dict():
     }
     plate_from_dict = Plate.from_dict(plate_dict)
     assert isinstance(plate_from_dict, Plate)
+    assert plate_from_dict.dimensions == (0.003, 0.003)
+    assert plate_from_dict.material == "personalized"
+    assert plate_from_dict.thickness == pytest.approx(0.001)
+    assert plate_from_dict.z_points == pytest.approx(50)
+    assert plate_from_dict.angular_points == pytest.approx(50)

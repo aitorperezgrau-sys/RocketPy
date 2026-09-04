@@ -1147,6 +1147,7 @@ def test_evaluate_reduced_mass_with_motor(calisto):
     ],
 )
 def test_add_wire(request, wire, position_endpoints, parachute_name, calisto_robust):
+    """Tests that add_wire raises InvalidParameterError as intended."""
     wire_object = request.getfixturevalue(wire)
     with pytest.raises(InvalidParameterError):
         calisto_robust.add_wire(wire_object, position_endpoints, parachute_name)
@@ -1164,16 +1165,15 @@ def test_add_wire(request, wire, position_endpoints, parachute_name, calisto_rob
     ],
 )
 def test_add_plate(request, plate, position, height, calisto_robust):
+    """Tests that add_plate raises InvalidParameterError as intended."""
     plate_obj = request.getfixturevalue(plate)
     with pytest.raises(InvalidParameterError):
         calisto_robust.add_plate(plate_obj, position, height)
 
 
 def test_general_radius(calisto_robust):
-    """
-    Tests the general radius funciton as well as the _calculate_radius_z_intermediate,
-    nose cone radius function and the tail radius function.
-    """
+    """Tests the general radius funciton as well as the _calculate_radius_z_intermediate,
+    nose cone radius function and the tail radius function."""
     prev = 0
     for z in np.linspace(-1.313 - 0.06, 1.16, 100):
         current_radius = calisto_robust.general_radius(z, frame="ucs")

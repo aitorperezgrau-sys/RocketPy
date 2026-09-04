@@ -322,7 +322,7 @@ def test_noisy_rotated_magnetometer(
     b_field_bacs += Vector([60e-6] * 3)
 
     # communicatons interference
-    test_communications_wire.measure_magnetic_field(Vector(sensor_from_bacs_list))
+    test_communications_wire.measure_magnetic_field(Vector(sensor_from_bacs_list), frame = 'bacs')
     b_field_bacs += test_communications_wire._magnetic_field[
         tuple(sensor_from_bacs_list)
     ]
