@@ -49,7 +49,7 @@ def validate_wire_type(wire_type, ignition_wire_function, current, extra_ignitio
 
 
 def test_define_magnetic_field(test_communications_wire):
-    """Ensures proper handling of the magnetic field calculated
+    """Tests proper handling of the magnetic field calculated
     in the _magnetic_field dictionary."""
     position_vector = [0.003, 0.002, 1]
     magnetic_field = [10, 25, 10]
@@ -66,7 +66,7 @@ def test_define_magnetic_field(test_communications_wire):
 
 
 def test_current_directon(calisto_with_sensors):
-    """Ensures that changing direction of the current results in a magnetic field vector
+    """Tests that changing direction of the current results in a magnetic field vector
     of the same magnitude but with opposite components and the magnetic field components
     have a correct physical meaning."""
     horizontal_wire_1 = Wire(10, wire_type="communications", name="horizontal_wire")
@@ -158,7 +158,7 @@ def test_from_dict():
 
 
 def test_rocket_belonging(test_communications_wire, calisto_robust):
-    """Ensures the belonging method of the wire works as intended."""
+    """Tests the belonging method of the wire works as intended."""
     calisto_robust.add_wire(
         test_communications_wire,
         position_endpoints=[[0.001, 0.002, -0.3], [0.001, 0.002, 0.3]],
@@ -171,7 +171,7 @@ def test_rocket_belonging(test_communications_wire, calisto_robust):
 
 
 def test_wire_prints_and_plots(test_communications_wire, calisto_robust):
-    """Ensures the print methods of the Wire class work properly. Checks if all attributes are
+    """Tests the print methods of the Wire class work properly. Checks if all attributes are
     printed and plotted correctly.
     """
     with pytest.raises(InvalidParameterError):
